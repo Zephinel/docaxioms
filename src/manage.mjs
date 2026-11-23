@@ -33,13 +33,14 @@ export function source(from = HERE) {
 
 /**
  * The command that checks `project`, as typed from `cwd` in a POSIX shell. It changes into the project first,
- * so that npx finds the project's own installation; the directory is quoted so that the shell reads it literally.
+ * so that npx finds the project's own installation; the directory is quoted so that the shell reads it literally,
+ * and starts with `./` or `../` so that `cd` neither searches CDPATH nor reads it as an option.
  */
 export function checkCommand(project, cwd = process.cwd()) {
   const run = "npx --no-install docaxioms check";
   const rel = relative(cwd, project).split(sep).join("/");
   if (!rel) return run;
-  const dir = rel.startsWith("-") ? `./${rel}` : rel;
+  const dir = /^(\.\.?\/|\.\.$|\/|[A-Za-z]:\/)/.test(rel) ? rel : `./${rel}`;
   const quoted = /^[\w./:@%+=,-]+$/.test(dir) ? dir : `'${dir.replace(/'/g, "'\\''")}'`;
   return `cd ${quoted} && ${run}`;
 }

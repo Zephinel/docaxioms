@@ -172,16 +172,18 @@ test("a project's copy carries the licence, the same as here", () => {
   assert.equal(readFileSync(new URL("../core/LICENSE", import.meta.url), "utf8"), readFileSync(new URL("../LICENSE", import.meta.url), "utf8"));
 });
 
-test("the printed check command changes into the project, and a POSIX shell reads the directory literally", { skip: process.platform === "win32" }, () => {
+test("the printed check command changes into the project, and a POSIX shell reads the directory literally, CDPATH or not", { skip: process.platform === "win32" }, () => {
   const base = realpathSync(mkdtempSync(join(tmpdir(), "docaxioms-cmd-")));
   try {
     assert.equal(checkCommand(base, base), "npx --no-install docaxioms check");
-    for (const name of ["packages/docs", "my docs", "docs$(echo injected)", "it's", "-docs", "a\\b", "x;y&z`w`"]) {
+    const decoy = join(base, "decoy");
+    for (const name of ["packages/docs", "bin", ".hidden", "my docs", "docs$(echo injected)", "it's", "-docs", "a\\b", "x;y&z`w`"]) {
+      mkdirSync(join(decoy, name), { recursive: true });
       const dir = join(base, name);
       mkdirSync(dir, { recursive: true });
       const command = checkCommand(dir, base);
       assert.ok(command.endsWith(" && npx --no-install docaxioms check"), command);
-      const landed = execFileSync("/bin/sh", ["-c", command.replace("npx --no-install docaxioms check", "pwd -P")], { cwd: base, encoding: "utf8" }).trim();
+      const landed = execFileSync("/bin/sh", ["-c", command.replace("npx --no-install docaxioms check", "pwd -P")], { cwd: base, encoding: "utf8", env: { ...process.env, CDPATH: decoy } }).trim();
       assert.equal(landed, realpathSync(dir), command);
     }
   } finally {

@@ -352,5 +352,5 @@ test("withoutFences strips fenced blocks while preserving 4-space indented code"
 
 test("the core names no project: no path of a machine, no address, no tool, no other script", async () => {
   const core = ["GUIDE.md", "GARDEN.md", "AXIOMS.lock.md"].map((file) => readFileSync(new URL(`../core/${file}`, import.meta.url), "utf8"));
-  for (const text of core) assert.doesNotMatch(text, /\/(?:Users|home)\/|@\w+\.\w|https?:|\b(?:Claude|Codex|Gemini|GPT|npm|cargo|pip)\b|\p{Script=Han}|\b[A-Z]{1,3}\d{2,}\b|\bAD-/u);
+  for (const text of core) assert.doesNotMatch(text, /\/(?:Users|home)\/|@\w+\.\w|https?:|\b(?:Claude|Codex|Gemini|GPT|npm|cargo|pip|git)\b|\p{Script=Han}|\b[A-Z]{1,3}\d{2,}\b|\bAD-/u);
 });
