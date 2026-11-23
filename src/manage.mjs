@@ -40,7 +40,7 @@ export function checkCommand(project, cwd = process.cwd()) {
   const run = "npx --no-install docaxioms check";
   const rel = relative(cwd, project).split(sep).join("/");
   if (!rel) return run;
-  const dir = /^(\.\.?\/|\.\.$|\/|[A-Za-z]:\/)/.test(rel) ? rel : `./${rel}`;
+  const dir = isAbsolute(rel) || /^(\.\.\/|\.\.$)/.test(rel) ? rel : `./${rel}`;
   const quoted = /^[\w./:@%+=,-]+$/.test(dir) ? dir : `'${dir.replace(/'/g, "'\\''")}'`;
   return `cd ${quoted} && ${run}`;
 }

@@ -177,7 +177,7 @@ test("the printed check command changes into the project, and a POSIX shell read
   try {
     assert.equal(checkCommand(base, base), "npx --no-install docaxioms check");
     const decoy = join(base, "decoy");
-    for (const name of ["packages/docs", "bin", ".hidden", "my docs", "docs$(echo injected)", "it's", "-docs", "a\\b", "x;y&z`w`"]) {
+    for (const name of ["packages/docs", "bin", ".hidden", "C:/docs", "my docs", "docs$(echo injected)", "it's", "-docs", "a\\b", "x;y&z`w`"]) {
       mkdirSync(join(decoy, name), { recursive: true });
       const dir = join(base, name);
       mkdirSync(dir, { recursive: true });
