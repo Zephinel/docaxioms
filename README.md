@@ -1,61 +1,88 @@
 # docaxioms
 
-A documentation system for software projects, derived from axioms instead of habits.
+[![npm](https://img.shields.io/npm/v/docaxioms)](https://www.npmjs.com/package/docaxioms) [![check](https://github.com/Zephinel/docaxioms/actions/workflows/check.yml/badge.svg)](https://github.com/Zephinel/docaxioms/actions/workflows/check.yml) [![licence](https://img.shields.io/npm/l/docaxioms)](LICENSE) [![node](https://img.shields.io/node/v/docaxioms)](package.json)
 
-Documents are copies of one moment, and a reader who starts without memory, such as a model in a new context, has nothing else. So every rule here is derived from a few statements that do not go stale ([`core/AXIOMS.lock.md`](core/AXIOMS.lock.md)), names the axioms it follows from, and separates precise hard gates (`gate`) from advisory review aids (`aid`, M2).
+**Checks a project's documentation against its code: it fails on broken links and anchors, stale code pins, decisions without a landing, and documents over budget.**
 
-| Part | What it is |
-|---|---|
-| [`core/`](core/GUIDE.md) | Pure-text specification pinned in every project: the axioms, [`GUIDE.md`](core/GUIDE.md), [`GARDEN.md`](core/GARDEN.md), and licence |
-| [`bin/docaxioms.mjs`](bin/docaxioms.mjs) | CLI (`check`, `pin`, `garden`, `init`, `update`) |
-| [`src/`](src/index.mjs) | Check engine built on `remark` (CommonMark + GFM), `github-slugger`, and `picomatch` |
-| [`templates/`](templates/AGENTS.md) | Starter documents, multi-agent bridge (`CLAUDE.md`), and profile; existing project files are never overwritten |
-| [`test/`](test/check.test.mjs) | Seeded-fault portability suite on a Python fixture plus init/update/pin/aid tests |
-| [`docs/decisions.md`](docs/decisions.md) | What the owner decided about docaxioms itself, verified by its own check |
+> **Status**: pre-release (`0.x`); commands and profile keys may still change. This README describes `main`, which can be ahead of the npm package; installing from GitHub gets `main`.
 
 ## Use it in a project
 
-`docaxioms` runs as a Node CLI package (**requires Node >= 22** and the installed package; the project's own code may be in any language, A6), while consumer projects pin only the pure-text specification files from `core/` (`AD-4`). Install it from npm, or from GitHub with `github:Zephinel/docaxioms`; it is still a pre-release. Its name is `docaxioms` (`AD-5`); projects set up under the earlier name `agentic-docs` (an `agentic-docs.json` profile) are not read, so set them up again with `init`:
+Needs Node 22 or later; the project's own code may be in any language (`AD-2`). Projects pin only the pure-text specification from `core/` and run the checks through this CLI (`AD-4`).
 
 ```bash
-npm install --save-dev docaxioms
-npx --no-install docaxioms init .             # pins core/ into docaxioms/, writes starter docs & docaxioms.json
-npx --no-install docaxioms check              # fails on hard gates; prints review aids without failing
-npx --no-install docaxioms check --report     # prints all gates and aids, always exits 0
-npx --no-install docaxioms check --strict-aids # fails on review aids too
-npx --no-install docaxioms pin                # lists shifted, stale, or uninitialized <!-- pin: ... --> anchors
-npx --no-install docaxioms pin --relocate     # updates shifted line numbers when pinned content is unchanged
-npx --no-install docaxioms pin --write --file docs/design.md  # refreshes hashes for reviewed docs (or --pin <doc:line>)
-npx --no-install docaxioms garden             # lists K3 descriptions, stage card, pins and mapped code
+npm install --save-dev docaxioms   # or: npm install --save-dev github:Zephinel/docaxioms
+npx --no-install docaxioms init .
+npx --no-install docaxioms check
 ```
 
-To update the pinned specification after upgrading the package: `npx --no-install docaxioms update .`. A project pins the CLI version (plus commit when installed from git) and the SHA-256 of each file in `core/`; local edits or CLI/spec version mismatches fail the check. When the axioms change, `update` refuses without `--accept-axioms`, which requires the project owner's explicit word (A0).
+`init` writes `docaxioms/` (the pinned specification), `docaxioms.json` (the profile) and the starter documents it does not find, among them `CLAUDE.md` holding only `@AGENTS.md`, for a tool that reads that name: a bridge, not a dependency (M3). `check` prints one line per check and exits 1 when a gate fails, for example after a broken link:
 
-### Code drift anchoring and review aids
+```text
+ok   core files are the pinned version (A4, A6)
+FAIL links and anchors resolve (A2, A4): 1
+       CURRENT.md: docs/design.md leads nowhere
+...
+```
 
-- **Exact code pins (`gate`, A2, A6, A7):** embed an invisible HTML comment anywhere in a Markdown document:
-  `<!-- pin: src/auth.ts#L10-L30@a1b2c3d4e5f6 -->` (paths resolve from repo root, or relative with `./`/`../`). Any mismatch fails the gate, including shifted lines: when an identical hash moves to a unique line range, `pin --relocate` updates only the line numbers without changing hashes. When pinned content changes, review the passage against code and re-pin with `pin --write --file <doc>` (prints the newly covered lines for verification).
-- **Code-to-docs mapping (`aid`, A2, A6, M2):** configure `codeToDocs` globs in `docaxioms.json` to flag untouched documents when mapped source files change in git (prints a separate note if the configured git base is unavailable, without counting it as a finding).
-- **Progressive disclosure budgets (`gate`, A3, M4):** configure `budgets` (and `card`) to cap entry routing maps (`AGENTS.md`) and stage cards (`CURRENT.md`).
-- **Command validation (`gate`, A2, A7):** configure `commands` to check backticked commands in K3 descriptions against `package.json` scripts, a `Makefile`, or an explicit list.
-- **Project-specific checks:** point `projectChecks` at a module exporting `{ name, axioms, level?, run(project) }` ([the profile](core/GUIDE.md#the-profile)).
+Each check names the axioms it follows from, such as (A2, A4): a few statements that do not go stale ([`core/AXIOMS.lock.md`](core/AXIOMS.lock.md)). A check is a precise gate or an advisory review aid (M2). No check holds that prose is right; [`GARDEN.md`](core/GARDEN.md) is the read-only audit for that.
 
-### Multi-agent bridge and axiom protection
+| Command | What it does |
+|---|---|
+| `check` | Runs every check; exits 1 on a failing gate. `--strict-aids` also fails on review aids; `--report` does not fail on findings (errors still exit 1) |
+| `pin` | Lists code pins that no longer match; `--relocate` and `--write` update them (see code pins below) |
+| `garden` | Lists current descriptions, the stage card, their pins and mapped code, for the audit |
+| `init <dir>` | Sets up a project; never overwrites its files |
+| `update <dir>` | Brings the pinned specification up to date; refuses changed axioms without `--accept-axioms`, which needs the owner's explicit word (A0) |
 
-Keep `AGENTS.md` as the single source of truth (M3). For tools that read another filename, bridge instead of copying — `init` creates `CLAUDE.md` containing only `@AGENTS.md`.
+`check`, `pin` and `garden` take `--root <dir>`; `check` and `garden` also take `--json`. A project pins the CLI version and the SHA-256 of each file in `core/`; a local edit, or a CLI of another version, fails the check. When the CLI runs from a git checkout of docaxioms, its commit is pinned and compared too. The name is `docaxioms` (`AD-5`): projects set up under the earlier name `agentic-docs` are not read; set them up again with `init`.
 
-Protect `AXIOMS.lock.md` with the mechanisms your environment offers and document what they do not hold (A6):
+### Profile checks
 
-- **Claude Code** (`.claude/settings.json`; does not block shell commands):
-  `"permissions": { "deny": ["Edit(**/AXIOMS.lock.md)", "Write(**/AXIOMS.lock.md)"] }`
-- **Git pre-commit hook** (`.git/hooks/pre-commit`):
-  `npx --no-install docaxioms check`
-- **GitHub Actions** (`.github/workflows/docs.yml`):
-  run `npx --no-install docaxioms check` on every pull request.
+- **Code pins (`gate`, A2, A6, A7):** a comment such as `<!-- pin: path/to/file#L10-L30@<hash> -->` anchors a passage to the code it describes. Any mismatch fails, shifted lines included: `pin --relocate` fixes a shift, `pin --write --file <doc>` re-pins after review ([the guide](core/GUIDE.md#code-pins-review-aids-and-gardening)).
+- **Code-to-docs mapping (`aid`, A2, A6, M2):** `codeToDocs` globs flag documents left untouched when mapped source files change in git.
+- **Budgets (`gate`, A3, M4):** `budgets` (and `card`) cap entry documents such as `AGENTS.md` and the stage card `CURRENT.md`.
+- **Commands (`gate`, A2, A7):** `commands` checks backticked commands in current descriptions against a JSON file's keys (such as `package.json` scripts), a `Makefile`, or a list.
+- **Project checks:** `projectChecks` names a module whose default export is a list of `{ name, axioms, level?, run(project) }`.
+
+Every key is in [the profile](core/GUIDE.md#the-profile).
+
+### Run the check
+
+`docaxioms check` exits 1 when a gate fails, so any tool can call it; nothing calls it for you. From the strongest hold to the weakest:
+
+- **A required CI check.** Run the command in your CI and require it for merging. It holds for the revision CI tested. Fetch enough history for the comparison base (`history.base`, `codeToDocs`); without it those checks compare with HEAD only and print a note saying so (A1, A6).
+- **The project's verify command.** Call it from the task that people and agents already run (`npm run check`, `make check`, …), so that any agent following `AGENTS.md` runs it too (M3).
+- **A local hook, optional.** Prefer `pre-push` to `pre-commit`: code and its documentation may be separate commits, and it is the pair that must pass. It is a reminder, not a gate: clones do not get it, `--no-verify` skips it, and `check` reads the working tree, not what is staged (A6).
+
+Never enforce with `--report`. Without a local install, `npx --no-install` can run a global or cached copy: the check fails if its version differs from the pinned one, not if only its build does.
+
+### Protect the axioms
+
+`init` makes `AXIOMS.lock.md` read-only, and the check fails when it no longer matches its hash in `docaxioms.json` (A4). That stops an accidental edit, not a deliberate one: changing the file and its hash together passes, and git does not keep the read-only mode. For a stronger hold, cover both files with what your tools offer and say in the project what it does not hold (A6), for example:
+
+- an owner review rule on `docaxioms/` and `docaxioms.json`, such as a code owners file on your host;
+- your agent's file permissions, such as a Claude Code deny rule `Edit(**/AXIOMS.lock.md)` in `.claude/settings.json`, which does not stop shell commands.
 
 ## Work on docaxioms
 
-`npm run check` (Node 22+). A change to `core/AXIOMS.lock.md` requires the owner's explicit word, a decision quoting it, and the updated pin in `docaxioms.json`, in one commit.
+```bash
+git clone https://github.com/Zephinel/docaxioms.git
+cd docaxioms
+npm ci
+npm run check
+```
+
+`npm run check` runs the tests and this repository's own check; CI runs it on every pull request. Agents start from [`AGENTS.md`](AGENTS.md). A change to `core/AXIOMS.lock.md` follows that file's own "Changing this file" and updates its pin in `docaxioms.json` in the same commit.
+
+| Part | What it is |
+|---|---|
+| [`core/`](core) | The specification projects pin: the axioms, [`GUIDE.md`](core/GUIDE.md), [`GARDEN.md`](core/GARDEN.md), and licence |
+| [`bin/docaxioms.mjs`](bin/docaxioms.mjs) | The CLI |
+| [`src/`](src) | The engine: checks, pins, gardening, `init` and `update`; also the package's export |
+| [`templates/`](templates) | Starter documents, the `CLAUDE.md` bridge, and the profile |
+| [`test/`](test) | Seeded faults on a Python fixture, plus init, update, pin and aid tests |
+| [`docs/decisions.md`](docs/decisions.md) | What the owner decided about docaxioms; its ids, statuses and landings are checked |
 
 ## Licence
 
