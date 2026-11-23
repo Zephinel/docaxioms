@@ -277,6 +277,16 @@ test("review aid: codeToDocs warns without failing gates, clears on doc edit, an
   assert.match(codeToDocsResult.notes[0], /base "origin\/missing" not found/);
 });
 
+test("history gate says when its base is missing instead of comparing silently against HEAD (A6)", async () => {
+  const history = (results) => results.find((r) => r.name.startsWith("a history file"));
+  const found = history(await runFixture(() => {}));
+  assert.deepEqual(found.notes, []);
+  const missing = history(await runFixture(() => {}, { ...PROFILE, history: { ...PROFILE.history, base: "origin/missing" } }));
+  assert.deepEqual(missing.problems, []);
+  assert.equal(missing.notes.length, 1);
+  assert.match(missing.notes[0], /base "origin\/missing" not found/);
+});
+
 test("review aid: evolutionary phrasing reports exact line inside multi-line paragraph and skips exempt/fences", async () => {
   const flagged = await runFixture(({ add }) => add("docs/design.md", "\nLine one of paragraph.\nLine two used to live in memory.\n"));
   assert.deepEqual(flagged.filter((r) => r.level === "gate" && r.problems.length), []);

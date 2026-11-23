@@ -44,18 +44,19 @@ function runGit(root, args) {
   }
 }
 
+/** The commit to compare with: the merge base with `wantedBase`, else HEAD; any fallback is reported (A6). */
+function resolveBase(root, wantedBase = "origin/main") {
+  const base = runGit(root, ["merge-base", wantedBase, "HEAD"])?.trim();
+  if (base) return { base, degraded: null };
+  const head = runGit(root, ["rev-parse", "HEAD"])?.trim();
+  if (!head) return { base: null, degraded: "repository has no commits; nothing could be compared" };
+  return { base: head, degraded: `base "${wantedBase}" not found; fell back to HEAD (committed changes are not compared)` };
+}
+
 /** Changed files relative to base (including untracked files in working tree), reporting any fallback (A6). */
 function changedFiles(root, baseRef) {
-  const wantedBase = baseRef ?? "origin/main";
-  let base = runGit(root, ["merge-base", wantedBase, "HEAD"])?.trim();
-  let degraded = null;
-  if (!base) {
-    base = runGit(root, ["rev-parse", "HEAD"])?.trim();
-    if (!base) {
-      return { files: null, degraded: "repository has no commits; codeToDocs could not compute diff" };
-    }
-    degraded = `base "${wantedBase}" not found; fell back to HEAD (committed changes are not compared)`;
-  }
+  const { base, degraded } = resolveBase(root, baseRef);
+  if (!base) return { files: null, degraded };
   const files = new Set();
   const diff = runGit(root, ["diff", "--name-only", "-z", base]);
   if (diff) for (const file of diff.split("\0")) if (file) files.add(file);
@@ -549,13 +550,13 @@ const CHECKS = [
     run: (p) => {
       const { history } = p.profile;
       if (!history) return [];
-      let base = runGit(p.root, ["merge-base", history.base ?? "origin/main", "HEAD"])?.trim();
-      if (!base) base = runGit(p.root, ["rev-parse", "HEAD"])?.trim();
-      if (!base) return [];
+      const { base, degraded } = resolveBase(p.root, history.base);
+      const notes = degraded ? [degraded] : [];
+      if (!base) return { problems: [], notes };
       const bare = (text) => text.replace(/\n+$/, "").replace(/\]\([^)]*\)/g, "]()");
       const diff = runGit(p.root, ["diff", "--name-status", "--no-renames", "--diff-filter=MD", "-z", base, "--", history.dir]);
-      if (!diff) return [];
-      return diff
+      if (!diff) return { problems: [], notes };
+      const problems = diff
         .split("\0")
         .filter(Boolean)
         .reduce((pairs, part, index, parts) => (index % 2 ? pairs : [...pairs, [part, parts[index + 1]]]), [])
@@ -574,6 +575,7 @@ const CHECKS = [
           ) return [];
           return [`${file}: changed other than in a link target, or grew other than by a dated erratum at its end`];
         });
+      return { problems, notes };
     },
   },
 
