@@ -15,10 +15,10 @@ Documents are copies of one moment, and a reader who starts without memory, such
 
 ## Use it in a project
 
-`docaxioms` runs as a Node CLI package (**requires Node >= 22** and the installed package; the project's own code may be in any language, A6), while consumer projects pin only the pure-text specification files from `core/` (`AD-4`). Install it from GitHub. Its name is `docaxioms` (`AD-5`); projects set up under the earlier name `agentic-docs` (an `agentic-docs.json` profile) are not read, so set them up again with `init`:
+`docaxioms` runs as a Node CLI package (**requires Node >= 22** and the installed package; the project's own code may be in any language, A6), while consumer projects pin only the pure-text specification files from `core/` (`AD-4`). Install it from npm, or from GitHub with `github:Zephinel/docaxioms`; it is still a pre-release. Its name is `docaxioms` (`AD-5`); projects set up under the earlier name `agentic-docs` (an `agentic-docs.json` profile) are not read, so set them up again with `init`:
 
 ```bash
-npm install --save-dev github:Zephinel/docaxioms
+npm install --save-dev docaxioms
 npx --no-install docaxioms init .             # pins core/ into docaxioms/, writes starter docs & docaxioms.json
 npx --no-install docaxioms check              # fails on hard gates; prints review aids without failing
 npx --no-install docaxioms check --report     # prints all gates and aids, always exits 0

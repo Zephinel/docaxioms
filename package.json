@@ -7,7 +7,7 @@
     "node": ">=22.0.0"
   },
   "bin": {
-    "docaxioms": "./bin/docaxioms.mjs"
+    "docaxioms": "bin/docaxioms.mjs"
   },
   "exports": {
     ".": "./src/index.mjs"
