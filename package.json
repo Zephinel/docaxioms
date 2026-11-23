@@ -1,0 +1,9 @@
+{
+  "name": "agentic-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --no-warnings --test test/*.test.mjs && node core/check.mjs"
+  },
+  "license": "MIT"
+}
