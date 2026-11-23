@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -154,7 +154,8 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
   // Now evolutionary aid triggers -> default check exits 0, --strict-aids exits 1
   const out = execFileSync("node", [CLI, "check", "--root", root], { encoding: "utf8" });
   assert.match(out, /aid  current descriptions use evolutionary phrasing/);
-  assert.match(out, /note: repository has no commits/);
+  assert.match(out, /note: no commit to compare with/);
+  assert.match(out, /^note code changes with mapped documents untouched/m);
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root, "--strict-aids"], { stdio: "pipe" }));
   // Remove evolutionary wording: ONLY degraded note remains -> even --strict-aids MUST exit 0 (R3)
   writeFileSync(at("docs/guide.md"), readFileSync(at("docs/guide.md"), "utf8").replace("used to be", "is"));
@@ -171,8 +172,19 @@ test("a project's copy carries the licence, the same as here", () => {
   assert.equal(readFileSync(new URL("../core/LICENSE", import.meta.url), "utf8"), readFileSync(new URL("../LICENSE", import.meta.url), "utf8"));
 });
 
-test("the printed check command names --root only when the project is not the working directory", () => {
-  assert.equal(checkCommand("/work/app", "/work/app"), "npx --no-install docaxioms check");
-  assert.equal(checkCommand("/work/app/packages/docs", "/work/app"), "npx --no-install docaxioms check --root packages/docs");
-  assert.equal(checkCommand("/work/app/my docs", "/work/app"), "npx --no-install docaxioms check --root \"my docs\"");
+test("the printed check command changes into the project, and a POSIX shell reads the directory literally", { skip: process.platform === "win32" }, () => {
+  const base = realpathSync(mkdtempSync(join(tmpdir(), "docaxioms-cmd-")));
+  try {
+    assert.equal(checkCommand(base, base), "npx --no-install docaxioms check");
+    for (const name of ["packages/docs", "my docs", "docs$(echo injected)", "it's", "-docs", "a\\b", "x;y&z`w`"]) {
+      const dir = join(base, name);
+      mkdirSync(dir, { recursive: true });
+      const command = checkCommand(dir, base);
+      assert.ok(command.endsWith(" && npx --no-install docaxioms check"), command);
+      const landed = execFileSync("/bin/sh", ["-c", command.replace("npx --no-install docaxioms check", "pwd -P")], { cwd: base, encoding: "utf8" }).trim();
+      assert.equal(landed, realpathSync(dir), command);
+    }
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
 });

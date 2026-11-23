@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, normalize, relative } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -31,11 +31,17 @@ export function source(from = HERE) {
   return git("rev-parse", "HEAD");
 }
 
-/** The command that checks `project`, as run from `cwd`: `--root` only when they differ. */
+/**
+ * The command that checks `project`, as typed from `cwd` in a POSIX shell. It changes into the project first,
+ * so that npx finds the project's own installation; the directory is quoted so that the shell reads it literally.
+ */
 export function checkCommand(project, cwd = process.cwd()) {
-  const rel = relative(cwd, project);
-  const quoted = /\s/.test(rel) ? JSON.stringify(rel) : rel;
-  return `npx --no-install docaxioms check${rel ? ` --root ${quoted}` : ""}`;
+  const run = "npx --no-install docaxioms check";
+  const rel = relative(cwd, project).split(sep).join("/");
+  if (!rel) return run;
+  const dir = rel.startsWith("-") ? `./${rel}` : rel;
+  const quoted = /^[\w./:@%+=,-]+$/.test(dir) ? dir : `'${dir.replace(/'/g, "'\\''")}'`;
+  return `cd ${quoted} && ${run}`;
 }
 
 const CORE = () => readdirSync(join(HERE, "core")).filter((name) => !name.startsWith(".")).sort();

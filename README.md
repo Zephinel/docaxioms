@@ -51,7 +51,7 @@ Every key is in [the profile](core/GUIDE.md#the-profile).
 
 `docaxioms check` exits 1 when a gate fails, so any tool can call it; nothing calls it for you. From the strongest hold to the weakest:
 
-- **A required CI check.** Run the command in your CI and require it for merging. It holds for the revision CI tested. Fetch enough history for the comparison base (`history.base`, `codeToDocs`); without it those checks compare with HEAD only and print a note saying so (A1, A6).
+- **A required CI check.** Run the command in your CI and require it for merging. It holds for the revision CI tested. Fetch enough history for the comparison base (`history.base`, `codeToDocs`); without it those checks compare with HEAD only and print a note saying so (A1, A6). On the base branch itself, such as a push to `main`, the base is HEAD, so they compare nothing committed: they hold on pull requests.
 - **The project's verify command.** Call it from the task that people and agents already run (`npm run check`, `make check`, …), so that any agent following `AGENTS.md` runs it too (M3).
 - **A local hook, optional.** Prefer `pre-push` to `pre-commit`: code and its documentation may be separate commits, and it is the pair that must pass. It is a reminder, not a gate: clones do not get it, `--no-verify` skips it, and `check` reads the working tree, not what is staged (A6).
 
@@ -59,10 +59,10 @@ Never enforce with `--report`. Without a local install, `npx --no-install` can r
 
 ### Protect the axioms
 
-`init` makes `AXIOMS.lock.md` read-only, and the check fails when it no longer matches its hash in `docaxioms.json` (A4). That stops an accidental edit, not a deliberate one: changing the file and its hash together passes, and git does not keep the read-only mode. For a stronger hold, cover both files with what your tools offer and say in the project what it does not hold (A6), for example:
+`init` makes `AXIOMS.lock.md` read-only, and the check fails when it no longer matches its hash in `docaxioms.json` (A4). That stops an accidental edit, not a deliberate one: changing the file and its hash together passes, and git does not keep the read-only mode. For a stronger hold, use what your tools offer and say in the project what it does not hold (A6), for example:
 
-- an owner review rule on `docaxioms/` and `docaxioms.json`, such as a code owners file on your host;
-- your agent's file permissions, such as a Claude Code deny rule `Edit(**/AXIOMS.lock.md)` in `.claude/settings.json`, which does not stop shell commands.
+- an owner review rule on `docaxioms/` and `docaxioms.json`, such as a code owners file on your host: it covers the file and its hash;
+- your agent's file permissions on the file itself, such as a Claude Code deny rule `Edit(**/AXIOMS.lock.md)` in `.claude/settings.json`; it does not stop shell commands or an edit of the hash.
 
 ## Work on docaxioms
 

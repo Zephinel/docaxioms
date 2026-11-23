@@ -45,12 +45,13 @@ function runGit(root, args) {
 }
 
 /** The commit to compare with: the merge base with `wantedBase`, else HEAD; any fallback is reported (A6). */
-function resolveBase(root, wantedBase = "origin/main") {
-  const base = runGit(root, ["merge-base", wantedBase, "HEAD"])?.trim();
+function resolveBase(root, wantedBase) {
+  const target = wantedBase ?? "origin/main";
+  const base = runGit(root, ["merge-base", target, "HEAD"])?.trim();
   if (base) return { base, degraded: null };
   const head = runGit(root, ["rev-parse", "HEAD"])?.trim();
-  if (!head) return { base: null, degraded: "repository has no commits; nothing could be compared" };
-  return { base: head, degraded: `base "${wantedBase}" not found; fell back to HEAD (committed changes are not compared)` };
+  if (!head) return { base: null, degraded: "no commit to compare with (not a git repository, or no commits yet); nothing was compared" };
+  return { base: head, degraded: `base "${target}" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)` };
 }
 
 /** Changed files relative to base (including untracked files in working tree), reporting any fallback (A6). */
@@ -396,7 +397,7 @@ const CHECKS = [
 
   {
     name: "code pins match the current source",
-    axioms: "A2, A6",
+    axioms: "A2, A6, A7",
     level: "gate",
     run: (p) => verifyPins(p),
   },

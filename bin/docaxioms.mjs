@@ -50,7 +50,7 @@ try {
       console.log(JSON.stringify(results, null, 2));
     } else {
       for (const { name, axioms, level, problems, notes = [] } of results) {
-        const tag = !problems.length ? "ok  " : level === "aid" ? "aid " : "FAIL";
+        const tag = problems.length ? (level === "aid" ? "aid " : "FAIL") : notes.length ? "note" : "ok  ";
         console.log(`${tag} ${name} (${axioms})${problems.length ? `: ${problems.length}` : ""}`);
         for (const problem of problems) console.log(`       ${problem}`);
         for (const note of notes) console.log(`       note: ${note}`);
@@ -170,8 +170,8 @@ try {
     if (command === "init") {
       for (const made of init(root, commit)) console.log(`made ${made}`);
       console.log(`docaxioms/ is pinned to ${label}; run: ${run}`);
-      console.log("Nothing runs the check for you yet: call it from your project's verify command, require it in CI,");
-      console.log("and optionally from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.");
+      console.log("Nothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it");
+      console.log("in CI, and optionally run it from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.");
     } else {
       update(root, commit, { acceptAxioms: values["accept-axioms"] });
       console.log(`docaxioms/ is pinned to ${label}; run: ${run}`);

@@ -285,6 +285,24 @@ test("history gate says when its base is missing instead of comparing silently a
   assert.deepEqual(missing.problems, []);
   assert.equal(missing.notes.length, 1);
   assert.match(missing.notes[0], /base "origin\/missing" not found/);
+  const changed = history(await runFixture(({ swap }) => swap("docs/old/first.md", "Old text,", "New text,"), { ...PROFILE, history: { ...PROFILE.history, base: "origin/missing" } }));
+  assert.equal(changed.problems.length, 1);
+  assert.equal(changed.notes.length, 1);
+  const unset = history(await runFixture(() => {}, { ...PROFILE, history: { ...PROFILE.history, base: null } }));
+  assert.match(unset.notes[0], /base "origin\/main" not found/);
+});
+
+test("history gate says when there is no commit to compare with", async () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-nocommit-"));
+  try {
+    mkdirSync(join(root, "docs/old"), { recursive: true });
+    writeFileSync(join(root, "docs/old/a.md"), "# A\n\n> OUT OF DATE\n");
+    execFileSync("git", ["-C", root, "init", "-q"], { stdio: "ignore" });
+    const results = await check(root, { history: { dir: "docs/old", banner: "OUT OF DATE", erratum: "## Erratum ", base: "main" } });
+    const gate = results.find((r) => r.name.startsWith("a history file"));
+    assert.deepEqual(gate.problems, []);
+    assert.match(gate.notes[0], /no commit to compare with/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test("review aid: evolutionary phrasing reports exact line inside multi-line paragraph and skips exempt/fences", async () => {

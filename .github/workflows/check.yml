@@ -14,11 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Full history, so that checks comparing with origin/main have a base (A6).
+          # Full history, so that checks comparing with origin/main have a base on pull requests (A6).
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          # The lowest version package.json supports.
+          # The lowest major version package.json supports.
           node-version: 22
           cache: npm
       - run: npm ci
