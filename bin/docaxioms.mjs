@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { check, project } from "../src/check.mjs";
 import { gardenManifest } from "../src/garden.mjs";
-import { init, packageVersion, source, update } from "../src/manage.mjs";
+import { checkCommand, init, packageVersion, source, update } from "../src/manage.mjs";
 import { syncPins } from "../src/pins.mjs";
 
 const USAGE = `usage:
@@ -166,12 +166,15 @@ try {
     const commit = source();
     const version = packageVersion();
     const label = commit ? `v${version} (${commit.slice(0, 8)})` : `v${version}`;
+    const run = checkCommand(root);
     if (command === "init") {
       for (const made of init(root, commit)) console.log(`made ${made}`);
-      console.log(`docaxioms/ is pinned to ${label}; run: npx --no-install docaxioms check`);
+      console.log(`docaxioms/ is pinned to ${label}; run: ${run}`);
+      console.log("Nothing runs the check for you yet: call it from your project's verify command, require it in CI,");
+      console.log("and optionally from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.");
     } else {
       update(root, commit, { acceptAxioms: values["accept-axioms"] });
-      console.log(`docaxioms/ is pinned to ${label}; run: npx --no-install docaxioms check`);
+      console.log(`docaxioms/ is pinned to ${label}; run: ${run}`);
     }
     process.exit(0);
   }

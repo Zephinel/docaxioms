@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, normalize } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -29,6 +29,13 @@ export function source(from = HERE) {
   }).trim();
   if (git("status", "--porcelain")) stop("this checkout of docaxioms has uncommitted changes: a project pins a commit");
   return git("rev-parse", "HEAD");
+}
+
+/** The command that checks `project`, as run from `cwd`: `--root` only when they differ. */
+export function checkCommand(project, cwd = process.cwd()) {
+  const rel = relative(cwd, project);
+  const quoted = /\s/.test(rel) ? JSON.stringify(rel) : rel;
+  return `npx --no-install docaxioms check${rel ? ` --root ${quoted}` : ""}`;
 }
 
 const CORE = () => readdirSync(join(HERE, "core")).filter((name) => !name.startsWith(".")).sort();

@@ -8,7 +8,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { check } from "../src/check.mjs";
-import { init, packageVersion, source, update } from "../src/manage.mjs";
+import { checkCommand, init, packageVersion, source, update } from "../src/manage.mjs";
 
 const CLI = fileURLToPath(new URL("../bin/docaxioms.mjs", import.meta.url));
 
@@ -169,4 +169,10 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
 });
 test("a project's copy carries the licence, the same as here", () => {
   assert.equal(readFileSync(new URL("../core/LICENSE", import.meta.url), "utf8"), readFileSync(new URL("../LICENSE", import.meta.url), "utf8"));
+});
+
+test("the printed check command names --root only when the project is not the working directory", () => {
+  assert.equal(checkCommand("/work/app", "/work/app"), "npx --no-install docaxioms check");
+  assert.equal(checkCommand("/work/app/packages/docs", "/work/app"), "npx --no-install docaxioms check --root packages/docs");
+  assert.equal(checkCommand("/work/app/my docs", "/work/app"), "npx --no-install docaxioms check --root \"my docs\"");
 });
