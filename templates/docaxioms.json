@@ -4,7 +4,14 @@
   "codeExtensions": [],
   "pathPrefixes": ["docs/"],
   "decisions": { "file": "docs/decisions.md", "id": "D" },
+  "log": "docs/log.md",
   "research": { "dir": "docs/research", "items": "docs/plan.md" },
   "history": { "dir": "docs/history", "banner": "Out of date", "erratum": "## Erratum ", "base": "origin/main" },
-  "card": { "file": "CURRENT.md", "maxLines": 45, "maxChars": 4000 }
+  "card": { "file": "CURRENT.md", "maxLines": 45, "maxChars": 4000 },
+  "budgets": [
+    { "files": "AGENTS.md", "maxLines": 100, "maxChars": 6000 }
+  ],
+  "garden": {
+    "exempt": ["CLAUDE.md"]
+  }
 }

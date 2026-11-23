@@ -1,0 +1,59 @@
+{
+  "core": {
+    "files": {
+      "core/AXIOMS.lock.md": "0ebfe50e130f8c2b9e263aa0cae4a4ef83bd463f3a2dec21b1a3930ca2841312"
+    }
+  },
+  "entries": [
+    "README.md",
+    "AGENTS.md"
+  ],
+  "reachable": "^(docs|core)/",
+  "codeExtensions": [
+    ".mjs"
+  ],
+  "pathPrefixes": [
+    "bin/",
+    "core/",
+    "docs/",
+    "src/",
+    "test/"
+  ],
+  "pathExempt": "^(templates/|core/(GUIDE|GARDEN)\\.md$)",
+  "decisions": {
+    "file": "docs/decisions.md",
+    "id": "AD-"
+  },
+  "commands": [
+    {
+      "prefix": "npm run ",
+      "jsonFile": "package.json",
+      "key": "scripts"
+    }
+  ],
+  "budgets": [
+    {
+      "files": "AGENTS.md",
+      "maxLines": 50,
+      "maxChars": 2000
+    },
+    {
+      "files": "README.md",
+      "maxLines": 150,
+      "maxChars": 8000
+    }
+  ],
+  "codeToDocs": [
+    {
+      "code": "src/**",
+      "docs": [
+        "core/GUIDE.md",
+        "README.md"
+      ]
+    }
+  ],
+  "codeDocExempt": "^test/",
+  "ignore": [
+    "templates"
+  ]
+}

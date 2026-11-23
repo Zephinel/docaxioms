@@ -7,15 +7,25 @@ import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFile
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
-import { check } from "../core/check.mjs";
+import { check, project, withoutFences } from "../src/check.mjs";
+import { gardenManifest } from "../src/garden.mjs";
+import { hashSourceSlice, syncPins } from "../src/pins.mjs";
+
+const CLI_PY = "# ADR-2: the cache is kept on disk (design 1.1)\ndef ttl():\n    return 3600\n";
+const CLI_PIN = hashSourceSlice(CLI_PY, 2, 3).short;
 
 const FILES = {
-  "weather/cli.py": "# ADR-2: the cache is kept on disk (design 1.1)\n",
-  "README.md": "# weather\n\nSee [docs](docs/index.md). The command lives in `weather/cli.py`.\n",
-  "docs/index.md": "# Index\n\n[Design](design.md#1-cache) [Decisions](adr.md) [Plan](todo.md) [Card](../NOW.md)\n",
-  "docs/design.md": "# Design\n\n## 1. Cache\n\nOn disk (ADR-2).\n\n### 1.1 Expiry\n\nOne hour.\n",
+  "weather/cli.py": CLI_PY,
+  "weather/@scope/mod.py": "MODE = 'strict'\n",
+  "weather/empty.py": "",
+  "docs/img/diagram.png": "PNG",
+  "Makefile": "test:\n\tpytest\nlint fmt:\n\truff\n",
+  "README.md": "# weather\n\nSee [docs](docs/index.md). The command lives in `weather/cli.py`. Run `make test` and `make fmt`.\n",
+  "docs/index.md": "# Index\n\n[Design](design.md#1-cache) [Decisions](adr.md) [Plan](todo.md) [Log](log.md) [Card](../NOW.md) ![diagram](img/diagram.png)\n",
+  "docs/design.md": `# Design\n\n## 1. Cache\n\n<!-- pin: weather/cli.py#L2-L3@${CLI_PIN} -->\n\nOn disk (ADR-2).\n\n### 1.1 Expiry\n\nOne hour.\n`,
   "docs/adr.md": "# Decisions\n\n| Id | What | Decision | Status | Landing |\n|---|---|---|---|---|\n| ADR-1 | Units | metric | withdrawn | - |\n| ADR-2 | Cache | on disk | active | [design](design.md#1-cache) |\n",
-  "docs/todo.md": "# To do\n\n- wind: [notes](ideas/wind.md)\n",
+  "docs/log.md": "# Log\n\n- 2026-11-23: ran `make legacy-build` before removing it.\n",
+  "docs/todo.md": "# To do\n\n- wind: [notes](ideas/wind.md)\n- future command: `make deploy`\n",
   "docs/ideas/wind.md": "# Wind\n\nStatus: open (wind)\n",
   "docs/old/first.md": "# First design\n\n> OUT OF DATE, a record.\n\nOld text, see [plan](../todo.md).\n",
   "docs/old/plain.md": "# Plain\n\n> OUT OF DATE, a record.\n\nNo newline",
@@ -24,16 +34,25 @@ const FILES = {
 };
 const PROFILE = {
   core: { dir: "law", files: { "LAW.md": createHash("sha256").update(FILES["law/LAW.md"]).digest("hex") } },
-  entries: ["README.md"], reachable: "^docs/", codeExtensions: [".py"], pathPrefixes: ["weather/", "docs/"], gonePaths: ["weather/legacy/"],
+  entries: ["README.md"],
+  reachable: "^docs/",
+  codeExtensions: [".py"],
+  pathPrefixes: ["weather/", "docs/"],
+  gonePaths: ["weather/legacy/"],
   decisions: { file: "docs/adr.md", id: "ADR-" },
+  log: "docs/log.md",
   sections: [{ cite: "\\bdesign (\\d+(?:\\.\\d+)*)\\b", files: "^weather/", document: "docs/design.md" }],
+  commands: [{ prefix: "make ", makefile: "Makefile" }],
   research: { dir: "docs/ideas", items: "docs/todo.md" },
   history: { dir: "docs/old", banner: "OUT OF DATE", erratum: "## Erratum ", base: "main" },
   card: { file: "NOW.md", maxLines: 10, maxChars: 300 },
+  budgets: [{ files: "README.md", maxLines: 20, maxChars: 1000 }],
+  codeToDocs: [{ code: "weather/**", docs: ["docs/design.md"], base: "main" }],
+  evolutionary: { phrases: ["used to", "was replaced by"], exempt: ["README.md"] },
 };
 
-async function failing(change, profile = PROFILE) {
-  const root = mkdtempSync(join(tmpdir(), "agentic-docs-"));
+async function runFixture(change, profile = PROFILE) {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-"));
   try {
     const at = (file) => join(root, file);
     const put = (file, text) => { mkdirSync(dirname(at(file)), { recursive: true }); writeFileSync(at(file), text); };
@@ -41,33 +60,59 @@ async function failing(change, profile = PROFILE) {
     const git = (...args) => execFileSync("git", ["-C", root, "-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", ...args], { stdio: "ignore" });
     git("init", "-q", "-b", "main"); git("add", "-A"); git("commit", "-qm", "base"); git("checkout", "-qb", "work");
     const swap = (file, from, to) => { const text = readFileSync(at(file), "utf8"); assert.ok(text.includes(from), `${file} has no "${from}"`); writeFileSync(at(file), text.replace(from, to)); };
-    change({ put, swap, add: (file, text) => appendFileSync(at(file), text), drop: (file) => rmSync(at(file)), bare: () => {} });
-    return (await check(root, profile)).filter((result) => result.problems.length).map((result) => result.name);
+    change({ root, at, put, swap, add: (file, text) => appendFileSync(at(file), text), drop: (file) => rmSync(at(file)), bare: () => {} });
+    return await check(root, profile);
   } finally { rmSync(root, { recursive: true, force: true }); }
 }
 
-test("a project in order passes", async () => assert.deepEqual(await failing(() => {}), []));
+async function failing(change, profile = PROFILE, { includeAids = false } = {}) {
+  const results = await runFixture(change, profile);
+  return results
+    .filter((result) => result.problems.length && (includeAids || result.level !== "aid"))
+    .map((result) => result.name);
+}
+
+test("a project in order passes (gates and aids)", async () => {
+  assert.deepEqual(await failing(() => {}, PROFILE, { includeAids: true }), []);
+});
 
 const FAULTS = [
   ["core files", ({ add }) => add("law/LAW.md", "x")],
   ["core files", ({ drop }) => drop("law/LAW.md")],
   ["core files", ({ put }) => put("law/extra.md", "# Extra\n")],
+  ["core files", () => {}, { ...PROFILE, core: { ...PROFILE.core, version: "0.0.1" } }],
+  ["core files", () => {}, { ...PROFILE, core: { ...PROFILE.core, commit: "0".repeat(40) } }],
   ["links and anchors", ({ swap }) => swap("docs/index.md", "#1-cache", "#1-cash")],
   ["links and anchors", ({ swap }) => swap("docs/index.md", "(todo.md)", "(gone.md)")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n![missing](img/missing.png)\n")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n![missing][img]\n\n[img]: img/missing.png\n")],
   ["decision numbers", ({ add }) => add("weather/cli.py", "# ADR-9\n")],
+  ["decision numbers", ({ add }) => add("docs/design.md", "\n<!-- see ADR-99 -->\n")],
   ["decision numbers", ({ add }) => add("docs/adr.md", "| ADR-2 | again | x | withdrawn | - |\n")],
   ["cited sections", ({ swap }) => swap("weather/cli.py", "design 1.1", "design 4.2")],
   ["documents named in code", ({ add }) => add("weather/cli.py", "# see docs/ideas/rain.md\n")],
   ["paths named", ({ swap }) => swap("README.md", "weather/cli.py", "weather/main.py")],
   ["paths named", ({ put }) => put("weather/legacy/a.py", "")],
+  ["code pins", ({ swap }) => swap("weather/cli.py", "3600", "7200")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: weather/missing.py@000000000000 -->\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: weather/cli.py#L1-L99@000000000000 -->\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: weather/cli.py#L2-L3 -->\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin weather/cli.py -->\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: weather/a b.py -->\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: ../../outside.py@000000000000 -->\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: weather/empty.py#L1@000000000000 -->\n")],
+  ["commands named", ({ add }) => add("README.md", "\nRun `make deploy`.\n")],
+  ["commands named", ({ put }) => put("pkg.json", "{bad json"), { ...PROFILE, commands: [{ prefix: "run ", jsonFile: "pkg.json", key: "scripts" }] }],
   ["open research", ({ swap }) => swap("docs/ideas/wind.md", "open (wind)", "built")],
   ["open research", ({ swap }) => swap("docs/todo.md", "[notes](ideas/wind.md)", "notes")],
   ["open research", ({ swap }) => swap("docs/old/first.md", "OUT OF DATE", "Fine")],
   ["every current document", ({ put }) => put("docs/lost.md", "# Lost\n")],
   ["a decision names", ({ swap }) => swap("docs/design.md", "On disk (ADR-2).", "On disk.")],
   ["a decision names", ({ swap }) => swap("docs/adr.md", "| active |", "| done |")],
-  ["a decision names", ({ put, swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind:\n- other (ADR-2)\n- more:"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a decision names", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind:\n- other (ADR-2)\n- more:"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a decision names", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a data-id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
   ["the stage card", ({ add }) => add("NOW.md", "line\n".repeat(12))],
+  ["bounded documents", ({ add }) => add("README.md", "line\n".repeat(25))],
   ["a history file", ({ swap }) => swap("docs/old/first.md", "Old text,", "New text,")],
   ["a history file", ({ swap }) => swap("docs/old/first.md", "Old text,", "Extra.\n\nOld text,")],
   ["a history file", ({ add }) => add("docs/old/first.md", "\nnot an erratum\n")],
@@ -95,9 +140,17 @@ const ALLOWED = [
   ["a link target fixed in history", ({ swap }) => swap("docs/old/first.md", "../todo.md", "../design.md")],
   ["a new file in history", ({ put }) => put("docs/old/second.md", "# Second\n\n> OUT OF DATE, a record.\n")],
   ["a withdrawn decision without a landing", ({ add }) => add("docs/adr.md", "| ADR-3 | x | y | withdrawn | - |\n")],
-  ["a landing at an explicit anchor", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a landing at an explicit id anchor", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a landing at an explicit name anchor", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a name=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
   ["a made-up document path in a fixture", ({ add }) => add("weather/cli.py", "# a fixture: made/up/notes.md\n")],
   ["a partly superseded decision with its landing", ({ swap }) => swap("docs/adr.md", "| active |", "| partly superseded (expiry by ADR-1) |")],
+  ["a pin example inside a fenced code block", ({ add }) => add("docs/design.md", "\n```md\n<!-- pin: weather/missing.py@000000000000 -->\n```\n")],
+  ["a command placeholder in inline code", ({ add }) => add("README.md", "\nRun `make <target>`.\n")],
+  ["a whole-file code pin", ({ add }) => add("docs/design.md", `\n<!-- pin: weather/cli.py@${hashSourceSlice(CLI_PY).short} -->\n`)],
+  ["a pin whose path contains @", ({ add }) => add("docs/design.md", `\n<!-- pin: weather/@scope/mod.py#L1@${hashSourceSlice(FILES["weather/@scope/mod.py"], 1, 1).short} -->\n`)],
+  ["a whole-file pin on an empty file", ({ add }) => add("docs/design.md", `\n<!-- pin: weather/empty.py@${hashSourceSlice("").short} -->\n`)],
+  ["an ordinary prose comment starting with pin", ({ add }) => add("docs/design.md", "\n<!-- pin the version here -->\n")],
+  ["a fake decision row inside an HTML comment", ({ add }) => add("docs/adr.md", "\n<!-- | ADR-2 | commented | x | invalid | - | -->\n")],
 ];
 const landing = (target) => ({ swap }) => swap("docs/adr.md", "design.md#1-cache", target);
 ALLOWED.push(
@@ -114,7 +167,162 @@ ALLOWED.push(
 );
 for (const [name, change, profile] of ALLOWED) test(`allowed: ${name}`, async () => assert.deepEqual(await failing(change, rows(profile)), []));
 
+test("B1 regression: pin --write inside indented list and blockquote HTML blocks preserves markdown intact", async () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-b1-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) {
+      mkdirSync(dirname(at(file)), { recursive: true });
+      writeFileSync(at(file), text);
+    }
+    const blockDoc = [
+      "# Nested",
+      "",
+      "- item",
+      "  <details>",
+      "  <summary>s</summary>",
+      "  <!-- pin: weather/cli.py#L2-L3 -->",
+      "  </details>",
+      "",
+      "> <details>",
+      "> <summary>q</summary>",
+      "> <!-- pin: weather/cli.py#L2-L3 -->",
+      "> </details>",
+      "",
+    ].join("\n");
+    writeFileSync(at("docs/nested.md"), blockDoc);
+    appendFileSync(at("docs/index.md"), "\n[Nested](nested.md)\n");
+
+    const dry = syncPins(project(root, PROFILE), { write: false });
+    const nestedChanges = dry.filter((c) => c.file === "docs/nested.md");
+    assert.deepEqual(nestedChanges.map((c) => c.line), [6, 11]);
+
+    syncPins(project(root, PROFILE), { write: true, files: ["docs/nested.md"] });
+    const written = readFileSync(at("docs/nested.md"), "utf8");
+    assert.equal(written, blockDoc.replaceAll("<!-- pin: weather/cli.py#L2-L3 -->", `<!-- pin: weather/cli.py#L2-L3@${CLI_PIN} -->`));
+    const after = await check(root, PROFILE);
+    assert.equal(after.find((r) => r.name.startsWith("code pins match")).problems.length, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("B2 + N1 regression: shifted lines fail gate closed, relocate safely, and 1-line collisions never silently pass", async () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-b2-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) {
+      mkdirSync(dirname(at(file)), { recursive: true });
+      writeFileSync(at(file), text);
+    }
+    // Insert unrelated imports above the pinned function
+    writeFileSync(at("weather/cli.py"), `import os\nimport sys\n${CLI_PY}`);
+
+    const shifted = await check(root, PROFILE);
+    const gate = shifted.find((r) => r.name.startsWith("code pins match"));
+    assert.equal(gate.problems.length, 1);
+    assert.match(gate.problems[0], /#L2-L3 moved to #L4-L5/);
+
+    // Relocate updates line numbers ONLY, keeping the exact same hash, and now gate passes
+    syncPins(project(root, PROFILE), { relocate: true });
+    assert.match(readFileSync(at("docs/design.md"), "utf8"), new RegExp(`<!-- pin: weather/cli\\.py#L4-L5@${CLI_PIN} -->`));
+    const relocated = await check(root, PROFILE);
+    assert.equal(relocated.find((r) => r.name.startsWith("code pins match")).problems.length, 0);
+
+    // N1: 1-line pin whose line is edited while another function happens to contain the old line MUST fail gate
+    const twoFns = "def a():\n    return 0\n\ndef b():\n    return 0\n";
+    const ret0Pin = hashSourceSlice(twoFns, 2, 2).short;
+    writeFileSync(at("weather/fns.py"), twoFns.replace("def a():\n    return 0", "def a():\n    return 1"));
+    appendFileSync(at("docs/design.md"), `\n<!-- pin: weather/fns.py#L2@${ret0Pin} -->\n`);
+    const n1 = await check(root, PROFILE);
+    assert.equal(n1.find((r) => r.name.startsWith("code pins match")).problems.length, 1);
+    assert.match(n1.find((r) => r.name.startsWith("code pins match")).problems[0], /#L2 moved to #L5/);
+
+    // Insert 3 more lines above AND mutate the function body: gate MUST fail
+    writeFileSync(at("weather/cli.py"), `import a\nimport b\nimport c\nimport os\nimport sys\n${CLI_PY.replace("3600", "999")}`);
+    const mutated = await check(root, PROFILE);
+    assert.equal(mutated.find((r) => r.name.startsWith("code pins match")).problems.length, 2);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("B2 edge: ambiguous move (duplicate identical windows) fails gate closed", async () => {
+  const dup = await runFixture(({ put }) => put("weather/cli.py", `import os\n${CLI_PY}${CLI_PY}`));
+  const gate = dup.find((r) => r.name.startsWith("code pins match"));
+  assert.equal(gate.problems.length, 1);
+  assert.match(gate.problems[0], /moved ambiguously/);
+});
+
+test("review aid: codeToDocs warns without failing gates, clears on doc edit, and reports missing base (A6)", async () => {
+  const withCodeOnly = await runFixture(({ put }) => put("weather/new.py", "# helper\n"));
+  assert.deepEqual(withCodeOnly.filter((r) => r.level === "gate" && r.problems.length), []);
+  const aid = withCodeOnly.find((r) => r.name.startsWith("code changes"));
+  assert.equal(aid.level, "aid");
+  assert.equal(aid.problems.length, 1);
+
+  const withDocUpdated = await runFixture(({ put, add }) => {
+    put("weather/new.py", "# helper\n");
+    add("docs/design.md", "\nHelper note.\n");
+  });
+  assert.equal(withDocUpdated.find((r) => r.name.startsWith("code changes")).problems.length, 0);
+
+  const degraded = await runFixture(() => {}, {
+    ...PROFILE,
+    codeToDocs: [{ code: "weather/**", docs: ["docs/design.md"], base: "origin/missing" }],
+  });
+  const codeToDocsResult = degraded.find((r) => r.name.startsWith("code changes"));
+  assert.deepEqual(codeToDocsResult.problems, []);
+  assert.equal(codeToDocsResult.notes.length, 1);
+  assert.match(codeToDocsResult.notes[0], /base "origin\/missing" not found/);
+});
+
+test("review aid: evolutionary phrasing reports exact line inside multi-line paragraph and skips exempt/fences", async () => {
+  const flagged = await runFixture(({ add }) => add("docs/design.md", "\nLine one of paragraph.\nLine two used to live in memory.\n"));
+  assert.deepEqual(flagged.filter((r) => r.level === "gate" && r.problems.length), []);
+  const aid = flagged.find((r) => r.name.startsWith("current descriptions"));
+  assert.equal(aid.level, "aid");
+  assert.equal(aid.problems.length, 1);
+  assert.match(aid.problems[0], /docs\/design\.md:14:/);
+
+  const exempt = await runFixture(({ add }) => {
+    add("README.md", "\nThis project used to have a flag.\n");
+    add("docs/design.md", "\n```txt\nThis used to apply.\n```\n");
+  });
+  assert.equal(exempt.find((r) => r.name.startsWith("current descriptions")).problems.length, 0);
+});
+
+test("gardenManifest includes README and stageCard, ignores evolutionary.exempt, and honours garden.exempt", () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-garden-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) {
+      mkdirSync(dirname(at(file)), { recursive: true });
+      writeFileSync(at(file), text);
+    }
+    const manifest = gardenManifest(root, { ...PROFILE, garden: { exempt: ["docs/index.md"] } });
+    assert.ok(manifest.descriptions.some((item) => item.file === "README.md"));
+    assert.equal(manifest.descriptions.some((item) => item.file === "docs/index.md"), false);
+    assert.equal(manifest.stageCard.file, "NOW.md");
+    const design = manifest.descriptions.find((item) => item.file === "docs/design.md");
+    assert.equal(design.pins, 1);
+    assert.deepEqual(design.mappedCode, ["weather/**"]);
+    assert.equal(manifest.descriptions.some((item) => item.file === "docs/adr.md"), false);
+    assert.equal(manifest.descriptions.some((item) => item.file === "docs/log.md"), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("withoutFences strips fenced blocks while preserving 4-space indented code", () => {
+  const src = "def f():\n    return 1\n```\nignored\n```\n    return 2\n";
+  const out = withoutFences(src);
+  assert.match(out, /return 1/);
+  assert.match(out, /return 2/);
+  assert.doesNotMatch(out, /ignored/);
+});
+
 test("the core names no project: no path of a machine, no address, no tool, no other script", async () => {
-  const core = ["check.mjs", "GUIDE.md", "AXIOMS.lock.md"].map((file) => readFileSync(new URL(`../core/${file}`, import.meta.url), "utf8"));
+  const core = ["GUIDE.md", "GARDEN.md", "AXIOMS.lock.md"].map((file) => readFileSync(new URL(`../core/${file}`, import.meta.url), "utf8"));
   for (const text of core) assert.doesNotMatch(text, /\/(?:Users|home)\/|@\w+\.\w|https?:|\b(?:Claude|Codex|Gemini|GPT|npm|cargo|pip)\b|\p{Script=Han}|\b[A-Z]{1,3}\d{2,}\b|\bAD-/u);
 });
