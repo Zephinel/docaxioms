@@ -5,7 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, normalize } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -29,6 +29,20 @@ export function source(from = HERE) {
   }).trim();
   if (git("status", "--porcelain")) stop("this checkout of docaxioms has uncommitted changes: a project pins a commit");
   return git("rev-parse", "HEAD");
+}
+
+/**
+ * The command that checks `project`, as typed from `cwd` in a POSIX shell. It changes into the project first,
+ * so that npx finds the project's own installation; the directory is quoted so that the shell reads it literally,
+ * and starts with `./` or `../` so that `cd` neither searches CDPATH nor reads it as an option.
+ */
+export function checkCommand(project, cwd = process.cwd()) {
+  const run = "npx --no-install docaxioms check";
+  const rel = relative(cwd, project).split(sep).join("/");
+  if (!rel) return run;
+  const dir = isAbsolute(rel) || /^(\.\.\/|\.\.$)/.test(rel) ? rel : `./${rel}`;
+  const quoted = /^[\w./:@%+=,-]+$/.test(dir) ? dir : `'${dir.replace(/'/g, "'\\''")}'`;
+  return `cd ${quoted} && ${run}`;
 }
 
 const CORE = () => readdirSync(join(HERE, "core")).filter((name) => !name.startsWith(".")).sort();

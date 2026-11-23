@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { check, project } from "../src/check.mjs";
 import { gardenManifest } from "../src/garden.mjs";
-import { init, packageVersion, source, update } from "../src/manage.mjs";
+import { checkCommand, init, packageVersion, source, update } from "../src/manage.mjs";
 import { syncPins } from "../src/pins.mjs";
 
 const USAGE = `usage:
@@ -50,7 +50,7 @@ try {
       console.log(JSON.stringify(results, null, 2));
     } else {
       for (const { name, axioms, level, problems, notes = [] } of results) {
-        const tag = !problems.length ? "ok  " : level === "aid" ? "aid " : "FAIL";
+        const tag = problems.length ? (level === "aid" ? "aid " : "FAIL") : notes.length ? "note" : "ok  ";
         console.log(`${tag} ${name} (${axioms})${problems.length ? `: ${problems.length}` : ""}`);
         for (const problem of problems) console.log(`       ${problem}`);
         for (const note of notes) console.log(`       note: ${note}`);
@@ -166,12 +166,15 @@ try {
     const commit = source();
     const version = packageVersion();
     const label = commit ? `v${version} (${commit.slice(0, 8)})` : `v${version}`;
+    const run = checkCommand(root);
     if (command === "init") {
       for (const made of init(root, commit)) console.log(`made ${made}`);
-      console.log(`docaxioms/ is pinned to ${label}; run: npx --no-install docaxioms check`);
+      console.log(`docaxioms/ is pinned to ${label}; run: ${run}`);
+      console.log("Nothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it");
+      console.log("in CI, and optionally run it from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.");
     } else {
       update(root, commit, { acceptAxioms: values["accept-axioms"] });
-      console.log(`docaxioms/ is pinned to ${label}; run: npx --no-install docaxioms check`);
+      console.log(`docaxioms/ is pinned to ${label}; run: ${run}`);
     }
     process.exit(0);
   }
