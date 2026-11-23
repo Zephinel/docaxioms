@@ -1,9 +1,36 @@
 {
-  "name": "agentic-docs",
-  "private": true,
+  "name": "docaxioms",
+  "version": "0.2.0",
+  "description": "A documentation system for software projects, derived from axioms instead of habits.",
   "type": "module",
-  "scripts": {
-    "check": "node --no-warnings --test test/*.test.mjs && node core/check.mjs"
+  "engines": {
+    "node": ">=22.0.0"
   },
-  "license": "MIT"
+  "bin": {
+    "docaxioms": "./bin/docaxioms.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "bin/",
+    "core/",
+    "src/",
+    "templates/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node --no-warnings --test test/*.test.mjs && node bin/docaxioms.mjs check"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "github-slugger": "^2.0.0",
+    "mdast-util-to-string": "^4.0.0",
+    "picomatch": "^4.0.7",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.2.0"
+  }
 }
