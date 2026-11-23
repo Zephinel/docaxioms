@@ -1,6 +1,6 @@
 {
   "name": "docaxioms",
-  "version": "0.2.0",
+  "version": "0.1.0-alpha.0",
   "description": "A documentation system for software projects, derived from axioms instead of habits.",
   "type": "module",
   "engines": {
