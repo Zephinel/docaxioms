@@ -25,9 +25,9 @@ test("this repository passes the checks that block a merge", async () => {
     const matches = results.filter((r) => r.name === name);
     return [name, matches.length === 1 ? matches[0].problems : [`${matches.length} checks have this name`]];
   });
-  // A code pin whose file is gone is a path that leads nowhere; a pin whose code changed or moved is only reported.
+  // A code pin whose file is gone, or outside the repository, is a path that leads nowhere; a pin whose code changed or moved is only reported.
   const missingPins = inspectPins(project(ROOT, profile))
-    .filter((r) => r.status === "missing")
+    .filter((r) => r.status === "missing" || r.status === "outside-root")
     .map((r) => `${r.file}:${r.pin.line}: ${r.detail}`);
   failing.push(["code pins name files that are there", missingPins]);
   assert.deepEqual(failing.filter(([, problems]) => problems.length), []);
