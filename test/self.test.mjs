@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { check } from "../src/check.mjs";
+import { check, project } from "../src/check.mjs";
+import { inspectPins } from "../src/pins.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const BLOCKING = [
@@ -17,10 +18,17 @@ const BLOCKING = [
 
 test("this repository passes the checks that block a merge", async () => {
   const profile = JSON.parse(readFileSync(new URL("../docaxioms.json", import.meta.url), "utf8"));
+  // Without its entry the axiom pin checks nothing.
+  assert.match(profile.core?.files?.["core/AXIOMS.lock.md"] ?? "", /^[0-9a-f]{64}$/, "docaxioms.json pins core/AXIOMS.lock.md");
   const results = await check(ROOT, profile);
-  for (const name of BLOCKING) {
-    const result = results.find((r) => r.name === name);
-    assert.ok(result, `no check is named "${name}"`);
-    assert.deepEqual(result.problems, [], name);
-  }
+  const failing = BLOCKING.map((name) => {
+    const matches = results.filter((r) => r.name === name);
+    return [name, matches.length === 1 ? matches[0].problems : [`${matches.length} checks have this name`]];
+  });
+  // A code pin whose file is gone is a path that leads nowhere; a pin whose code changed or moved is only reported.
+  const missingPins = inspectPins(project(ROOT, profile))
+    .filter((r) => r.status === "missing")
+    .map((r) => `${r.file}:${r.pin.line}: ${r.detail}`);
+  failing.push(["code pins name files that are there", missingPins]);
+  assert.deepEqual(failing.filter(([, problems]) => problems.length), []);
 });

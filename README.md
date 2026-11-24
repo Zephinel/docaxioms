@@ -73,7 +73,7 @@ npm ci
 npm run check
 ```
 
-`npm run check` runs the tests, which hold this repository's links, paths, commands and axiom pin, then prints the rest of its own check as a report; CI runs it on every pull request and it must pass to merge. Agents start from [`AGENTS.md`](AGENTS.md). A change to `core/AXIOMS.lock.md` follows that file's own "Changing this file" and updates its pin in `docaxioms.json` in the same commit.
+While docaxioms is in development, `npm run check` runs the tests, which hold this repository's links, paths, commands and axiom pin, then prints the rest of its own check as a report; CI runs it on every pull request and it must pass to merge. Agents start from [`AGENTS.md`](AGENTS.md). A change to `core/AXIOMS.lock.md` follows that file's own "Changing this file" and updates its pin in `docaxioms.json` in the same commit.
 
 | Part | What it is |
 |---|---|
@@ -82,7 +82,7 @@ npm run check
 | [`src/`](src) | The engine: checks, pins, gardening, `init` and `update`; also the package's export |
 | [`templates/`](templates) | Starter documents, the `CLAUDE.md` bridge, and the profile |
 | [`test/`](test) | Seeded faults on a Python fixture, plus init, update, pin and aid tests |
-| [`docs/decisions.md`](docs/decisions.md) | What the owner decided about docaxioms; its ids, statuses and landings are checked |
+| [`docs/decisions.md`](docs/decisions.md) | What the owner decided about docaxioms; its ids, statuses and landings are in the check's report |
 
 ## Licence
 
