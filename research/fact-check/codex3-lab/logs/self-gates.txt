@@ -1,0 +1,10 @@
+{"label": "changed-pin", "kind": "check", "exit": 1}
+{"label": "changed-pin", "kind": "self", "exit": 0}
+{"label": "missing-pin", "kind": "check", "exit": 1}
+{"label": "missing-pin", "kind": "self", "exit": 1}
+{"label": "outside-pin", "kind": "check", "exit": 1}
+{"label": "outside-pin", "kind": "self", "exit": 1}
+{"label": "budget", "kind": "check", "exit": 1}
+{"label": "budget", "kind": "self", "exit": 0}
+{"label": "decision-state", "kind": "check", "exit": 1}
+{"label": "decision-state", "kind": "self", "exit": 0}

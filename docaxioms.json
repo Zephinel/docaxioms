@@ -55,6 +55,7 @@
   "codeDocExempt": "^test/",
   "ignore": [
     "templates",
-    "research/fact-check"
+    "research/fact-check",
+    "research/sources"
   ]
 }

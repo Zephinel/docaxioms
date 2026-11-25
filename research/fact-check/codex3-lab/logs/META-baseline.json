@@ -1,0 +1,17 @@
+{
+  "label": "META-baseline",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "check",
+    "--baseline",
+    "baseline.json",
+    "--root",
+    "<lab>/repo"
+  ],
+  "cwd": "<lab>",
+  "exit": 1,
+  "signal": null,
+  "stdout": "",
+  "stderr": "Unknown option '--baseline'\n"
+}

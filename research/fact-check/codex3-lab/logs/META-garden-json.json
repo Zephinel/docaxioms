@@ -1,0 +1,16 @@
+{
+  "label": "META-garden-json",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "garden",
+    "--json",
+    "--root",
+    "<lab>/repo"
+  ],
+  "cwd": "<lab>",
+  "exit": 0,
+  "signal": null,
+  "stdout": "{\n  \"root\": \"<lab>/repo\",\n  \"guidePath\": null,\n  \"descriptions\": [\n    {\n      \"file\": \"AGENTS.md\",\n      \"lines\": 3,\n      \"chars\": 832,\n      \"pins\": 0,\n      \"mappedCode\": []\n    },\n    {\n      \"file\": \"README.md\",\n      \"lines\": 89,\n      \"chars\": 6969,\n      \"pins\": 0,\n      \"mappedCode\": [\n        \"src/**\"\n      ]\n    },\n    {\n      \"file\": \"core/GARDEN.md\",\n      \"lines\": 28,\n      \"chars\": 2346,\n      \"pins\": 0,\n      \"mappedCode\": []\n    },\n    {\n      \"file\": \"core/GUIDE.md\",\n      \"lines\": 69,\n      \"chars\": 7091,\n      \"pins\": 0,\n      \"mappedCode\": [\n        \"src/**\"\n      ]\n    }\n  ],\n  \"decisionsFile\": \"docs/decisions.md\",\n  \"stageCard\": null\n}\n",
+  "stderr": ""
+}

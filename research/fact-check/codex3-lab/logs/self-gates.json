@@ -1,0 +1,147 @@
+[
+  {
+    "label": "changed-pin",
+    "kind": "check",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "<lab>/cases/self-changed-pin-8drfk3pu/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/self-changed-pin-8drfk3pu",
+      "--json"
+    ],
+    "cwd": "<lab>/cases/self-changed-pin-8drfk3pu",
+    "exit": 1,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"README.md:91: src/index.mjs changed (pinned @000000000000, now @042ef05e7ffb)\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "label": "changed-pin",
+    "kind": "self",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "--test",
+      "test/self.test.mjs"
+    ],
+    "cwd": "<lab>/cases/self-changed-pin-8drfk3pu",
+    "exit": 0,
+    "stdout": "TAP version 13\n# Subtest: this repository passes the checks that block a merge\nok 1 - this repository passes the checks that block a merge\n  ---\n  duration_ms: 221.805375\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 366.607083\n",
+    "stderr": ""
+  },
+  {
+    "label": "missing-pin",
+    "kind": "check",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "<lab>/cases/self-missing-pin-f0o3l71w/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/self-missing-pin-f0o3l71w",
+      "--json"
+    ],
+    "cwd": "<lab>/cases/self-missing-pin-f0o3l71w",
+    "exit": 1,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"README.md:91: pin target src/absent.mjs does not exist\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "label": "missing-pin",
+    "kind": "self",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "--test",
+      "test/self.test.mjs"
+    ],
+    "cwd": "<lab>/cases/self-missing-pin-f0o3l71w",
+    "exit": 1,
+    "stdout": "TAP version 13\n# Subtest: this repository passes the checks that block a merge\nnot ok 1 - this repository passes the checks that block a merge\n  ---\n  duration_ms: 177.433417\n  type: 'test'\n  location: '<lab>/cases/self-missing-pin-f0o3l71w/test/self.test.mjs:19:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n    + [\n    +   [\n    +     'code pins name files that are there',\n    +     [\n    +       'README.md:91: pin target src/absent.mjs does not exist'\n    +     ]\n    +   ]\n    + ]\n    - []\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n  actual:\n    0:\n      0: 'code pins name files that are there'\n      1:\n        0: 'README.md:91: pin target src/absent.mjs does not exist'\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://<lab>/cases/self-missing-pin-f0o3l71w/test/self.test.mjs:33:10)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 0\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 316.949334\n",
+    "stderr": ""
+  },
+  {
+    "label": "outside-pin",
+    "kind": "check",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "<lab>/cases/self-outside-pin-4xxg4lol/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/self-outside-pin-4xxg4lol",
+      "--json"
+    ],
+    "cwd": "<lab>/cases/self-outside-pin-4xxg4lol",
+    "exit": 1,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"README.md:91: pin path \\\"../outside.mjs\\\" escapes the repository root\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "label": "outside-pin",
+    "kind": "self",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "--test",
+      "test/self.test.mjs"
+    ],
+    "cwd": "<lab>/cases/self-outside-pin-4xxg4lol",
+    "exit": 1,
+    "stdout": "TAP version 13\n# Subtest: this repository passes the checks that block a merge\nnot ok 1 - this repository passes the checks that block a merge\n  ---\n  duration_ms: 153.395125\n  type: 'test'\n  location: '<lab>/cases/self-outside-pin-4xxg4lol/test/self.test.mjs:19:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n    + [\n    +   [\n    +     'code pins name files that are there',\n    +     [\n    +       'README.md:91: pin path \"../outside.mjs\" escapes the repository root'\n    +     ]\n    +   ]\n    + ]\n    - []\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n  actual:\n    0:\n      0: 'code pins name files that are there'\n      1:\n        0: 'README.md:91: pin path \"../outside.mjs\" escapes the repository root'\n  operator: 'deepStrictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://<lab>/cases/self-outside-pin-4xxg4lol/test/self.test.mjs:33:10)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 0\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 271.67\n",
+    "stderr": ""
+  },
+  {
+    "label": "budget",
+    "kind": "check",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "<lab>/cases/self-budget-3x45gm7b/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/self-budget-3x45gm7b",
+      "--json"
+    ],
+    "cwd": "<lab>/cases/self-budget-3x45gm7b",
+    "exit": 1,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"README.md: 15971 characters, at most 8000\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "label": "budget",
+    "kind": "self",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "--test",
+      "test/self.test.mjs"
+    ],
+    "cwd": "<lab>/cases/self-budget-3x45gm7b",
+    "exit": 0,
+    "stdout": "TAP version 13\n# Subtest: this repository passes the checks that block a merge\nok 1 - this repository passes the checks that block a merge\n  ---\n  duration_ms: 154.261\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 276.216708\n",
+    "stderr": ""
+  },
+  {
+    "label": "decision-state",
+    "kind": "check",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "<lab>/cases/self-decision-state-sw9hwhva/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/self-decision-state-sw9hwhva",
+      "--json"
+    ],
+    "cwd": "<lab>/cases/self-decision-state-sw9hwhva",
+    "exit": 1,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"AD-1: status \\\"INVALID\\\" is not one of the four\",\n      \"AD-2: status \\\"INVALID\\\" is not one of the four\",\n      \"AD-3: status \\\"INVALID\\\" is not one of the four\",\n      \"AD-4: status \\\"INVALID\\\" is not one of the four\",\n      \"AD-6: status \\\"INVALID\\\" is not one of the four\",\n      \"AD-7: status \\\"INVALID\\\" is not one of the four\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "label": "decision-state",
+    "kind": "self",
+    "command": [
+      "<lab1>/runtime/node_modules/.bin/node",
+      "--test",
+      "test/self.test.mjs"
+    ],
+    "cwd": "<lab>/cases/self-decision-state-sw9hwhva",
+    "exit": 0,
+    "stdout": "TAP version 13\n# Subtest: this repository passes the checks that block a merge\nok 1 - this repository passes the checks that block a merge\n  ---\n  duration_ms: 170.574\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 307.200208\n",
+    "stderr": ""
+  }
+]

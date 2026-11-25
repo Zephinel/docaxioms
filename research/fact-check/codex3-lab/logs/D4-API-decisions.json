@@ -1,0 +1,5 @@
+{
+  "name": "Error",
+  "code": "ENOENT",
+  "message": "ENOENT: no such file or directory, open '<lab>/cases/D4-decisions-VbWEZa/docs/decisions.md'"
+}

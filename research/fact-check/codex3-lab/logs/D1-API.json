@@ -1,0 +1,15 @@
+{
+  "all": [
+    "README.md",
+    "docaxioms.json",
+    "docs/decisions.md"
+  ],
+  "resolved": [
+    {
+      "target": "../D1-escape-MUOVVq-outside.md#outside",
+      "anchor": "outside",
+      "path": "../D1-escape-MUOVVq-outside.md"
+    }
+  ],
+  "outsidePassage": "# Outside\nChosen outside this repository (AD-1).\n"
+}

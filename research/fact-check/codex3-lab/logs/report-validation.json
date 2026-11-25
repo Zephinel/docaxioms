@@ -1,0 +1,10 @@
+{
+  "output": "<scratch>/codex3-findings.md",
+  "links": 91,
+  "missing": [],
+  "tables": 20,
+  "malformedTableRows": [],
+  "recordedReproductions": 66,
+  "selfComparisons": 10,
+  "lastHeading": "7. C 相对前两份报告的新增有价值点：收益/成本前5"
+}
