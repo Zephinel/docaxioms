@@ -27,7 +27,7 @@
     "README.md"
   ],
   "scripts": {
-    "check": "node --no-warnings --test test/*.test.mjs && node bin/docaxioms.mjs check"
+    "check": "node --no-warnings --test test/*.test.mjs && node bin/docaxioms.mjs check --report"
   },
   "license": "MIT",
   "dependencies": {
