@@ -1,0 +1,26 @@
+### CASE M-missing-cli
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs demo
+exit=1
+usage:
+  docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]
+  docaxioms pin    [--root <dir>] [--relocate] [--write (--file <doc> | --pin <doc:line> | --all)]
+  docaxioms garden [--root <dir>] [--json]
+  docaxioms init   <project>
+  docaxioms update <project> [--accept-axioms]
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/M-missing-cli-1GlEm3 --changed-only
+exit=1
+Unknown option '--changed-only'
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/M-missing-cli-1GlEm3 --format sarif
+exit=1
+Unknown option '--format'
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/M-missing-cli-1GlEm3 --require-base
+exit=1
+Unknown option '--require-base'
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs mcp
+exit=1
+usage:
+  docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]
+  docaxioms pin    [--root <dir>] [--relocate] [--write (--file <doc> | --pin <doc:line> | --all)]
+  docaxioms garden [--root <dir>] [--json]
+  docaxioms init   <project>
+  docaxioms update <project> [--accept-axioms]

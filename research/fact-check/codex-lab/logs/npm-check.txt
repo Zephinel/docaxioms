@@ -1,0 +1,642 @@
+
+> docaxioms@0.1.0-alpha.0 check
+> node --no-warnings --test test/*.test.mjs && node bin/docaxioms.mjs check --report
+
+TAP version 13
+# Subtest: a project in order passes (gates and aids)
+ok 1 - a project in order passes (gates and aids)
+  ---
+  duration_ms: 411.360334
+  type: 'test'
+  ...
+# Subtest: caught: core files (add("law/LAW.md", "x"))
+ok 2 - caught: core files (add("law/LAW.md", "x"))
+  ---
+  duration_ms: 354.921792
+  type: 'test'
+  ...
+# Subtest: caught: core files (drop("law/LAW.md"))
+ok 3 - caught: core files (drop("law/LAW.md"))
+  ---
+  duration_ms: 342.942792
+  type: 'test'
+  ...
+# Subtest: caught: core files (put("law/extra.md", "\# Extra\\n"))
+ok 4 - caught: core files (put("law/extra.md", "\# Extra\\n"))
+  ---
+  duration_ms: 318.437083
+  type: 'test'
+  ...
+# Subtest: caught: core files ({})
+ok 5 - caught: core files ({})
+  ---
+  duration_ms: 304.580291
+  type: 'test'
+  ...
+# Subtest: caught: core files ({})
+ok 6 - caught: core files ({})
+  ---
+  duration_ms: 285.878084
+  type: 'test'
+  ...
+# Subtest: caught: links and anchors (swap("docs/index.md", "\#1-cache", "\#1-cash"))
+ok 7 - caught: links and anchors (swap("docs/index.md", "\#1-cache", "\#1-cash"))
+  ---
+  duration_ms: 266.100291
+  type: 'test'
+  ...
+# Subtest: caught: links and anchors (swap("docs/index.md", "(todo.md)", "(gone.md)"))
+ok 8 - caught: links and anchors (swap("docs/index.md", "(todo.md)", "(gone.md)"))
+  ---
+  duration_ms: 278.451291
+  type: 'test'
+  ...
+# Subtest: caught: links and anchors (add("docs/index.md", "\\n![missing](img/missing.png)\\n"))
+ok 9 - caught: links and anchors (add("docs/index.md", "\\n![missing](img/missing.png)\\n"))
+  ---
+  duration_ms: 244.054291
+  type: 'test'
+  ...
+# Subtest: caught: links and anchors (add("docs/index.md", "\\n![missing][img]\\n\\n[img]: img/missing.png\\n"))
+ok 10 - caught: links and anchors (add("docs/index.md", "\\n![missing][img]\\n\\n[img]: img/missing.png\\n"))
+  ---
+  duration_ms: 234.684792
+  type: 'test'
+  ...
+# Subtest: caught: decision numbers (add("weather/cli.py", "\# ADR-9\\n"))
+ok 11 - caught: decision numbers (add("weather/cli.py", "\# ADR-9\\n"))
+  ---
+  duration_ms: 227.636375
+  type: 'test'
+  ...
+# Subtest: caught: decision numbers (add("docs/design.md", "\\n<!-- see ADR-99 -->\\n"))
+ok 12 - caught: decision numbers (add("docs/design.md", "\\n<!-- see ADR-99 -->\\n"))
+  ---
+  duration_ms: 233.55175
+  type: 'test'
+  ...
+# Subtest: caught: decision numbers (add("docs/adr.md", "| ADR-2 | again | x | withdrawn | - |\\n"))
+ok 13 - caught: decision numbers (add("docs/adr.md", "| ADR-2 | again | x | withdrawn | - |\\n"))
+  ---
+  duration_ms: 242.32575
+  type: 'test'
+  ...
+# Subtest: caught: cited sections (swap("weather/cli.py", "design 1.1", "design 4.2"))
+ok 14 - caught: cited sections (swap("weather/cli.py", "design 1.1", "design 4.2"))
+  ---
+  duration_ms: 232.433875
+  type: 'test'
+  ...
+# Subtest: caught: documents named in code (add("weather/cli.py", "\# see docs/ideas/rain.md\\n"))
+ok 15 - caught: documents named in code (add("weather/cli.py", "\# see docs/ideas/rain.md\\n"))
+  ---
+  duration_ms: 236.256625
+  type: 'test'
+  ...
+# Subtest: caught: paths named (swap("README.md", "weather/cli.py", "weather/main.py"))
+ok 16 - caught: paths named (swap("README.md", "weather/cli.py", "weather/main.py"))
+  ---
+  duration_ms: 229.84375
+  type: 'test'
+  ...
+# Subtest: caught: paths named (put("weather/legacy/a.py", ""))
+ok 17 - caught: paths named (put("weather/legacy/a.py", ""))
+  ---
+  duration_ms: 235.716417
+  type: 'test'
+  ...
+# Subtest: caught: code pins (swap("weather/cli.py", "3600", "7200"))
+ok 18 - caught: code pins (swap("weather/cli.py", "3600", "7200"))
+  ---
+  duration_ms: 234.033459
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/missing.py@000000000000 -->\\n"))
+ok 19 - caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/missing.py@000000000000 -->\\n"))
+  ---
+  duration_ms: 284.711375
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/cli.py\#L1-L99@000000000000 -->\\n"))
+ok 20 - caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/cli.py\#L1-L99@000000000000 -->\\n"))
+  ---
+  duration_ms: 224.421333
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/cli.py\#L2-L3 -->\\n"))
+ok 21 - caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/cli.py\#L2-L3 -->\\n"))
+  ---
+  duration_ms: 240.831042
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin weather/cli.py -->\\n"))
+ok 22 - caught: code pins (add("docs/design.md", "\\n<!-- pin weather/cli.py -->\\n"))
+  ---
+  duration_ms: 238.266125
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/a b.py -->\\n"))
+ok 23 - caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/a b.py -->\\n"))
+  ---
+  duration_ms: 229.465375
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin: ../../outside.py@000000000000 -->\\n"))
+ok 24 - caught: code pins (add("docs/design.md", "\\n<!-- pin: ../../outside.py@000000000000 -->\\n"))
+  ---
+  duration_ms: 233.254958
+  type: 'test'
+  ...
+# Subtest: caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/empty.py\#L1@000000000000 -->\\n"))
+ok 25 - caught: code pins (add("docs/design.md", "\\n<!-- pin: weather/empty.py\#L1@000000000000 -->\\n"))
+  ---
+  duration_ms: 231.983042
+  type: 'test'
+  ...
+# Subtest: caught: commands named (add("README.md", "\\nRun `make deploy`.\\n"))
+ok 26 - caught: commands named (add("README.md", "\\nRun `make deploy`.\\n"))
+  ---
+  duration_ms: 229.233
+  type: 'test'
+  ...
+# Subtest: caught: commands named (put("pkg.json", "{bad json"))
+ok 27 - caught: commands named (put("pkg.json", "{bad json"))
+  ---
+  duration_ms: 228.518166
+  type: 'test'
+  ...
+# Subtest: caught: open research (swap("docs/ideas/wind.md", "open (wind)", "built"))
+ok 28 - caught: open research (swap("docs/ideas/wind.md", "open (wind)", "built"))
+  ---
+  duration_ms: 258.168208
+  type: 'test'
+  ...
+# Subtest: caught: open research (swap("docs/todo.md", "[notes](ideas/wind.md)", "notes"))
+ok 29 - caught: open research (swap("docs/todo.md", "[notes](ideas/wind.md)", "notes"))
+  ---
+  duration_ms: 289.324417
+  type: 'test'
+  ...
+# Subtest: caught: open research (swap("docs/old/first.md", "OUT OF DATE", "Fine"))
+ok 30 - caught: open research (swap("docs/old/first.md", "OUT OF DATE", "Fine"))
+  ---
+  duration_ms: 299.235625
+  type: 'test'
+  ...
+# Subtest: caught: every current document (put("docs/lost.md", "\# Lost\\n"))
+ok 31 - caught: every current document (put("docs/lost.md", "\# Lost\\n"))
+  ---
+  duration_ms: 279.852041
+  type: 'test'
+  ...
+# Subtest: caught: a decision names (swap("docs/design.md", "On disk (ADR-2).", "On disk."))
+ok 32 - caught: a decision names (swap("docs/design.md", "On disk (ADR-2).", "On disk."))
+  ---
+  duration_ms: 233.908792
+  type: 'test'
+  ...
+# Subtest: caught: a decision names (swap("docs/adr.md", "| active |", "| done |"))
+ok 33 - caught: a decision names (swap("docs/adr.md", "| active |", "| done |"))
+  ---
+  duration_ms: 211.517834
+  type: 'test'
+  ...
+# Subtest: caught: a decision names ({ swap("docs/todo.md", "- wind:", "- <a id=\\"wind\\"></a>wind:\\n- other (ADR-)
+ok 34 - caught: a decision names ({ swap("docs/todo.md", "- wind:", "- <a id=\\"wind\\"></a>wind:\\n- other (ADR-)
+  ---
+  duration_ms: 206.757042
+  type: 'test'
+  ...
+# Subtest: caught: a decision names ({ swap("docs/todo.md", "- wind:", "- <a data-id=\\"wind\\"></a>wind (ADR-2):"))
+ok 35 - caught: a decision names ({ swap("docs/todo.md", "- wind:", "- <a data-id=\\"wind\\"></a>wind (ADR-2):"))
+  ---
+  duration_ms: 211.630875
+  type: 'test'
+  ...
+# Subtest: caught: the stage card (add("NOW.md", "line\\n".repeat(12)))
+ok 36 - caught: the stage card (add("NOW.md", "line\\n".repeat(12)))
+  ---
+  duration_ms: 221.30825
+  type: 'test'
+  ...
+# Subtest: caught: bounded documents (add("README.md", "line\\n".repeat(25)))
+ok 37 - caught: bounded documents (add("README.md", "line\\n".repeat(25)))
+  ---
+  duration_ms: 211.328958
+  type: 'test'
+  ...
+# Subtest: caught: a history file (swap("docs/old/first.md", "Old text,", "New text,"))
+ok 38 - caught: a history file (swap("docs/old/first.md", "Old text,", "New text,"))
+  ---
+  duration_ms: 226.705166
+  type: 'test'
+  ...
+# Subtest: caught: a history file (swap("docs/old/first.md", "Old text,", "Extra.\\n\\nOld text,"))
+ok 39 - caught: a history file (swap("docs/old/first.md", "Old text,", "Extra.\\n\\nOld text,"))
+  ---
+  duration_ms: 227.011375
+  type: 'test'
+  ...
+# Subtest: caught: a history file (add("docs/old/first.md", "\\nnot an erratum\\n"))
+ok 40 - caught: a history file (add("docs/old/first.md", "\\nnot an erratum\\n"))
+  ---
+  duration_ms: 222.565167
+  type: 'test'
+  ...
+# Subtest: caught: a history file (drop("docs/old/first.md"))
+ok 41 - caught: a history file (drop("docs/old/first.md"))
+  ---
+  duration_ms: 209.870958
+  type: 'test'
+  ...
+# Subtest: caught: links and anchors (add("docs/index.md", "\\n[Rain]\\n\\n[rain]: <rain.md> \\"Title\\"\\n"))
+ok 42 - caught: links and anchors (add("docs/index.md", "\\n[Rain]\\n\\n[rain]: <rain.md> \\"Title\\"\\n"))
+  ---
+  duration_ms: 211.045209
+  type: 'test'
+  ...
+# Subtest: caught: links and anchors (add("docs/index.md", "\\n[Rain][rain]\\n\\n[rain]: rain.md\\n"))
+ok 43 - caught: links and anchors (add("docs/index.md", "\\n[Rain][rain]\\n\\n[rain]: rain.md\\n"))
+  ---
+  duration_ms: 213.157
+  type: 'test'
+  ...
+# Subtest: caught: documents named in code (add("weather/cli.py", "\# see docs/gone.md\\n"))
+ok 44 - caught: documents named in code (add("weather/cli.py", "\# see docs/gone.md\\n"))
+  ---
+  duration_ms: 226.44975
+  type: 'test'
+  ...
+# Subtest: caught: a decision names (add("docs/adr.md", "\\n\#\# Later\\n\\n| ADR-4 | x | y | done | - |\\n"))
+ok 45 - caught: a decision names (add("docs/adr.md", "\\n\#\# Later\\n\\n| ADR-4 | x | y | done | - |\\n"))
+  ---
+  duration_ms: 213.372917
+  type: 'test'
+  ...
+# Subtest: caught: a decision names (add("docs/adr.md", "\\n\#\# Second\\n\\n| ADR-4 | x | y | active | [here](\#nowhere)
+ok 46 - caught: a decision names (add("docs/adr.md", "\\n\#\# Second\\n\\n| ADR-4 | x | y | active | [here](\#nowhere)
+  ---
+  duration_ms: 210.084583
+  type: 'test'
+  ...
+# Subtest: caught: a decision names (add("docs/adr.md", "\\n\#\# Now\\n\\n| ADR-4 | x | y | active | [d](design.md\#1-ca)
+ok 47 - caught: a decision names (add("docs/adr.md", "\\n\#\# Now\\n\\n| ADR-4 | x | y | active | [d](design.md\#1-ca)
+  ---
+  duration_ms: 212.5235
+  type: 'test'
+  ...
+# Subtest: caught: cited sections ({ add("docs/design.md", "\\n\#\#\# 1.2 Rows\\n\\n| 1 | a |\\n\\n\#\#\# 1.3 Other\\n)
+ok 48 - caught: cited sections ({ add("docs/design.md", "\\n\#\#\# 1.2 Rows\\n\\n| 1 | a |\\n\\n\#\#\# 1.3 Other\\n)
+  ---
+  duration_ms: 211.454042
+  type: 'test'
+  ...
+# Subtest: caught: a history file ({ add("docs/old/first.md", "\\n\#\# Erratum 2026-11-23\\n\\nIt was two hours)
+ok 49 - caught: a history file ({ add("docs/old/first.md", "\\n\#\# Erratum 2026-11-23\\n\\nIt was two hours)
+  ---
+  duration_ms: 231.916292
+  type: 'test'
+  ...
+# Subtest: caught: a history file ({ swap("docs/old/first.md", "Old text,", "New text,"); bare(); })
+ok 50 - caught: a history file ({ swap("docs/old/first.md", "Old text,", "New text,"); bare(); })
+  ---
+  duration_ms: 238.396292
+  type: 'test'
+  ...
+# Subtest: allowed: a dated erratum
+ok 51 - allowed: a dated erratum
+  ---
+  duration_ms: 236.311
+  type: 'test'
+  ...
+# Subtest: allowed: a link target fixed in history
+ok 52 - allowed: a link target fixed in history
+  ---
+  duration_ms: 228.54825
+  type: 'test'
+  ...
+# Subtest: allowed: a new file in history
+ok 53 - allowed: a new file in history
+  ---
+  duration_ms: 207.790208
+  type: 'test'
+  ...
+# Subtest: allowed: a withdrawn decision without a landing
+ok 54 - allowed: a withdrawn decision without a landing
+  ---
+  duration_ms: 205.941958
+  type: 'test'
+  ...
+# Subtest: allowed: a landing at an explicit id anchor
+ok 55 - allowed: a landing at an explicit id anchor
+  ---
+  duration_ms: 208.773458
+  type: 'test'
+  ...
+# Subtest: allowed: a landing at an explicit name anchor
+ok 56 - allowed: a landing at an explicit name anchor
+  ---
+  duration_ms: 208.033958
+  type: 'test'
+  ...
+# Subtest: allowed: a made-up document path in a fixture
+ok 57 - allowed: a made-up document path in a fixture
+  ---
+  duration_ms: 209.07625
+  type: 'test'
+  ...
+# Subtest: allowed: a partly superseded decision with its landing
+ok 58 - allowed: a partly superseded decision with its landing
+  ---
+  duration_ms: 207.93975
+  type: 'test'
+  ...
+# Subtest: allowed: a pin example inside a fenced code block
+ok 59 - allowed: a pin example inside a fenced code block
+  ---
+  duration_ms: 209.747709
+  type: 'test'
+  ...
+# Subtest: allowed: a command placeholder in inline code
+ok 60 - allowed: a command placeholder in inline code
+  ---
+  duration_ms: 211.848208
+  type: 'test'
+  ...
+# Subtest: allowed: a whole-file code pin
+ok 61 - allowed: a whole-file code pin
+  ---
+  duration_ms: 215.05975
+  type: 'test'
+  ...
+# Subtest: allowed: a pin whose path contains @
+ok 62 - allowed: a pin whose path contains @
+  ---
+  duration_ms: 221.593292
+  type: 'test'
+  ...
+# Subtest: allowed: a whole-file pin on an empty file
+ok 63 - allowed: a whole-file pin on an empty file
+  ---
+  duration_ms: 228.531375
+  type: 'test'
+  ...
+# Subtest: allowed: an ordinary prose comment starting with pin
+ok 64 - allowed: an ordinary prose comment starting with pin
+  ---
+  duration_ms: 209.335209
+  type: 'test'
+  ...
+# Subtest: allowed: a fake decision row inside an HTML comment
+ok 65 - allowed: a fake decision row inside an HTML comment
+  ---
+  duration_ms: 210.266125
+  type: 'test'
+  ...
+# Subtest: allowed: text in brackets before a colon
+ok 66 - allowed: text in brackets before a colon
+  ---
+  duration_ms: 209.982875
+  type: 'test'
+  ...
+# Subtest: allowed: a footnote and a reference to a site
+ok 67 - allowed: a footnote and a reference to a site
+  ---
+  duration_ms: 217.166625
+  type: 'test'
+  ...
+# Subtest: allowed: a landing past a comment in a code block
+ok 68 - allowed: a landing past a comment in a code block
+  ---
+  duration_ms: 212.666542
+  type: 'test'
+  ...
+# Subtest: allowed: a landing at an encoded heading
+ok 69 - allowed: a landing at an encoded heading
+  ---
+  duration_ms: 209.713083
+  type: 'test'
+  ...
+# Subtest: allowed: a landing at the second of two headings
+ok 70 - allowed: a landing at the second of two headings
+  ---
+  duration_ms: 213.179958
+  type: 'test'
+  ...
+# Subtest: allowed: a landing in the decisions themselves
+ok 71 - allowed: a landing in the decisions themselves
+  ---
+  duration_ms: 210.88575
+  type: 'test'
+  ...
+# Subtest: allowed: a row of a section of level two
+ok 72 - allowed: a row of a section of level two
+  ---
+  duration_ms: 225.604417
+  type: 'test'
+  ...
+# Subtest: allowed: an erratum after a file with no newline at its end
+ok 73 - allowed: an erratum after a file with no newline at its end
+  ---
+  duration_ms: 225.9345
+  type: 'test'
+  ...
+# Subtest: allowed: a second erratum
+ok 74 - allowed: a second erratum
+  ---
+  duration_ms: 262.315166
+  type: 'test'
+  ...
+# Subtest: allowed: a folder the profile ignores by its path
+ok 75 - allowed: a folder the profile ignores by its path
+  ---
+  duration_ms: 222.178458
+  type: 'test'
+  ...
+# Subtest: B1 regression: pin --write inside indented list and blockquote HTML blocks preserves markdown intact
+ok 76 - B1 regression: pin --write inside indented list and blockquote HTML blocks preserves markdown intact
+  ---
+  duration_ms: 187.35
+  type: 'test'
+  ...
+# Subtest: B2 + N1 regression: shifted lines fail gate closed, relocate safely, and 1-line collisions never silently pass
+ok 77 - B2 + N1 regression: shifted lines fail gate closed, relocate safely, and 1-line collisions never silently pass
+  ---
+  duration_ms: 335.764416
+  type: 'test'
+  ...
+# Subtest: B2 edge: ambiguous move (duplicate identical windows) fails gate closed
+ok 78 - B2 edge: ambiguous move (duplicate identical windows) fails gate closed
+  ---
+  duration_ms: 208.1955
+  type: 'test'
+  ...
+# Subtest: review aid: codeToDocs warns without failing gates, clears on doc edit, and reports missing base (A6)
+ok 79 - review aid: codeToDocs warns without failing gates, clears on doc edit, and reports missing base (A6)
+  ---
+  duration_ms: 645.2325
+  type: 'test'
+  ...
+# Subtest: history gate says when its base is missing instead of comparing silently against HEAD (A6)
+ok 80 - history gate says when its base is missing instead of comparing silently against HEAD (A6)
+  ---
+  duration_ms: 894.276458
+  type: 'test'
+  ...
+# Subtest: history gate says when there is no commit to compare with
+ok 81 - history gate says when there is no commit to compare with
+  ---
+  duration_ms: 72.340708
+  type: 'test'
+  ...
+# Subtest: review aid: evolutionary phrasing reports exact line inside multi-line paragraph and skips exempt/fences
+ok 82 - review aid: evolutionary phrasing reports exact line inside multi-line paragraph and skips exempt/fences
+  ---
+  duration_ms: 419.598125
+  type: 'test'
+  ...
+# Subtest: gardenManifest includes README and stageCard, ignores evolutionary.exempt, and honours garden.exempt
+ok 83 - gardenManifest includes README and stageCard, ignores evolutionary.exempt, and honours garden.exempt
+  ---
+  duration_ms: 21.562541
+  type: 'test'
+  ...
+# Subtest: withoutFences strips fenced blocks while preserving 4-space indented code
+ok 84 - withoutFences strips fenced blocks while preserving 4-space indented code
+  ---
+  duration_ms: 0.108
+  type: 'test'
+  ...
+# Subtest: the core names no project: no path of a machine, no address, no tool, no other script
+ok 85 - the core names no project: no path of a machine, no address, no tool, no other script
+  ---
+  duration_ms: 1.163916
+  type: 'test'
+  ...
+# Subtest: a new project passes its own check and pins version plus pure-text core files
+ok 86 - a new project passes its own check and pins version plus pure-text core files
+  ---
+  duration_ms: 142.190417
+  type: 'test'
+  ...
+# Subtest: a project's own files stay as they are
+ok 87 - a project's own files stay as they are
+  ---
+  duration_ms: 6.795791
+  type: 'test'
+  ...
+# Subtest: a folder of the project's own name is not taken over
+ok 88 - a folder of the project's own name is not taken over
+  ---
+  duration_ms: 1.4655
+  type: 'test'
+  ...
+# Subtest: update pins the new commit and keeps the profile's other keys
+ok 89 - update pins the new commit and keeps the profile's other keys
+  ---
+  duration_ms: 14.167166
+  type: 'test'
+  ...
+# Subtest: update does not write over a local change, and the check names it
+ok 90 - update does not write over a local change, and the check names it
+  ---
+  duration_ms: 145.983625
+  type: 'test'
+  ...
+# Subtest: update does not delete a file that is not the core's
+ok 91 - update does not delete a file that is not the core's
+  ---
+  duration_ms: 6.632458
+  type: 'test'
+  ...
+# Subtest: update removes a pinned core file that the core no longer has
+ok 92 - update removes a pinned core file that the core no longer has
+  ---
+  duration_ms: 9.325708
+  type: 'test'
+  ...
+# Subtest: changed axioms come only with the owner's word
+ok 93 - changed axioms come only with the owner's word
+  ---
+  duration_ms: 121.582334
+  type: 'test'
+  ...
+# Subtest: a project pins only what was committed, and source() returns undefined outside git
+ok 94 - a project pins only what was committed, and source() returns undefined outside git
+  ---
+  duration_ms: 197.339708
+  type: 'test'
+  ...
+# Subtest: a core in a folder of another name stays there, and docaxioms/ stays the project's
+ok 95 - a core in a folder of another name stays there, and docaxioms/ stays the project's
+  ---
+  duration_ms: 19.974167
+  type: 'test'
+  ...
+# Subtest: a core folder outside the project is refused
+ok 96 - a core folder outside the project is refused
+  ---
+  duration_ms: 6.844875
+  type: 'test'
+  ...
+# Subtest: an update writes only what changed
+ok 97 - an update writes only what changed
+  ---
+  duration_ms: 7.689208
+  type: 'test'
+  ...
+# Subtest: a pinned name outside the core folder removes nothing
+ok 98 - a pinned name outside the core folder removes nothing
+  ---
+  duration_ms: 7.47525
+  type: 'test'
+  ...
+# Subtest: CLI check respects gate vs aid exit codes, notes on --strict-aids, scoped pin --write previews, and garden
+ok 99 - CLI check respects gate vs aid exit codes, notes on --strict-aids, scoped pin --write previews, and garden
+  ---
+  duration_ms: 2242.598
+  type: 'test'
+  ...
+# Subtest: a project's copy carries the licence, the same as here
+ok 100 - a project's copy carries the licence, the same as here
+  ---
+  duration_ms: 0.256625
+  type: 'test'
+  ...
+# Subtest: the printed check command changes into the project, and a POSIX shell reads the directory literally, CDPATH or not
+ok 101 - the printed check command changes into the project, and a POSIX shell reads the directory literally, CDPATH or not
+  ---
+  duration_ms: 62.783417
+  type: 'test'
+  ...
+# Subtest: this repository passes the checks that block a merge
+ok 102 - this repository passes the checks that block a merge
+  ---
+  duration_ms: 281.269167
+  type: 'test'
+  ...
+1..102
+# tests 102
+# suites 0
+# pass 102
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20754.48175
+ok   core files are the pinned version (A4, A6)
+ok   links and anchors resolve (A2, A4)
+ok   decision numbers are unique and every one cited exists (A4)
+ok   cited sections exist (A4)
+ok   documents named in code exist (A2, A7)
+ok   paths named in current documents exist (A2, A7)
+ok   code pins match the current source (A2, A6, A7)
+ok   commands named in current documents exist (A2, A7)
+ok   open research is linked from an open item; history carries its banner (A3, A5)
+ok   every current document is reachable from an entry point (A3)
+ok   a decision names where it landed, and that passage names it (A0, A4)
+ok   the stage card stays a card (A3)
+ok   bounded documents stay within budget (A3, M4)
+ok   a history file changes only in link targets, or grows by a dated erratum (A5)
+ok   code changes with mapped documents untouched (A2, A6, M2)
+ok   current descriptions use evolutionary phrasing (A3, M1, M2)

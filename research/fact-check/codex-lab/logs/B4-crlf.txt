@@ -1,0 +1,51 @@
+### CASE B4-crlf
+$ git clone -c core.autocrlf=true --no-local <lab>/cases/B4-crlf-a7xcxD <lab>/cases/B4-crlf-clone-1795596675127
+exit=0
+Cloning into '<lab>/cases/B4-crlf-clone-1795596675127'...
+autocrlf: true
+CRLF in axioms: true
+CRLF in git blob: false
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/B4-crlf-clone-1795596675127
+exit=1
+FAIL core files are the pinned version (A4, A6): 4
+       docaxioms/AXIOMS.lock.md: not the pinned version (it comes from docaxioms; change it there, then update)
+       docaxioms/GARDEN.md: not the pinned version (it comes from docaxioms; change it there, then update)
+       docaxioms/GUIDE.md: not the pinned version (it comes from docaxioms; change it there, then update)
+       docaxioms/LICENSE: not the pinned version (it comes from docaxioms; change it there, then update)
+ok   links and anchors resolve (A2, A4)
+ok   decision numbers are unique and every one cited exists (A4)
+ok   cited sections exist (A4)
+ok   documents named in code exist (A2, A7)
+ok   paths named in current documents exist (A2, A7)
+ok   code pins match the current source (A2, A6, A7)
+ok   commands named in current documents exist (A2, A7)
+ok   open research is linked from an open item; history carries its banner (A3, A5)
+ok   every current document is reachable from an entry point (A3)
+ok   a decision names where it landed, and that passage names it (A0, A4)
+ok   the stage card stays a card (A3)
+ok   bounded documents stay within budget (A3, M4)
+ok   a history file changes only in link targets, or grows by a dated erratum (A5)
+ok   code changes with mapped documents untouched (A2, A6, M2)
+ok   current descriptions use evolutionary phrasing (A3, M1, M2)
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs update <lab>/cases/B4-crlf-clone-1795596675127
+exit=1
+docaxioms/AXIOMS.lock.md was changed in the project: take that change to docaxioms first
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/B4-crlf-clone-1795596675127
+exit=1
+ok   core files are the pinned version (A4, A6)
+ok   links and anchors resolve (A2, A4)
+ok   decision numbers are unique and every one cited exists (A4)
+ok   cited sections exist (A4)
+ok   documents named in code exist (A2, A7)
+ok   paths named in current documents exist (A2, A7)
+ok   code pins match the current source (A2, A6, A7)
+ok   commands named in current documents exist (A2, A7)
+ok   open research is linked from an open item; history carries its banner (A3, A5)
+ok   every current document is reachable from an entry point (A3)
+ok   a decision names where it landed, and that passage names it (A0, A4)
+ok   the stage card stays a card (A3)
+ok   bounded documents stay within budget (A3, M4)
+FAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1
+       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end
+ok   code changes with mapped documents untouched (A2, A6, M2)
+ok   current descriptions use evolutionary phrasing (A3, M1, M2)
