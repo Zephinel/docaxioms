@@ -79,6 +79,9 @@ function changedFiles(root, baseRef) {
 }
 
 export function project(root, given) {
+  // Every command reads the project through here, so a profile that is not valid goes no further (A6).
+  const invalid = profileProblems(given);
+  if (invalid.length) throw new Error(invalid.join("\n"));
   // JSON null leaves a key unset (profile.mjs); dropping it here gives every reader that one meaning.
   const profile = withoutNulls(given);
   const at = (file) => join(root, file);
@@ -121,22 +124,32 @@ export function project(root, given) {
   const currentDocs = all.filter((file) => file.endsWith(".md") && !inHistory(file) && !inCore(file));
   const code = all.filter((file) => !inCore(file) && (profile.codeExtensions ?? []).some((extension) => file.endsWith(extension)));
 
-  // A target inside the repository by name may still lead out of it through a symbolic link on its way.
+  // A path inside the repository by name may still lead out of it through a symbolic link on its way: the nearest
+  // part of it that is there must be inside, so that nothing outside is read or even looked for.
   const realRoot = realpathSync(root);
+  const inside = (path) => {
+    for (let probe = at(path); ; probe = dirname(probe)) {
+      try {
+        const real = realpathSync(probe);
+        return real === realRoot || real.startsWith(`${realRoot}${sep}`);
+      } catch {
+        if (dirname(probe) === probe) return false;
+      }
+    }
+  };
   const locate = (fromFile, rawPath) => {
     const target = resolveTarget(fromFile, rawPath);
-    if (target.outside) return target;
-    let real;
-    try { real = realpathSync(at(target.path)); } catch { return target; }
-    return real === realRoot || real.startsWith(`${realRoot}${sep}`) ? target : { ...target, outside: true };
+    return target.outside || inside(target.path) ? target : { ...target, outside: true };
   };
   const sections = (file) => markdown(file).sections;
   const passage = (file, anchor) => markdown(file).passage(anchor);
   const links = (file) => markdown(file)
     .links()
-    .filter((target) => !/^[a-z][a-z0-9+.-]*:/i.test(target))
+    // A target with a scheme, or one that starts with `//`, is on another site.
+    .filter((target) => !/^[a-z][a-z0-9+.-]*:/i.test(target) && !target.startsWith("//"))
     .map((target) => {
-      const [path, anchor] = target.split("#");
+      const [address, anchor] = target.split("#");
+      const path = address.split("?")[0];
       return { target, anchor, ...(path ? locate(file, path) : { path: file }) };
     });
 
@@ -154,6 +167,7 @@ export function project(root, given) {
     sections,
     passage,
     links,
+    inside,
     locate,
     match: makeMatcher,
     at,
@@ -229,7 +243,7 @@ export function decisionRows(p) {
 function allowedCommands(p, rule) {
   if (Array.isArray(rule.list)) return { valid: new Set(rule.list) };
   if (rule.jsonFile) {
-    if (!p.has(rule.jsonFile)) return { valid: null };
+    if (!p.has(rule.jsonFile)) return { error: `${rule.jsonFile}: named by commands in docaxioms.json, and not there` };
     try {
       const parsed = JSON.parse(p.read(rule.jsonFile));
       const bucket = rule.key ? parsed?.[rule.key] : parsed;
@@ -239,7 +253,7 @@ function allowedCommands(p, rule) {
     }
   }
   if (rule.makefile) {
-    if (!p.has(rule.makefile)) return { valid: null };
+    if (!p.has(rule.makefile)) return { error: `${rule.makefile}: named by commands in docaxioms.json, and not there` };
     const targets = new Set();
     for (const line of p.read(rule.makefile).split("\n")) {
       if (!line || /^[\s#]/.test(line)) continue;
@@ -415,9 +429,13 @@ const CHECKS = [
           .filter((file) => !elsewhere.test(file))
           .flatMap((file) => p.markdown(file).inlineCodes.flatMap(({ value: path }) => {
             if (!named.test(path)) return [];
-            const literal = path.replace(/#L\d+(?:-L?\d+)?$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
-            return /[*<>{}…()|$#]|\.\.\./.test(literal)
-              || p.has(literal)
+            const literal = path.replace(/#[^#\s]*$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
+            if (/[*<>{}…()|$#]|\.\.\./.test(literal)) return [];
+            const lexical = normalize(literal).replace(/\\/g, "/");
+            if (lexical === ".." || lexical.startsWith("../") || isAbsolute(literal) || !p.inside(lexical)) {
+              return [`${file}: \`${path}\` leads outside the repository`];
+            }
+            return p.has(literal)
               || gone.some((one) => `${literal}/`.startsWith(one.replace(/\/?$/, "/")))
               ? []
               : [`${file}: \`${path}\``];
@@ -473,7 +491,8 @@ const CHECKS = [
         // Open items end at the heading whose whole line is `openUntil`.
         const until = research.openUntil && items.sections.find((one) => one.line.trim() === research.openUntil.trim());
         if (research.openUntil && !until) problems.push(`${research.items}: no heading "${research.openUntil}", which research.openUntil names`);
-        const open = until ? items.withoutCode.split("\n").slice(0, until.start).join("\n") : items.withoutCode;
+        // Where the heading that ends them is not there, no item can be told open.
+        const open = until ? items.withoutCode.split("\n").slice(0, until.start).join("\n") : research.openUntil ? "" : items.withoutCode;
         for (const file of p.currentDocs.filter((name) => name.startsWith(`${research.dir}/`) && !name.endsWith("/README.md"))) {
           if (!/^Status: open \(.+\)$/m.test(p.read(file).split("\n").slice(0, 12).join("\n"))) {
             problems.push(`${file}: its first lines need \`Status: open (<item>)\`; done or dropped research belongs in history`);
@@ -504,7 +523,7 @@ const CHECKS = [
         for (const { path, outside } of p.links(queue.pop())) {
           if (outside) continue;
           const next = p.has(path) && lstatSync(p.at(path)).isDirectory() ? `${path}/README.md` : path;
-          if (next.endsWith(".md") && p.has(next) && !p.inHistory(next) && !seen.has(next)) {
+          if (next.endsWith(".md") && p.has(next) && p.inside(next) && !p.inHistory(next) && !seen.has(next)) {
             seen.add(next);
             queue.push(next);
           }
@@ -537,7 +556,7 @@ const CHECKS = [
             const { path: file, outside } = path ? p.locate(p.profile.decisions.file, path) : { path: p.profile.decisions.file };
             if (outside) { problems.push(`${name}: ${target} leads outside the repository`); continue; }
             if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }
-            if (!file.endsWith(".md")) continue;
+            if (!file.endsWith(".md") || lstatSync(p.at(file)).isDirectory()) { problems.push(`${name}: ${target} is not a document`); continue; }
             const text = anchor ? p.passage(file, anchor) : p.read(file);
             if (text === undefined) problems.push(`${name}: ${target} names a heading that is not there`);
             else if (!new RegExp(`\\b${escape(name)}\\b`).test(text)) problems.push(`${name}: ${target} does not name ${name}`);
@@ -553,7 +572,8 @@ const CHECKS = [
     level: "gate",
     run: (p) => {
       const { card } = p.profile;
-      if (!card || !p.has(card.file)) return [];
+      if (!card) return [];
+      if (!p.has(card.file)) return [`${card.file}: named by card in docaxioms.json, and not there`];
       const text = p.read(card.file);
       const lines = text.trimEnd().split("\n").length;
       return [
@@ -701,25 +721,41 @@ function normalizeOutcome(outcome) {
   return { problems: outcome?.problems ?? [], notes: outcome?.notes ?? [] };
 }
 
+/** What was thrown, as text; formatting it must not throw again. */
+function why(error) {
+  try { return error instanceof Error ? error.message : String(error); } catch { return "a value that cannot be shown as text"; }
+}
+
 /** One check's result. A check that could not run says why in `errors`, and the others still run (A6). */
 async function runCheck({ name, axioms, level = "gate", run }, p) {
   try {
     return { name, axioms, level, ...normalizeOutcome(await run(p)), errors: [] };
   } catch (error) {
-    return { name, axioms, level, problems: [], notes: [], errors: [error instanceof Error ? error.message : String(error)] };
+    return { name, axioms, level, problems: [], notes: [], errors: [why(error)] };
   }
 }
 
-export async function check(root, profile) {
-  const p = project(resolve(root), profile);
+export async function check(root, given) {
+  // The checks read the profile; one that is not valid leaves them unable to run, which fails even a report (A6).
+  const invalid = profileProblems(given);
+  if (invalid.length) {
+    const [first, ...rest] = CHECKS;
+    return [
+      { name: first.name, axioms: first.axioms, level: first.level, problems: invalid, notes: [], errors: [] },
+      ...rest.map(({ name, axioms, level = "gate" }) => ({ name, axioms, level, problems: [], notes: [], errors: ["not run: docaxioms.json is not valid"] })),
+    ];
+  }
+  const p = project(resolve(root), given);
+  const { profile } = p;
   const results = [];
   for (const one of CHECKS) results.push(await runCheck(one, p));
   if (profile.projectChecks) {
     let own;
     try {
       own = (await import(pathToFileURL(p.at(profile.projectChecks)).href)).default;
+      if (!Array.isArray(own)) throw new Error("its default export is not a list of checks");
     } catch (error) {
-      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${error instanceof Error ? error.message : String(error)}`] });
+      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${why(error)}`] });
     }
     for (const one of own ?? []) results.push(await runCheck(one, p));
   }

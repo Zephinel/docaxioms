@@ -171,18 +171,22 @@ export function parseMarkdown(text) {
   };
 }
 
-/** The index of the `]` that closes the `[` at `open`, skipping escaped brackets and code spans; -1 when there is none. */
-function closingBracket(text, open) {
+/**
+ * The index of the `]` that closes the `[` at `open`, skipping escaped brackets, and code spans unless `codeSpans` is
+ * false (the label of a link definition has none); -1 when there is none.
+ */
+function closingBracket(text, open, codeSpans = true, limit = text.length) {
   let depth = 0;
-  for (let i = open; i < text.length; i += 1) {
+  for (let i = open; i < limit; i += 1) {
     if (text[i] === "\\") { i += 1; continue; }
-    if (text[i] === "`") {
+    if (codeSpans && text[i] === "`") {
       // A code span binds tighter than a link: a run of n backticks closes at the next run of exactly n (CommonMark).
       const run = /^`+/.exec(text.slice(i))[0];
       const closer = new RegExp(`(?<!\`)${run}(?!\`)`, "g");
       closer.lastIndex = i + run.length;
       const found = closer.exec(text);
-      i = (found ? found.index + run.length : i + run.length) - 1;
+      // A run with no closer inside the node is literal backticks.
+      i = (found && found.index < limit ? found.index + run.length : i + run.length) - 1;
       continue;
     }
     if (text[i] === "[") depth += 1;
@@ -199,8 +203,8 @@ function destinationAt(text, from) {
   let start = from;
   let lineStart = false;
   while (start < text.length) {
-    if (text[start] === "\n") lineStart = true;
-    else if (!(/[ \t\r]/.test(text[start]) || (lineStart && text[start] === ">"))) break;
+    if (text[start] === "\n" || text[start] === "\r") lineStart = true;
+    else if (!(/[ \t]/.test(text[start]) || (lineStart && text[start] === ">"))) break;
     start += 1;
   }
   let end = start;
@@ -231,18 +235,18 @@ export function withoutLinkTargets(text) {
     const start = node.position.start.offset;
     const end = node.position.end.offset;
     if (node.type === "definition") {
-      const close = closingBracket(text, start);
+      const close = closingBracket(text, start, false);
       if (close !== -1 && text[close + 1] === ":") ranges.push(destinationAt(text, close + 2));
       return;
     }
     const open = node.type === "image" ? start + 1 : start;
     if (text[open] !== "[") {
-      // An autolink, `<url>` or a bare address: the whole of it is the target.
-      ranges.push(text[start] === "<" ? [start + 1, end - 1] : [start, end]);
+      // An autolink `<url>` has its target inside the brackets. A bare address is prose that reads as a link, so it stays.
+      if (text[start] === "<") ranges.push([start + 1, end - 1]);
       return;
     }
     const last = node.children?.at(-1)?.position?.end.offset;
-    const close = last !== undefined && text[last] === "]" ? last : closingBracket(text, open);
+    const close = last !== undefined && text[last] === "]" ? last : closingBracket(text, open, true, end);
     if (close !== -1 && text[close + 1] === "(") ranges.push(destinationAt(text, close + 2));
   });
   ranges.sort((a, b) => a[0] - b[0]);

@@ -12,6 +12,9 @@ const isRegex = (value) => {
 
 const KINDS = {
   string: [isString, "a string"],
+  text: [(value) => isString(value) && value.trim() !== "", "a string that is not empty"],
+  // A folder from the repository root, named the way the checks join it: `docs/old`, not `docs/old/`, `.` or `../x`.
+  dir: [(value) => isString(value) && /^(?!\.{1,2}(?:\/|$))(?!\/)[^\\]*[^/\\]$/.test(value) && !value.split("/").includes(".."), "a folder from the repository root, without a trailing /"],
   strings: [isStrings, "a list of strings"],
   globs: [(value) => isString(value) || isStrings(value), "a string or a list of strings"],
   regex: [isRegex, "a valid regular expression"],
@@ -22,22 +25,22 @@ const KINDS = {
 
 // A field ending in `!` is required where its object is given. An array of one shape is a list of such objects.
 const SCHEMA = {
-  core: { dir: "string", source: "string", version: "string", commit: "string", files: "hashes" },
+  core: { dir: "dir", source: "string", version: "string", commit: "string", files: "hashes" },
   entries: "strings",
   reachable: "regex",
   codeExtensions: "strings",
   ignore: "strings",
-  decisions: { file: "string!", id: "string!", landedSection: "string", citeExempt: "regex" },
+  decisions: { file: "text!", id: "text!", landedSection: "string", citeExempt: "regex" },
   log: "globs",
-  sections: [{ cite: "regex!", files: "regex!", document: "string!", rowTables: "headings" }],
+  sections: [{ cite: "regex!", files: "regex!", document: "text!", rowTables: "headings" }],
   pathPrefixes: "strings",
   pathExempt: "regex",
   gonePaths: "strings",
   codeDocExempt: "regex",
-  commands: [{ prefix: "string!", jsonFile: "string", key: "string", makefile: "string", list: "strings", exempt: "globs" }],
-  research: { dir: "string!", items: "string!", openUntil: "string" },
-  history: { dir: "string!", banner: "string!", erratum: "string!", base: "string" },
-  card: { file: "string!", maxLines: "count", maxChars: "count" },
+  commands: [{ prefix: "text!", jsonFile: "string", key: "string", makefile: "string", list: "strings", exempt: "globs" }],
+  research: { dir: "dir!", items: "text!", openUntil: "text" },
+  history: { dir: "dir!", banner: "text!", erratum: "text!", base: "text" },
+  card: { file: "text!", maxLines: "count", maxChars: "count" },
   budgets: [{ files: "globs!", maxLines: "count", maxChars: "count", exempt: "globs" }],
   codeToDocs: [{ code: "globs!", docs: "globs!", base: "string" }],
   evolutionary: { phrases: "strings", exempt: "globs" },
@@ -52,7 +55,7 @@ function validate(value, shape, where, problems) {
     return;
   }
   if (isObject(shape)) {
-    if (!isObject(value)) { problems.push(`${where} must be an object`); return; }
+    if (!isObject(value)) { problems.push(`${where || "the profile"} must be an object`); return; }
     for (const key of Object.keys(value)) {
       if (!Object.hasOwn(shape, key) && !key.startsWith("x-")) problems.push(`${where ? `${where}.` : ""}${key} is not a key docaxioms knows (a project's own keys start with "x-")`);
     }
@@ -74,11 +77,16 @@ function validate(value, shape, where, problems) {
   }
 }
 
-/** `profile` without the keys it sets to JSON null, which leaves them unset, so that every check reads one meaning. */
+/**
+ * `profile` without the keys it sets to JSON null, which leaves them unset, so that every check reads one meaning.
+ * A project's own `x-` data is its own and kept as it is.
+ */
 export function withoutNulls(value) {
   if (Array.isArray(value)) return value.map(withoutNulls);
   if (!isObject(value)) return value;
-  return Object.fromEntries(Object.entries(value).filter(([, one]) => one !== null).map(([key, one]) => [key, withoutNulls(one)]));
+  return Object.fromEntries(Object.entries(value)
+    .filter(([, one]) => one !== null)
+    .map(([key, one]) => [key, key.startsWith("x-") ? one : withoutNulls(one)]));
 }
 
 /** Every way `profile` departs from what docaxioms reads, as one message each. */
@@ -88,6 +96,9 @@ export function profileProblems(profile) {
   for (const [index, rule] of (Array.isArray(profile?.commands) ? profile.commands : []).entries()) {
     const sources = ["jsonFile", "makefile", "list"].filter((key) => rule?.[key] !== undefined && rule?.[key] !== null);
     if (sources.length !== 1) problems.push(`commands[${index}] needs exactly one of jsonFile, makefile and list`);
+  }
+  for (const [index, rule] of (Array.isArray(profile?.budgets) ? profile.budgets : []).entries()) {
+    if (rule?.maxLines == null && rule?.maxChars == null) problems.push(`budgets[${index}] needs maxLines or maxChars`);
   }
   return problems.map((problem) => `docaxioms.json: ${problem}`);
 }

@@ -124,6 +124,7 @@ export function inspectPins(p) {
         continue;
       }
       const resolved = resolvePinPath(file, pin.rawPath);
+      if (!resolved.error && !p.inside(resolved.path)) resolved.error = `pin path "${pin.rawPath}" leads outside the repository through a symbolic link`;
       if (resolved.error) {
         records.push({ file, pin, status: "outside-root", detail: resolved.error });
         continue;
@@ -241,16 +242,19 @@ export function verifyPins(p) {
  *   and also relocates `moved` pins in scope without altering their hashes.
  */
 export function syncPins(p, { write = false, relocate = false, files = [], pins = [], all = false } = {}) {
-  const fileSet = new Set(files.map((f) => normalize(f).replace(/\\/g, "/")));
+  // A document is named from the repository root, with or without a leading `/`.
+  const fromRoot = (path) => normalize(path).replace(/\\/g, "/").replace(/^\/+/, "");
+  const fileSet = new Set(files.map(fromRoot));
   const pinSet = new Set(pins.map((spec) => {
     const idx = spec.lastIndexOf(":");
     if (idx === -1) return spec;
-    return `${normalize(spec.slice(0, idx)).replace(/\\/g, "/")}:${spec.slice(idx + 1)}`;
+    return `${fromRoot(spec.slice(0, idx))}:${spec.slice(idx + 1)}`;
   }));
   const hasScope = fileSet.size > 0 || pinSet.size > 0;
   const inScope = (file, line) => all || (!hasScope && !write) || fileSet.has(file) || pinSet.has(`${file}:${line}`);
 
-  const records = inspectPins(p);
+  // With a scope, only its pins are reported: a fault elsewhere is not this command's to fail on.
+  const records = inspectPins(p).filter((record) => !hasScope || inScope(record.file, record.pin.line));
   const changes = [];
   const editsByFile = new Map();
 
@@ -265,6 +269,9 @@ export function syncPins(p, { write = false, relocate = false, files = [], pins 
       changes.push({ file: spec, status: "no-match", detail: `--pin ${spec} names no code pin` });
     }
   }
+  if (all && write && !records.length) changes.push({ file: "", status: "no-match", detail: "--all finds no code pin" });
+  // A scope that names nothing is a mistake in the command: write nothing until it is put right.
+  if (changes.length) return changes;
 
   for (const record of records) {
     const { file, pin, status } = record;

@@ -35,7 +35,7 @@ When it stops describing the present: move what is still true to its owner, move
 
 - The check passes: `docaxioms check`, on every documentation commit and before a push. Where code and its documentation are separate commits, it is the pair that must pass.
 - What changed was read against its owner. No check holds that a description is right, that a decision was really the owner's, or that a landing says the right thing (A6).
-- A link leads to a file in the repository: from its document, or from the repository root when it starts with `/` (A2, A4).
+- A link into the repository leads to a file or folder there: from its document, or from the repository root when it starts with `/`; a decision lands in a document (A2, A4).
 - From the entry point, a reader finds what the software does now without opening research or history (A3).
 - Entry documents stay concise routing maps (M4): put detail in dedicated documents and link to them.
 
@@ -60,7 +60,7 @@ Every key is optional; a check with nothing to look at passes. A key not in this
 | `pathPrefixes`, `pathExempt`, `gonePaths` | Paths named in documents that must exist; documents that may name other projects' paths; paths named as gone, which must stay gone |
 | `codeDocExempt` | Code that may name documents that are not there |
 | `commands` | Documented command checks on descriptions: `{ prefix, jsonFile, key }` or `{ prefix, makefile }` or `{ prefix, list }`, with optional `exempt`; only text that starts with the prefix is checked, and its first word that is not an option names the command |
-| `research` | `dir`, `items` (the document of open items), `openUntil` (the heading where open items end) |
+| `research` | `dir`, `items` (the document of open items), `openUntil` (the heading line where open items end, such as `## Done`) |
 | `history` | `dir`, `banner`, `erratum` (the heading of an erratum, before its date), `base` (the branch to compare with) |
 | `card` | `file`, `maxLines`, `maxChars` |
 | `budgets` | Size limits for entry or current documents: `[{ files, maxLines, maxChars, exempt }]` |
