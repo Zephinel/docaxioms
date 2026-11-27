@@ -254,6 +254,18 @@ export function syncPins(p, { write = false, relocate = false, files = [], pins 
   const changes = [];
   const editsByFile = new Map();
 
+  // A scope that names no pin refreshes nothing: say so rather than report that all is up to date.
+  for (const file of fileSet) {
+    if (!records.some((record) => record.file === file)) {
+      changes.push({ file, status: "no-match", detail: `--file ${file} names no document with a code pin` });
+    }
+  }
+  for (const spec of pinSet) {
+    if (!records.some((record) => `${record.file}:${record.pin.line}` === spec)) {
+      changes.push({ file: spec, status: "no-match", detail: `--pin ${spec} names no code pin` });
+    }
+  }
+
   for (const record of records) {
     const { file, pin, status } = record;
     if (status === "ok") continue;

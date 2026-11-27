@@ -171,6 +171,74 @@ export function parseMarkdown(text) {
   };
 }
 
+/** The index of the `]` that closes the `[` at `open`, skipping escaped brackets; -1 when there is none. */
+function closingBracket(text, open) {
+  let depth = 0;
+  for (let i = open; i < text.length; i += 1) {
+    if (text[i] === "\\") { i += 1; continue; }
+    if (text[i] === "[") depth += 1;
+    else if (text[i] === "]" && --depth === 0) return i;
+  }
+  return -1;
+}
+
+/** The [start, end) of the link destination at or after `from`: `<...>`, or a run without spaces whose parentheses balance (CommonMark). */
+function destinationAt(text, from) {
+  let start = from;
+  while (/[ \t\n]/.test(text[start] ?? "")) start += 1;
+  let end = start;
+  if (text[start] === "<") {
+    end += 1;
+    while (end < text.length && text[end] !== ">" && text[end] !== "\n") end += text[end] === "\\" ? 2 : 1;
+    return [start, Math.min(end + 1, text.length)];
+  }
+  let depth = 0;
+  while (end < text.length && !/\s/.test(text[end])) {
+    if (text[end] === "\\") { end += 2; continue; }
+    if (text[end] === "(") depth += 1;
+    else if (text[end] === ")" && depth-- === 0) break;
+    end += 1;
+  }
+  return [start, Math.min(end, text.length)];
+}
+
+/**
+ * `text` with the destination of every link, image and link definition removed, and all else kept: titles, code
+ * and prose stay as they are, so that comparing two such texts lets only link targets differ.
+ */
+export function withoutLinkTargets(text) {
+  const tree = parser.parse(text);
+  const ranges = [];
+  visit(tree, (node) => {
+    if (!node.position || !["link", "image", "definition"].includes(node.type)) return;
+    const start = node.position.start.offset;
+    const end = node.position.end.offset;
+    if (node.type === "definition") {
+      const close = closingBracket(text, start);
+      if (close !== -1 && text[close + 1] === ":") ranges.push(destinationAt(text, close + 2));
+      return;
+    }
+    const open = node.type === "image" ? start + 1 : start;
+    if (text[open] !== "[") {
+      // An autolink, `<url>` or a bare address: the whole of it is the target.
+      ranges.push(text[start] === "<" ? [start + 1, end - 1] : [start, end]);
+      return;
+    }
+    const last = node.children?.at(-1)?.position?.end.offset;
+    const close = last !== undefined && text[last] === "]" ? last : closingBracket(text, open);
+    if (close !== -1 && text[close + 1] === "(") ranges.push(destinationAt(text, close + 2));
+  });
+  ranges.sort((a, b) => a[0] - b[0]);
+  let out = "";
+  let cursor = 0;
+  for (const [start, end] of ranges) {
+    if (start < cursor) continue;
+    out += text.slice(cursor, start);
+    cursor = end;
+  }
+  return out + text.slice(cursor);
+}
+
 /** Blank ONLY fenced code blocks (``` / ~~~) from arbitrary text while preserving line numbers and indented code. */
 export function withoutFences(text) {
   return text.replace(/^(```|~~~)[\s\S]*?^\1[^\n]*$/gm, (block) => block.replace(/[^\n]/g, ""));

@@ -29,6 +29,7 @@ const FILES = {
   "docs/ideas/wind.md": "# Wind\n\nStatus: open (wind)\n",
   "docs/old/first.md": "# First design\n\n> OUT OF DATE, a record.\n\nOld text, see [plan](../todo.md).\n",
   "docs/old/plain.md": "# Plain\n\n> OUT OF DATE, a record.\n\nNo newline",
+  "docs/old/refs.md": "# Refs\n\n> OUT OF DATE, a record.\n\n[Plan][p] and [odd](../todo_(1).md \"A\ntitle\").\n\n```\n[x](../keep.md)\n```\n\n[p]: ../todo.md\n",
   "NOW.md": "# Now\n\nNothing active.\n",
   "law/LAW.md": "locked\n",
 };
@@ -130,6 +131,28 @@ FAULTS.push(
   ["a history file", ({ add, swap }) => { add("docs/old/first.md", "\n## Erratum 2026-11-23\n\nIt was two hours.\n"); swap("docs/old/first.md", "Old text,", "It was two hours.\n\nOld text,"); }],
   ["a history file", ({ swap, bare }) => { swap("docs/old/first.md", "Old text,", "New text,"); bare(); }, { ...PROFILE, history: { ...PROFILE.history, base: "origin/main" } }],
 );
+// The iteration reference of 2026-11-26, first batch: checks that did not hold what they say.
+FAULTS.push(
+  ["the profile", () => {}, { ...PROFILE, commmands: PROFILE.commands }],
+  ["the profile", () => {}, { ...PROFILE, card: { ...PROFILE.card, maxLines: "10" } }],
+  ["the profile", () => {}, { ...PROFILE, research: { dir: "docs/ideas" } }],
+  ["the profile", () => {}, { ...PROFILE, pathExempt: "(" }],
+  ["the profile", () => {}, { ...PROFILE, commands: [{ prefix: "make " }] }],
+  ["the profile", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, idd: "X-" } }],
+  ["paths named", ({ add }) => add("NOW.md", "`weather/gone.py`\n")],
+  ["paths named", ({ add }) => add("README.md", "\nSee `weather/gone.py#L10`.\n")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[out](../../outside.md)\n")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[out](../../outside.md#a)\n")],
+  ["a decision names", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "../../outside.md#a")],
+  ["a history file", ({ swap }) => swap("docs/old/refs.md", "A\ntitle", "A\nnew title")],
+  ["a history file", ({ swap }) => swap("docs/old/refs.md", "[x](../keep.md)", "[x](../other.md)")],
+  ["decision numbers", ({ drop }) => drop("docs/adr.md")],
+  ["cited sections", () => {}, { ...PROFILE, sections: [{ ...PROFILE.sections[0], document: "docs/nope.md" }] }],
+  ["open research", ({ drop }) => drop("docs/todo.md")],
+  ["open research", () => {}, { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done" } }],
+  ["open research", ({ swap, add }) => { swap("docs/todo.md", "[notes](ideas/wind.md)", "notes"); add("docs/todo.md", "\n## Done (old)\n\n- wind: [notes](ideas/wind.md)\n"); }, { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done (old)" } }],
+  ["commands named", ({ add }) => add("README.md", "\nRun `make -s deploy`.\n")],
+);
 const rows = (profile) => (profile === "rows" ? { ...PROFILE, sections: [{ ...PROFILE.sections[0], cite: "\\bdesign (\\d+(?:\\.\\d+)*(?:-\\d+)?)\\b", rowTables: { 1.2: "### 1.2", 2: "## 2" } }] } : profile);
 for (const [name, change, profile] of FAULTS) test(`caught: ${name} (${change.toString().slice(change.toString().indexOf("=>") + 3, 90)})`, async () => {
   assert.ok((await failing(change, rows(profile))).some((one) => one.startsWith(name)));
@@ -164,6 +187,16 @@ ALLOWED.push(
   ["an erratum after a file with no newline at its end", ({ add }) => add("docs/old/plain.md", "\n\n## Erratum 2026-11-23\n\nx\n")],
   ["a second erratum", ({ add }) => add("docs/old/first.md", "\n## Erratum 2026-11-23\n\nx\n\n## Erratum 2026-11-24\n\ny\n")],
   ["a folder the profile ignores by its path", ({ put }) => put("docs/tmp/lost.md", "# Lost\n\n[x](gone.md)\n"), { ...PROFILE, ignore: ["docs/tmp"] }],
+);
+ALLOWED.push(
+  ["a key of the project's own", () => {}, { ...PROFILE, "x-mine": { any: 1 } }],
+  ["a log, a plan and research naming paths not there", ({ add }) => { add("docs/log.md", "- 2026-11-24: removed `weather/old.py`.\n"); add("docs/todo.md", "- later: `weather/wind.py`\n"); add("docs/ideas/wind.md", "\nIn `weather/wind.py`.\n"); }],
+  ["a path with a line fragment", ({ add }) => add("README.md", "\nSee `weather/cli.py#L2-L3`.\n")],
+  ["a command after an option", ({ add }) => add("README.md", "\nRun `make -s test`.\n")],
+  ["a link from the repository root", ({ add }) => add("docs/index.md", "\n[design](/docs/design.md#1-cache)\n")],
+  ["a reference definition fixed in history", ({ swap }) => swap("docs/old/refs.md", "[p]: ../todo.md", "[p]: ../design.md")],
+  ["a target with parentheses fixed in history", ({ swap }) => swap("docs/old/refs.md", "../todo_(1).md", "../plan_(1)/x.md")],
+  ["open items that end at a heading with parentheses", ({ add }) => add("docs/todo.md", "\n## Done (old)\n\n- rain\n"), { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done (old)" } }],
 );
 for (const [name, change, profile] of ALLOWED) test(`allowed: ${name}`, async () => assert.deepEqual(await failing(change, rows(profile)), []));
 
@@ -275,6 +308,16 @@ test("review aid: codeToDocs warns without failing gates, clears on doc edit, an
   assert.deepEqual(codeToDocsResult.problems, []);
   assert.equal(codeToDocsResult.notes.length, 1);
   assert.match(codeToDocsResult.notes[0], /base "origin\/missing" not found/);
+});
+
+test("a check that cannot run says why, and the others still run (A6)", async () => {
+  const results = await runFixture(() => {}, { ...PROFILE, projectChecks: "nope.mjs" });
+  const load = results.find((r) => r.name === "project checks load");
+  assert.equal(load.errors.length, 1);
+  assert.match(load.errors[0], /^nope\.mjs: /);
+  assert.ok(results.filter((r) => r.name !== "project checks load").every((r) => Array.isArray(r.errors) && !r.errors.length));
+  const thrown = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"own\", axioms: \"A6\", run: () => { throw new Error(\"boom\"); } }];\n"), { ...PROFILE, projectChecks: "own.mjs" });
+  assert.deepEqual(thrown.find((r) => r.name === "own").errors, ["boom"]);
 });
 
 test("history gate says when its base is missing instead of comparing silently against HEAD (A6)", async () => {

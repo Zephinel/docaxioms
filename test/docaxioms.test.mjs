@@ -151,6 +151,10 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));
   // Pin the remaining doc
   execFileSync("node", [CLI, "pin", "--root", root, "--write", "--file", "docs/other.md"], { stdio: "pipe" });
+  // A scope that names no pin is an error; one whose pins are all up to date is not
+  assert.throws(() => execFileSync("node", [CLI, "pin", "--root", root, "--write", "--file", "README.md"], { stdio: "pipe" }));
+  assert.throws(() => execFileSync("node", [CLI, "pin", "--root", root, "--write", "--pin", "docs/guide.md:99"], { stdio: "pipe" }));
+  assert.match(execFileSync("node", [CLI, "pin", "--root", root, "--write", "--file", "docs/guide.md"], { encoding: "utf8" }), /all code pins are up to date/);
   // Now evolutionary aid triggers -> default check exits 0, --strict-aids exits 1
   const out = execFileSync("node", [CLI, "check", "--root", root], { encoding: "utf8" });
   assert.match(out, /aid  current descriptions use evolutionary phrasing/);

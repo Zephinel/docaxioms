@@ -7,12 +7,13 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, normalize, resolve } from "node:path";
+import { dirname, isAbsolute, join, normalize, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { toString } from "mdast-util-to-string";
 import picomatch from "picomatch";
-import { extractLinkTargets, parseMarkdown, withoutFences } from "./markdown.mjs";
+import { extractLinkTargets, parseMarkdown, withoutFences, withoutLinkTargets } from "./markdown.mjs";
 import { verifyPins } from "./pins.mjs";
+import { profileProblems } from "./profile.mjs";
 
 export { withoutFences };
 
@@ -25,6 +26,17 @@ const asArray = (value) => (Array.isArray(value) ? value : value ? [value] : [])
 const safeDecode = (text) => {
   try { return decodeURIComponent(text); } catch { return text; }
 };
+
+/**
+ * Where a link target leads in the repository: from the document's folder, or from the repository root when it
+ * starts with `/`. A target that leads out of the repository is marked `outside`, so that nothing reads it (A2, A4).
+ */
+export function resolveTarget(fromFile, rawPath) {
+  const decoded = safeDecode(rawPath).replace(/\\/g, "/");
+  const joined = decoded.startsWith("/") ? decoded.replace(/^\/+/, "") || "." : join(dirname(fromFile), decoded);
+  const path = normalize(joined).replace(/\\/g, "/").replace(/\/$/, "");
+  return path === ".." || path.startsWith("../") || isAbsolute(path) ? { path, outside: true } : { path };
+}
 
 function makeMatcher(patterns) {
   const list = asArray(patterns);
@@ -114,11 +126,7 @@ export function project(root, profile) {
     .filter((target) => !/^[a-z][a-z0-9+.-]*:/i.test(target))
     .map((target) => {
       const [path, anchor] = target.split("#");
-      return {
-        target,
-        anchor,
-        path: path ? normalize(join(dirname(file), safeDecode(path))).replace(/\\/g, "/").replace(/\/$/, "") : file,
-      };
+      return { target, anchor, ...(path ? resolveTarget(file, path) : { path: file }) };
     });
 
   return {
@@ -257,6 +265,13 @@ export function descriptionDocs(p, extraExempt = []) {
 
 const CHECKS = [
   {
+    name: "the profile names only keys docaxioms knows, each with a value of its kind",
+    axioms: "A6",
+    level: "gate",
+    run: ({ profile }) => profileProblems(profile),
+  },
+
+  {
     name: "core files are the pinned version",
     axioms: "A4, A6",
     level: "gate",
@@ -291,7 +306,8 @@ const CHECKS = [
     name: "links and anchors resolve",
     axioms: "A2, A4",
     level: "gate",
-    run: (p) => p.currentDocs.flatMap((file) => p.links(file).flatMap(({ target, path, anchor }) => {
+    run: (p) => p.currentDocs.flatMap((file) => p.links(file).flatMap(({ target, path, anchor, outside }) => {
+      if (outside) return [`${file}: ${target} leads outside the repository`];
       if (!p.has(path)) return [`${file}: ${target} leads nowhere`];
       if (!anchor || !path.endsWith(".md")) return [];
       return p.passage(path, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
@@ -304,6 +320,7 @@ const CHECKS = [
     level: "gate",
     run: (p) => {
       if (!p.profile.decisions) return [];
+      if (!p.has(p.profile.decisions.file)) return [`${p.profile.decisions.file}: named by decisions.file in docaxioms.json, and not there`];
       const rows = decisionRows(p);
       const names = rows.map((row) => row.name);
       const known = new Set(names);
@@ -324,6 +341,7 @@ const CHECKS = [
     axioms: "A4",
     level: "gate",
     run: (p) => (p.profile.sections ?? []).flatMap(({ cite, files, document, rowTables = {} }) => {
+      if (!p.has(document)) return [`${document}: named by sections in docaxioms.json, and not there`];
       const heads = new Set(
         p.sections(document)
           .filter((one) => one.level >= 2)
@@ -364,7 +382,7 @@ const CHECKS = [
     },
   },
 
-  // Descriptions of the present only: a plan or research note may name another project's paths, a record names the past.
+  // Descriptions of the present and the stage card only: a plan or research note may name paths still to come, a record names the past.
   {
     name: "paths named in current documents exist",
     axioms: "A2, A7",
@@ -378,13 +396,14 @@ const CHECKS = [
       const back = gone
         .filter((path) => p.has(path.replace(/\/$/, "")))
         .map((path) => `${path} is declared gone in docaxioms.json and is there`);
+      const card = p.profile.card?.file;
       return [
         ...back,
-        ...p.currentDocs
+        ...[...descriptionDocs(p), ...(card && p.currentDocs.includes(card) ? [card] : [])]
           .filter((file) => !elsewhere.test(file))
           .flatMap((file) => p.markdown(file).inlineCodes.flatMap(({ value: path }) => {
             if (!named.test(path)) return [];
-            const literal = path.replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
+            const literal = path.replace(/#L\d+(?:-L?\d+)?$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
             return /[*<>{}…()|$#]|\.\.\./.test(literal)
               || p.has(literal)
               || gone.some((one) => `${literal}/`.startsWith(one.replace(/\/?$/, "/")))
@@ -416,7 +435,8 @@ const CHECKS = [
         for (const { value, line } of p.markdown(file).inlineCodes) {
           if (!value.startsWith(rule.prefix)) continue;
           const rest = value.slice(rule.prefix.length).trim();
-          const command = rest.split(/\s+/)[0];
+          // The first word that is not an option, such as `--silent`, names the command.
+          const command = rest.split(/\s+/).find((word) => !word.startsWith("-"));
           if (!command || /[*<>{}…()|$#]|\.\.\./.test(command)) continue;
           if (!valid.has(command)) {
             problems.push(`${file}:${line}: \`${rule.prefix}${command}\` is not defined`);
@@ -434,8 +454,14 @@ const CHECKS = [
     run: (p) => {
       const problems = [];
       const { research, history } = p.profile;
-      if (research) {
-        const open = p.markdown(research.items).withoutCode.split(new RegExp(`^${research.openUntil ?? "\\u0000"}`, "m"))[0];
+      if (research && !p.has(research.items)) {
+        problems.push(`${research.items}: named by research.items in docaxioms.json, and not there`);
+      } else if (research) {
+        const items = p.markdown(research.items);
+        // Open items end at the heading whose whole line is `openUntil`.
+        const until = research.openUntil && items.sections.find((one) => one.line.trim() === research.openUntil.trim());
+        if (research.openUntil && !until) problems.push(`${research.items}: no heading "${research.openUntil}", which research.openUntil names`);
+        const open = until ? items.withoutCode.split("\n").slice(0, until.start).join("\n") : items.withoutCode;
         for (const file of p.currentDocs.filter((name) => name.startsWith(`${research.dir}/`) && !name.endsWith("/README.md"))) {
           if (!/^Status: open \(.+\)$/m.test(p.read(file).split("\n").slice(0, 12).join("\n"))) {
             problems.push(`${file}: its first lines need \`Status: open (<item>)\`; done or dropped research belongs in history`);
@@ -463,7 +489,8 @@ const CHECKS = [
       const seen = new Set((p.profile.entries ?? []).filter(p.has));
       const queue = [...seen];
       while (queue.length) {
-        for (const { path } of p.links(queue.pop())) {
+        for (const { path, outside } of p.links(queue.pop())) {
+          if (outside) continue;
           const next = p.has(path) && lstatSync(p.at(path)).isDirectory() ? `${path}/README.md` : path;
           if (next.endsWith(".md") && p.has(next) && !p.inHistory(next) && !seen.has(next)) {
             seen.add(next);
@@ -481,7 +508,8 @@ const CHECKS = [
     axioms: "A0, A4",
     level: "gate",
     run: (p) => {
-      if (!p.profile.decisions) return [];
+      // A decisions file that is not there is the finding of the check above.
+      if (!p.profile.decisions || !p.has(p.profile.decisions.file)) return [];
       return decisionRows(p)
         .filter((row) => row.landing !== undefined)
         .flatMap(({ name, status, landingTargets }) => {
@@ -494,9 +522,8 @@ const CHECKS = [
           if (!targets.length) problems.push(`${name}: no landing passage`);
           for (const target of targets) {
             const [path, anchor] = target.split("#");
-            const file = path
-              ? normalize(join(dirname(p.profile.decisions.file), safeDecode(path))).replace(/\\/g, "/")
-              : p.profile.decisions.file;
+            const { path: file, outside } = path ? resolveTarget(p.profile.decisions.file, path) : { path: p.profile.decisions.file };
+            if (outside) { problems.push(`${name}: ${target} leads outside the repository`); continue; }
             if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }
             if (!file.endsWith(".md")) continue;
             const text = anchor ? p.passage(file, anchor) : p.read(file);
@@ -554,7 +581,8 @@ const CHECKS = [
       const { base, degraded } = resolveBase(p.root, history.base);
       const notes = degraded ? [degraded] : [];
       if (!base) return { problems: [], notes };
-      const bare = (text) => text.replace(/\n+$/, "").replace(/\]\([^)]*\)/g, "]()");
+      // Only a link's target may change: titles, code and prose are compared as they are.
+      const bare = (text) => withoutLinkTargets(text).replace(/\n+$/, "");
       const diff = runGit(p.root, ["diff", "--name-status", "--no-renames", "--diff-filter=MD", "-z", base, "--", history.dir]);
       if (!diff) return { problems: [], notes };
       const problems = diff
@@ -661,18 +689,27 @@ function normalizeOutcome(outcome) {
   return { problems: outcome?.problems ?? [], notes: outcome?.notes ?? [] };
 }
 
+/** One check's result. A check that could not run says why in `errors`, and the others still run (A6). */
+async function runCheck({ name, axioms, level = "gate", run }, p) {
+  try {
+    return { name, axioms, level, ...normalizeOutcome(await run(p)), errors: [] };
+  } catch (error) {
+    return { name, axioms, level, problems: [], notes: [], errors: [error.message] };
+  }
+}
+
 export async function check(root, profile) {
   const p = project(resolve(root), profile);
-  const results = CHECKS.map(({ name, axioms, level, run }) => {
-    const { problems, notes } = normalizeOutcome(run(p));
-    return { name, axioms, level, problems, notes };
-  });
+  const results = [];
+  for (const one of CHECKS) results.push(await runCheck(one, p));
   if (profile.projectChecks) {
-    const own = await import(pathToFileURL(p.at(profile.projectChecks)).href);
-    for (const { name, axioms, level = "gate", run } of own.default) {
-      const { problems, notes } = normalizeOutcome(await run(p));
-      results.push({ name, axioms, level, problems, notes });
+    let own;
+    try {
+      own = (await import(pathToFileURL(p.at(profile.projectChecks)).href)).default;
+    } catch (error) {
+      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${error.message}`] });
     }
+    for (const one of own ?? []) results.push(await runCheck(one, p));
   }
   return results;
 }

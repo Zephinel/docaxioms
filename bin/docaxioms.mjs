@@ -49,15 +49,18 @@ try {
     if (values.json) {
       console.log(JSON.stringify(results, null, 2));
     } else {
-      for (const { name, axioms, level, problems, notes = [] } of results) {
-        const tag = problems.length ? (level === "aid" ? "aid " : "FAIL") : notes.length ? "note" : "ok  ";
+      for (const { name, axioms, level, problems, notes = [], errors = [] } of results) {
+        const tag = errors.length ? "ERR " : problems.length ? (level === "aid" ? "aid " : "FAIL") : notes.length ? "note" : "ok  ";
         console.log(`${tag} ${name} (${axioms})${problems.length ? `: ${problems.length}` : ""}`);
+        for (const error of errors) console.log(`       error: ${error}`);
         for (const problem of problems) console.log(`       ${problem}`);
         for (const note of notes) console.log(`       note: ${note}`);
       }
     }
+    // A check that could not run fails even with --report: its findings are unknown (A6).
+    const errored = results.some((result) => result.errors?.length);
     const failed = results.some((result) => result.problems.length && (result.level !== "aid" || values["strict-aids"]));
-    process.exit(failed && !values.report ? 1 : 0);
+    process.exit(errored || (failed && !values.report) ? 1 : 0);
   }
 
   if (command === "pin") {
@@ -97,7 +100,10 @@ try {
     };
     let errors = 0;
     for (const change of changes) {
-      if (["malformed", "outside-root", "missing", "invalid-range", "ambiguous-move"].includes(change.status)) {
+      if (change.status === "no-match") {
+        errors += 1;
+        console.log(`ERR   ${change.detail}`);
+      } else if (["malformed", "outside-root", "missing", "invalid-range", "ambiguous-move"].includes(change.status)) {
         errors += 1;
         console.log(`ERR   ${change.file}:${change.line} ${change.target}: ${change.detail ?? change.status}`);
       } else if (change.status === "moved") {
