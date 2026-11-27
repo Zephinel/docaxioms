@@ -320,6 +320,25 @@ test("a check that cannot run says why, and the others still run (A6)", async ()
   assert.deepEqual(thrown.find((r) => r.name === "own").errors, ["boom"]);
 });
 
+test("a link out of the repository is not followed even when the file there exists (A2, A4)", async () => {
+  let outside;
+  const run = (change) => runFixture((tools) => {
+    outside = `${tools.root}-outside.md`;
+    const name = outside.split(/[\\/]/).pop();
+    writeFileSync(outside, `# A\n\n[back](${tools.root.split(/[\\/]/).pop()}/docs/orphan.md)\n`);
+    tools.put("docs/orphan.md", "# Orphan\n");
+    change(tools, `../../${name}`);
+  });
+  try {
+    const named = (results, start) => results.find((r) => r.name.startsWith(start)).problems;
+    const linked = await run(({ add }, target) => add("docs/index.md", `\n[out](${target}#a)\n`));
+    assert.deepEqual(named(linked, "links and anchors").filter((one) => /outside/.test(one)).length, 1);
+    assert.ok(named(linked, "every current document is reachable").some((one) => one.includes("docs/orphan.md")));
+    const landed = await run(({ swap }, target) => swap("docs/adr.md", "design.md#1-cache", `${target}#a`));
+    assert.ok(named(landed, "a decision names").some((one) => /leads outside the repository/.test(one)));
+  } finally { if (outside) rmSync(outside, { force: true }); }
+});
+
 test("history gate says when its base is missing instead of comparing silently against HEAD (A6)", async () => {
   const history = (results) => results.find((r) => r.name.startsWith("a history file"));
   const found = history(await runFixture(() => {}));
