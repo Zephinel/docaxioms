@@ -16,7 +16,7 @@ const KINDS = {
   globs: [(value) => isString(value) || isStrings(value), "a string or a list of strings"],
   regex: [isRegex, "a valid regular expression"],
   count: [(value) => Number.isInteger(value) && value > 0, "a whole number above 0"],
-  hashes: [(value) => isObject(value) && Object.values(value).every((hash) => /^[0-9a-f]{64}$/.test(hash)), "an object of file names to SHA-256 hashes"],
+  hashes: [(value) => isObject(value) && Object.values(value).every((hash) => isString(hash) && /^[0-9a-f]{64}$/.test(hash)), "an object of file names to SHA-256 hashes"],
   headings: [(value) => isObject(value) && Object.values(value).every(isString), "an object of section numbers to headings"],
 };
 
@@ -54,7 +54,7 @@ function validate(value, shape, where, problems) {
   if (isObject(shape)) {
     if (!isObject(value)) { problems.push(`${where} must be an object`); return; }
     for (const key of Object.keys(value)) {
-      if (!(key in shape) && !key.startsWith("x-")) problems.push(`${where ? `${where}.` : ""}${key} is not a key docaxioms knows (a project's own keys start with "x-")`);
+      if (!Object.hasOwn(shape, key) && !key.startsWith("x-")) problems.push(`${where ? `${where}.` : ""}${key} is not a key docaxioms knows (a project's own keys start with "x-")`);
     }
     for (const [key, field] of Object.entries(shape)) {
       const at = where ? `${where}.${key}` : key;
@@ -72,6 +72,13 @@ function validate(value, shape, where, problems) {
       }
     }
   }
+}
+
+/** `profile` without the keys it sets to JSON null, which leaves them unset, so that every check reads one meaning. */
+export function withoutNulls(value) {
+  if (Array.isArray(value)) return value.map(withoutNulls);
+  if (!isObject(value)) return value;
+  return Object.fromEntries(Object.entries(value).filter(([, one]) => one !== null).map(([key, one]) => [key, withoutNulls(one)]));
 }
 
 /** Every way `profile` departs from what docaxioms reads, as one message each. */

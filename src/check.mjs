@@ -6,14 +6,14 @@
 //   - "aid":  review aid; prints findings and counts without failing exit code (unless --strict-aids).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, normalize, resolve } from "node:path";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, isAbsolute, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { toString } from "mdast-util-to-string";
 import picomatch from "picomatch";
 import { extractLinkTargets, parseMarkdown, withoutFences, withoutLinkTargets } from "./markdown.mjs";
 import { verifyPins } from "./pins.mjs";
-import { profileProblems } from "./profile.mjs";
+import { profileProblems, withoutNulls } from "./profile.mjs";
 
 export { withoutFences };
 
@@ -78,7 +78,9 @@ function changedFiles(root, baseRef) {
   return { files, degraded };
 }
 
-export function project(root, profile) {
+export function project(root, given) {
+  // JSON null leaves a key unset (profile.mjs); dropping it here gives every reader that one meaning.
+  const profile = withoutNulls(given);
   const at = (file) => join(root, file);
   const cache = new Map();
   const mdCache = new Map();
@@ -119,6 +121,15 @@ export function project(root, profile) {
   const currentDocs = all.filter((file) => file.endsWith(".md") && !inHistory(file) && !inCore(file));
   const code = all.filter((file) => !inCore(file) && (profile.codeExtensions ?? []).some((extension) => file.endsWith(extension)));
 
+  // A target inside the repository by name may still lead out of it through a symbolic link on its way.
+  const realRoot = realpathSync(root);
+  const locate = (fromFile, rawPath) => {
+    const target = resolveTarget(fromFile, rawPath);
+    if (target.outside) return target;
+    let real;
+    try { real = realpathSync(at(target.path)); } catch { return target; }
+    return real === realRoot || real.startsWith(`${realRoot}${sep}`) ? target : { ...target, outside: true };
+  };
   const sections = (file) => markdown(file).sections;
   const passage = (file, anchor) => markdown(file).passage(anchor);
   const links = (file) => markdown(file)
@@ -126,7 +137,7 @@ export function project(root, profile) {
     .filter((target) => !/^[a-z][a-z0-9+.-]*:/i.test(target))
     .map((target) => {
       const [path, anchor] = target.split("#");
-      return { target, anchor, ...(path ? resolveTarget(file, path) : { path: file }) };
+      return { target, anchor, ...(path ? locate(file, path) : { path: file }) };
     });
 
   return {
@@ -143,6 +154,7 @@ export function project(root, profile) {
     sections,
     passage,
     links,
+    locate,
     match: makeMatcher,
     at,
   };
@@ -522,7 +534,7 @@ const CHECKS = [
           if (!targets.length) problems.push(`${name}: no landing passage`);
           for (const target of targets) {
             const [path, anchor] = target.split("#");
-            const { path: file, outside } = path ? resolveTarget(p.profile.decisions.file, path) : { path: p.profile.decisions.file };
+            const { path: file, outside } = path ? p.locate(p.profile.decisions.file, path) : { path: p.profile.decisions.file };
             if (outside) { problems.push(`${name}: ${target} leads outside the repository`); continue; }
             if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }
             if (!file.endsWith(".md")) continue;
@@ -694,7 +706,7 @@ async function runCheck({ name, axioms, level = "gate", run }, p) {
   try {
     return { name, axioms, level, ...normalizeOutcome(await run(p)), errors: [] };
   } catch (error) {
-    return { name, axioms, level, problems: [], notes: [], errors: [error.message] };
+    return { name, axioms, level, problems: [], notes: [], errors: [error instanceof Error ? error.message : String(error)] };
   }
 }
 
@@ -707,7 +719,7 @@ export async function check(root, profile) {
     try {
       own = (await import(pathToFileURL(p.at(profile.projectChecks)).href)).default;
     } catch (error) {
-      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${error.message}`] });
+      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${error instanceof Error ? error.message : String(error)}`] });
     }
     for (const one of own ?? []) results.push(await runCheck(one, p));
   }

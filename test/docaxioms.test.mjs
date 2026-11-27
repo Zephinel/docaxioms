@@ -141,7 +141,7 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
 
   // Unpinned comment fails gate -> exit 1
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));
-  // --report always exits 0
+  // --report exits 0 on findings
   execFileSync("node", [CLI, "check", "--root", root, "--report"], { stdio: "pipe" });
   // Bare pin --write without scope is refused (A7)
   assert.throws(() => execFileSync("node", [CLI, "pin", "--root", root, "--write"], { stdio: "pipe" }));
@@ -172,6 +172,18 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
   assert.equal(garden.descriptions.some((d) => d.file === "docs/log.md"), false);
   assert.equal(garden.descriptions.find((d) => d.file === "docs/guide.md").pins, 1);
 });
+inProject("a check that cannot run fails the command even with --report or --json (A6)", async ({ root, at, profile }) => {
+  init(root, "c1");
+  writeFileSync(at("own.mjs"), "export default [{ name: \"own\", axioms: \"A6\", run: () => { throw new Error(\"boom\"); } }];\n");
+  writeFileSync(at("docaxioms.json"), JSON.stringify({ ...profile(), projectChecks: "own.mjs" }));
+  for (const flags of [[], ["--report"], ["--json"], ["--report", "--json"]]) {
+    let failed;
+    try { execFileSync("node", [CLI, "check", "--root", root, ...flags], { stdio: "pipe" }); } catch (error) { failed = error; }
+    assert.equal(failed?.status, 1, `check ${flags.join(" ")}`);
+    assert.match(String(failed.stdout), /boom/);
+  }
+});
+
 test("a project's copy carries the licence, the same as here", () => {
   assert.equal(readFileSync(new URL("../core/LICENSE", import.meta.url), "utf8"), readFileSync(new URL("../LICENSE", import.meta.url), "utf8"));
 });

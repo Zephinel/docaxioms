@@ -171,21 +171,38 @@ export function parseMarkdown(text) {
   };
 }
 
-/** The index of the `]` that closes the `[` at `open`, skipping escaped brackets; -1 when there is none. */
+/** The index of the `]` that closes the `[` at `open`, skipping escaped brackets and code spans; -1 when there is none. */
 function closingBracket(text, open) {
   let depth = 0;
   for (let i = open; i < text.length; i += 1) {
     if (text[i] === "\\") { i += 1; continue; }
+    if (text[i] === "`") {
+      // A code span binds tighter than a link: a run of n backticks closes at the next run of exactly n (CommonMark).
+      const run = /^`+/.exec(text.slice(i))[0];
+      const closer = new RegExp(`(?<!\`)${run}(?!\`)`, "g");
+      closer.lastIndex = i + run.length;
+      const found = closer.exec(text);
+      i = (found ? found.index + run.length : i + run.length) - 1;
+      continue;
+    }
     if (text[i] === "[") depth += 1;
     else if (text[i] === "]" && --depth === 0) return i;
   }
   return -1;
 }
 
-/** The [start, end) of the link destination at or after `from`: `<...>`, or a run without spaces whose parentheses balance (CommonMark). */
+/**
+ * The [start, end) of the link destination at or after `from`: `<...>`, or a run without spaces whose parentheses balance
+ * (CommonMark). Before it may come spaces and a line ending, and on a new line the `>` marks of a block quote.
+ */
 function destinationAt(text, from) {
   let start = from;
-  while (/[ \t\n]/.test(text[start] ?? "")) start += 1;
+  let lineStart = false;
+  while (start < text.length) {
+    if (text[start] === "\n") lineStart = true;
+    else if (!(/[ \t\r]/.test(text[start]) || (lineStart && text[start] === ">"))) break;
+    start += 1;
+  }
   let end = start;
   if (text[start] === "<") {
     end += 1;
