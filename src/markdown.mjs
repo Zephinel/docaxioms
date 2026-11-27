@@ -1,6 +1,8 @@
 // Markdown parsing built on remark (CommonMark + GFM) and github-slugger.
 // Replaces regex-based Markdown scanning while preserving exact source offsets and line ranges.
 import GithubSlugger from "github-slugger";
+import { parse, postprocess, preprocess } from "micromark";
+import { gfm } from "micromark-extension-gfm";
 import { toString } from "mdast-util-to-string";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
@@ -171,85 +173,21 @@ export function parseMarkdown(text) {
   };
 }
 
-/**
- * The index of the `]` that closes the `[` at `open`, skipping escaped brackets, and code spans unless `codeSpans` is
- * false (the label of a link definition has none); -1 when there is none.
- */
-function closingBracket(text, open, codeSpans = true, limit = text.length) {
-  let depth = 0;
-  for (let i = open; i < limit; i += 1) {
-    if (text[i] === "\\") { i += 1; continue; }
-    if (codeSpans && text[i] === "`") {
-      // A code span binds tighter than a link: a run of n backticks closes at the next run of exactly n (CommonMark).
-      const run = /^`+/.exec(text.slice(i))[0];
-      const closer = new RegExp(`(?<!\`)${run}(?!\`)`, "g");
-      closer.lastIndex = i + run.length;
-      const found = closer.exec(text);
-      // A run with no closer inside the node is literal backticks.
-      i = (found && found.index < limit ? found.index + run.length : i + run.length) - 1;
-      continue;
-    }
-    if (text[i] === "[") depth += 1;
-    else if (text[i] === "]" && --depth === 0) return i;
-  }
-  return -1;
-}
-
-/**
- * The [start, end) of the link destination at or after `from`: `<...>`, or a run without spaces whose parentheses balance
- * (CommonMark). Before it may come spaces and a line ending, and on a new line the `>` marks of a block quote.
- */
-function destinationAt(text, from) {
-  let start = from;
-  let lineStart = false;
-  while (start < text.length) {
-    if (text[start] === "\n" || text[start] === "\r") lineStart = true;
-    else if (!(/[ \t]/.test(text[start]) || (lineStart && text[start] === ">"))) break;
-    start += 1;
-  }
-  let end = start;
-  if (text[start] === "<") {
-    end += 1;
-    while (end < text.length && text[end] !== ">" && text[end] !== "\n") end += text[end] === "\\" ? 2 : 1;
-    return [start, Math.min(end + 1, text.length)];
-  }
-  let depth = 0;
-  while (end < text.length && !/\s/.test(text[end])) {
-    if (text[end] === "\\") { end += 2; continue; }
-    if (text[end] === "(") depth += 1;
-    else if (text[end] === ")" && depth-- === 0) break;
-    end += 1;
-  }
-  return [start, Math.min(end, text.length)];
-}
+// The kinds of token that are a link's target: inline and definition destinations, and the address inside `<...>`.
+// A bare address is prose that reads as a link, so it is not among them.
+const TARGET_TOKENS = new Set(["resourceDestinationString", "definitionDestinationString", "autolinkProtocol", "autolinkEmail"]);
 
 /**
  * `text` with the destination of every link, image and link definition removed, and all else kept: titles, code
- * and prose stay as they are, so that comparing two such texts lets only link targets differ.
+ * and prose stay as they are, so that comparing two such texts lets only link targets differ. The ranges come from
+ * the parser's own tokens, the same parse that remark builds its tree from.
  */
 export function withoutLinkTargets(text) {
-  const tree = parser.parse(text);
-  const ranges = [];
-  visit(tree, (node) => {
-    if (!node.position || !["link", "image", "definition"].includes(node.type)) return;
-    const start = node.position.start.offset;
-    const end = node.position.end.offset;
-    if (node.type === "definition") {
-      const close = closingBracket(text, start, false);
-      if (close !== -1 && text[close + 1] === ":") ranges.push(destinationAt(text, close + 2));
-      return;
-    }
-    const open = node.type === "image" ? start + 1 : start;
-    if (text[open] !== "[") {
-      // An autolink `<url>` has its target inside the brackets. A bare address is prose that reads as a link, so it stays.
-      if (text[start] === "<") ranges.push([start + 1, end - 1]);
-      return;
-    }
-    const last = node.children?.at(-1)?.position?.end.offset;
-    const close = last !== undefined && text[last] === "]" ? last : closingBracket(text, open, true, end);
-    if (close !== -1 && text[close + 1] === "(") ranges.push(destinationAt(text, close + 2));
-  });
-  ranges.sort((a, b) => a[0] - b[0]);
+  const events = postprocess(parse({ extensions: [gfm()] }).document().write(preprocess()(text, undefined, true)));
+  const ranges = events
+    .filter(([kind, token]) => kind === "enter" && TARGET_TOKENS.has(token.type))
+    .map(([, token]) => [token.start.offset, token.end.offset])
+    .sort((a, b) => a[0] - b[0]);
   let out = "";
   let cursor = 0;
   for (const [start, end] of ranges) {

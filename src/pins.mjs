@@ -11,7 +11,7 @@
 // unrelated identical lines elsewhere. When a unique identical-hash window exists elsewhere in the file, the gate
 // reports the shift and `pin --relocate` updates only the line numbers without altering the hash.
 import { createHash } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { lstatSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, normalize } from "node:path";
 
 // Match `pin:` (any attempt with a colon) or `pin <path-like>` (missing colon before a path/file token),
@@ -112,13 +112,13 @@ export function formatPinComment(rawPath, startLine, endLine, shortHash) {
 }
 
 /** Inspect every pin comment across current documents and classify its exact state. */
-export function inspectPins(p) {
+export function inspectPins(p, wanted = () => true) {
   const records = [];
   for (const file of p.currentDocs) {
     const md = p.markdown(file);
     for (const comment of md.htmlComments) {
       const pin = parsePinComment(comment);
-      if (!pin) continue;
+      if (!pin || !wanted(file, pin.line)) continue;
       if (pin.malformed) {
         records.push({ file, pin, status: "malformed", detail: `malformed pin comment \`${comment.raw.trim()}\`` });
         continue;
@@ -131,6 +131,10 @@ export function inspectPins(p) {
       }
       if (!p.has(resolved.path)) {
         records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} does not exist` });
+        continue;
+      }
+      if (lstatSync(p.at(resolved.path)).isDirectory()) {
+        records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} is a folder, not a file` });
         continue;
       }
       const content = p.read(resolved.path);
@@ -254,7 +258,7 @@ export function syncPins(p, { write = false, relocate = false, files = [], pins 
   const inScope = (file, line) => all || (!hasScope && !write) || fileSet.has(file) || pinSet.has(`${file}:${line}`);
 
   // With a scope, only its pins are reported: a fault elsewhere is not this command's to fail on.
-  const records = inspectPins(p).filter((record) => !hasScope || inScope(record.file, record.pin.line));
+  const records = inspectPins(p, (file, line) => !hasScope || inScope(file, line));
   const changes = [];
   const editsByFile = new Map();
 

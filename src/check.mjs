@@ -133,6 +133,8 @@ export function project(root, given) {
         const real = realpathSync(probe);
         return real === realRoot || real.startsWith(`${realRoot}${sep}`);
       } catch {
+        // A symbolic link that leads nowhere cannot be shown to stay inside.
+        try { if (lstatSync(probe).isSymbolicLink()) return false; } catch { /* not there: try its folder */ }
         if (dirname(probe) === probe) return false;
       }
     }
@@ -429,7 +431,7 @@ const CHECKS = [
           .filter((file) => !elsewhere.test(file))
           .flatMap((file) => p.markdown(file).inlineCodes.flatMap(({ value: path }) => {
             if (!named.test(path)) return [];
-            const literal = path.replace(/#[^#\s]*$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
+            const literal = path.replace(/#.*$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
             if (/[*<>{}…()|$#]|\.\.\./.test(literal)) return [];
             const lexical = normalize(literal).replace(/\\/g, "/");
             if (lexical === ".." || lexical.startsWith("../") || isAbsolute(literal) || !p.inside(lexical)) {
@@ -517,13 +519,13 @@ const CHECKS = [
     axioms: "A3",
     level: "gate",
     run: (p) => {
-      const seen = new Set((p.profile.entries ?? []).filter(p.has));
+      const seen = new Set((p.profile.entries ?? []).filter((file) => p.inside(file) && p.has(file)));
       const queue = [...seen];
       while (queue.length) {
         for (const { path, outside } of p.links(queue.pop())) {
           if (outside) continue;
-          const next = p.has(path) && lstatSync(p.at(path)).isDirectory() ? `${path}/README.md` : path;
-          if (next.endsWith(".md") && p.has(next) && p.inside(next) && !p.inHistory(next) && !seen.has(next)) {
+          const next = p.inside(path) && p.has(path) && lstatSync(p.at(path)).isDirectory() ? `${path}/README.md` : path;
+          if (next.endsWith(".md") && p.inside(next) && p.has(next) && !p.inHistory(next) && !seen.has(next)) {
             seen.add(next);
             queue.push(next);
           }
@@ -753,8 +755,10 @@ export async function check(root, given) {
     let own;
     try {
       own = (await import(pathToFileURL(p.at(profile.projectChecks)).href)).default;
-      if (!Array.isArray(own)) throw new Error("its default export is not a list of checks");
+      const shaped = Array.isArray(own) && own.every((one) => one && typeof one.name === "string" && typeof one.run === "function");
+      if (!shaped) throw new Error("its default export is not a list of checks, each with a name and a run");
     } catch (error) {
+      own = [];
       results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${why(error)}`] });
     }
     for (const one of own ?? []) results.push(await runCheck(one, p));

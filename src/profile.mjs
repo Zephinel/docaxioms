@@ -14,7 +14,7 @@ const KINDS = {
   string: [isString, "a string"],
   text: [(value) => isString(value) && value.trim() !== "", "a string that is not empty"],
   // A folder from the repository root, named the way the checks join it: `docs/old`, not `docs/old/`, `.` or `../x`.
-  dir: [(value) => isString(value) && /^(?!\.{1,2}(?:\/|$))(?!\/)[^\\]*[^/\\]$/.test(value) && !value.split("/").includes(".."), "a folder from the repository root, without a trailing /"],
+  dir: [(value) => isString(value) && !value.includes("\\") && value.split("/").every((part) => part !== "" && part !== "." && part !== ".."), "a folder from the repository root, such as docs/old: no empty, . or .. part, no trailing /"],
   strings: [isStrings, "a list of strings"],
   globs: [(value) => isString(value) || isStrings(value), "a string or a list of strings"],
   regex: [isRegex, "a valid regular expression"],
@@ -37,7 +37,7 @@ const SCHEMA = {
   pathExempt: "regex",
   gonePaths: "strings",
   codeDocExempt: "regex",
-  commands: [{ prefix: "text!", jsonFile: "string", key: "string", makefile: "string", list: "strings", exempt: "globs" }],
+  commands: [{ prefix: "text!", jsonFile: "text", key: "string", makefile: "text", list: "strings", exempt: "globs" }],
   research: { dir: "dir!", items: "text!", openUntil: "text" },
   history: { dir: "dir!", banner: "text!", erratum: "text!", base: "text" },
   card: { file: "text!", maxLines: "count", maxChars: "count" },
@@ -85,7 +85,7 @@ export function withoutNulls(value) {
   if (Array.isArray(value)) return value.map(withoutNulls);
   if (!isObject(value)) return value;
   return Object.fromEntries(Object.entries(value)
-    .filter(([, one]) => one !== null)
+    .filter(([key, one]) => one !== null || key.startsWith("x-"))
     .map(([key, one]) => [key, key.startsWith("x-") ? one : withoutNulls(one)]));
 }
 

@@ -33,6 +33,7 @@ const FILES = {
   "docs/old/refs.md": "# Refs\n\n> OUT OF DATE, a record.\n\n[Plan][p] and [odd](../todo_(1).md \"A\ntitle\").\n\n```\n[x](../keep.md)\n```\n\n[p]: ../todo.md\n\n> [q](\n> ../todo.md\n> \"Q\")\n\n![a `](../alt.md)`](../img/a.png) [s](../todo.md \"S\")\n",
   "docs/old/label.md": "# Label\n\n> OUT OF DATE, a record.\n\n[`a]: ../todo.md\n\nSee `x` and note]: secret\n",
   "docs/old/span.md": "# Span\n\n> OUT OF DATE, a record.\n\n![`](a.png)\n\n` ](OLD)\n\n> [r](\r> ../todo.md\r> \"R\")\n",
+  "docs/old/html.md": "# Html\n\n> OUT OF DATE, a record.\n\n![<span title=\"](OLD)\">](../img/a.png)\n",
   "docs/old/crlf.md": "# Crlf\r\n\r\n> OUT OF DATE, a record.\r\n\r\n[c](\r\n../todo.md)\r\n",
   "NOW.md": "# Now\n\nNothing active.\n",
   "law/LAW.md": "locked\n",
@@ -169,6 +170,12 @@ FAULTS.push(
   ["a history file", ({ swap }) => swap("docs/old/refs.md", "\"S\"", "\"New\"")],
   ["the profile", () => {}, { ...PROFILE, research: { ...PROFILE.research, dir: "docs/ideas/" } }],
   ["the profile", () => {}, { ...PROFILE, commmands: null }],
+  ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, dir: "docs//old" } }],
+  ["the profile", () => {}, { ...PROFILE, research: { ...PROFILE.research, dir: "docs/./ideas" } }],
+  ["the profile", () => {}, { ...PROFILE, commands: [{ prefix: "make ", makefile: "" }] }],
+  ["a history file", ({ swap }) => swap("docs/old/html.md", "(OLD)", "(NEW)")],
+  ["paths named", ({ add }) => add("README.md", "\nSee `docs/gone.md#one#two`.\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: docs -->\n")],
   ["a history file", ({ swap }) => swap("docs/old/span.md", "(OLD)", "(NEW)")],
   ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, banner: "" } }],
   ["the profile", () => {}, { ...PROFILE, budgets: [{ files: "README.md" }] }],
@@ -233,6 +240,7 @@ ALLOWED.push(
   ["an image target fixed in history past code in its text", ({ swap }) => swap("docs/old/refs.md", "../img/a.png", "../img/b.png")],
   ["a key the profile leaves unset with null", () => {}, { ...PROFILE, core: { ...PROFILE.core, source: null }, sections: [{ ...PROFILE.sections[0], rowTables: null }], history: { ...PROFILE.history, base: null } }],
   ["a link to another site that starts with //", ({ add }) => add("docs/index.md", "\n[x](//example.com/a.md)\n")],
+  ["an image target fixed in history past HTML in its text", ({ swap }) => swap("docs/old/html.md", "../img/a.png", "../img/b.png")],
   ["a target after a lone CR in a block quote fixed in history", ({ swap }) => swap("docs/old/span.md", "> ../todo.md", "> ../design.md")],
   ["a link with a query", ({ add }) => add("docs/index.md", "\n[d](design.md?plain=1#1-cache)\n")],
   ["a definition target fixed in history past a backtick in its label", ({ swap }) => swap("docs/old/label.md", "../todo.md", "../design.md")],
@@ -422,8 +430,42 @@ test("a folder's README that is a symbolic link out of the repository is not fol
   } finally { rmSync(outside, { recursive: true, force: true }); }
 });
 
+test("an entry that is a symbolic link out of the repository, or one that leads nowhere, is not followed (A2, A4)", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-entry-"));
+  try {
+    writeFileSync(join(outside, "START.md"), "# Out\n\n[o](docs/orphan.md)\n");
+    const results = await runFixture(({ root, put, add }) => {
+      put("docs/orphan.md", "# Orphan\n");
+      symlinkSync(join(outside, "START.md"), join(root, "START.md"));
+      symlinkSync(join(outside, "nothing"), join(root, "external"));
+      add("docs/index.md", "\n[x](/external/missing.md)\n");
+    }, { ...PROFILE, entries: ["README.md", "START.md"] });
+    assert.ok(results.find((r) => r.name.startsWith("every current document is reachable")).problems.includes("docs/orphan.md"));
+    assert.ok(results.find((r) => r.name.startsWith("links and anchors")).problems.some((one) => /external\/missing\.md leads outside/.test(one)));
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("project checks that are not a list of checks are refused, and none of them runs", async () => {
+  for (const exported of ["{}", "[null]", "new Set([{ name: \"own\", axioms: \"A6\", run: () => [\"ran\"] }])"]) {
+    const results = await runFixture(({ put }) => put("own.mjs", `export default ${exported};\n`), { ...PROFILE, projectChecks: "own.mjs" });
+    assert.match(results.find((r) => r.name === "project checks load").errors[0], /not a list of checks/);
+    assert.equal(results.find((r) => r.name === "own"), undefined);
+  }
+});
+
+test("pin --write with a scope does not read the pins of other documents", () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-scope2-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(at(file)), { recursive: true }); writeFileSync(at(file), text); }
+    writeFileSync(at("docs/other.md"), "# Other\n\n<!-- pin: docs -->\n");
+    const scoped = syncPins(project(root, PROFILE), { write: true, files: ["docs/design.md"] });
+    assert.deepEqual(scoped, []);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("withoutNulls keeps a project's own x- data as it is", () => {
-  assert.deepEqual(withoutNulls({ a: null, b: { c: null }, "x-own": { d: null } }), { b: {}, "x-own": { d: null } });
+  assert.deepEqual(withoutNulls({ a: null, b: { c: null }, "x-own": { d: null }, "x-none": null }), { b: {}, "x-own": { d: null }, "x-none": null });
 });
 
 test("a code pin through a symbolic link out of the repository is not read (A2, A4)", async () => {
