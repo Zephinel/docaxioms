@@ -12,6 +12,7 @@ import { check, project } from "../src/check.mjs";
 import { gardenManifest } from "../src/garden.mjs";
 import { checkCommand, init, packageVersion, source, update } from "../src/manage.mjs";
 import { syncPins } from "../src/pins.mjs";
+import { profileProblems } from "../src/profile.mjs";
 
 const USAGE = `usage:
   docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]
@@ -20,10 +21,14 @@ const USAGE = `usage:
   docaxioms init   <project>
   docaxioms update <project> [--accept-axioms]`;
 
-function loadProfile(root) {
+function loadProfile(root, { strict = false } = {}) {
   const file = join(root, "docaxioms.json");
-  if (!existsSync(file)) throw new Error(`${file} is not there`);
-  return JSON.parse(readFileSync(file, "utf8"));
+  if (!existsSync(file)) throw new Error(`${file} does not exist (run docaxioms init, or pass --root <dir>)`);
+  const profile = JSON.parse(readFileSync(file, "utf8"));
+  // check reports problems in the profile as findings; pin and garden, which write or list from it, refuse to run.
+  const problems = strict ? profileProblems(profile) : [];
+  if (problems.length) throw new Error(problems.join("\n"));
+  return profile;
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -49,15 +54,18 @@ try {
     if (values.json) {
       console.log(JSON.stringify(results, null, 2));
     } else {
-      for (const { name, axioms, level, problems, notes = [] } of results) {
-        const tag = problems.length ? (level === "aid" ? "aid " : "FAIL") : notes.length ? "note" : "ok  ";
+      for (const { name, axioms, level, problems, notes = [], errors = [] } of results) {
+        const tag = errors.length ? "ERR " : problems.length ? (level === "aid" ? "aid " : "FAIL") : notes.length ? "note" : "ok  ";
         console.log(`${tag} ${name} (${axioms})${problems.length ? `: ${problems.length}` : ""}`);
+        for (const error of errors) console.log(`       error: ${error}`);
         for (const problem of problems) console.log(`       ${problem}`);
         for (const note of notes) console.log(`       note: ${note}`);
       }
     }
+    // A check that could not run fails even with --report: its findings are unknown (A6).
+    const errored = results.some((result) => result.errors?.length);
     const failed = results.some((result) => result.problems.length && (result.level !== "aid" || values["strict-aids"]));
-    process.exit(failed && !values.report ? 1 : 0);
+    process.exit(errored || (failed && !values.report) ? 1 : 0);
   }
 
   if (command === "pin") {
@@ -78,7 +86,7 @@ try {
       );
     }
     const root = resolve(values.root);
-    const p = project(root, loadProfile(root));
+    const p = project(root, loadProfile(root, { strict: true }));
     const changes = syncPins(p, {
       write: values.write,
       relocate: values.relocate,
@@ -97,7 +105,10 @@ try {
     };
     let errors = 0;
     for (const change of changes) {
-      if (["malformed", "outside-root", "missing", "invalid-range", "ambiguous-move"].includes(change.status)) {
+      if (change.status === "no-match") {
+        errors += 1;
+        console.log(`ERR   ${change.detail}`);
+      } else if (["malformed", "outside-root", "missing", "invalid-range", "ambiguous-move"].includes(change.status)) {
         errors += 1;
         console.log(`ERR   ${change.file}:${change.line} ${change.target}: ${change.detail ?? change.status}`);
       } else if (change.status === "moved") {
@@ -134,7 +145,7 @@ try {
       },
     });
     const root = resolve(values.root);
-    const manifest = gardenManifest(root, loadProfile(root));
+    const manifest = gardenManifest(root, loadProfile(root, { strict: true }));
     if (values.json) {
       console.log(JSON.stringify(manifest, null, 2));
       process.exit(0);
@@ -161,7 +172,7 @@ try {
     });
     const target = positionals[0];
     if (!target) throw new Error(USAGE);
-    if (!existsSync(target)) throw new Error(`${target} is not there`);
+    if (!existsSync(target)) throw new Error(`${target} does not exist`);
     const root = resolve(target);
     const commit = source();
     const version = packageVersion();

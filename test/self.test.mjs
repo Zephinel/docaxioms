@@ -1,6 +1,7 @@
 // This repository's own check: while docaxioms is in development, only these checks block a merge (AD-7).
 // `npm run check` prints the rest as a report.
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -20,6 +21,8 @@ test("this repository passes the checks that block a merge", async () => {
   const profile = JSON.parse(readFileSync(new URL("../docaxioms.json", import.meta.url), "utf8"));
   // Without its entry the axiom pin checks nothing.
   assert.match(profile.core?.files?.["core/AXIOMS.lock.md"] ?? "", /^[0-9a-f]{64}$/, "docaxioms.json pins core/AXIOMS.lock.md");
+  // Compare the lock file with its pin directly, so that a mistake elsewhere in the core settings cannot hide a change.
+  assert.equal(createHash("sha256").update(readFileSync(new URL("../core/AXIOMS.lock.md", import.meta.url))).digest("hex"), profile.core.files["core/AXIOMS.lock.md"], "core/AXIOMS.lock.md is the pinned version");
   const results = await check(ROOT, profile);
   const failing = BLOCKING.map((name) => {
     const matches = results.filter((r) => r.name === name);

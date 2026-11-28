@@ -45,7 +45,7 @@ inProject("a project's own files stay as they are", async ({ root, at, read }) =
   mkdirSync(at("docs")); writeFileSync(at("AGENTS.md"), "mine\n"); writeFileSync(at("docs/log.md"), "my log\n");
   init(root, "c1");
   assert.equal(read("AGENTS.md"), "mine\n"); assert.equal(read("docs/log.md"), "my log\n");
-  assert.throws(() => init(root, "c2"), /use update/);
+  assert.throws(() => init(root, "c2"), /run docaxioms update instead/);
 });
 inProject("a folder of the project's own name is not taken over", async ({ root, at, read }) => {
   mkdirSync(at("docaxioms")); writeFileSync(at("docaxioms/mine.txt"), "mine\n");
@@ -66,7 +66,7 @@ inProject("update does not write over a local change, and the check names it", a
 });
 inProject("update does not delete a file that is not the core's", async ({ root, at, read }) => {
   init(root, "c1"); writeFileSync(at("docaxioms/mine.txt"), "mine\n");
-  assert.throws(() => update(root, "c2"), /not part of the core/);
+  assert.throws(() => update(root, "c2"), /is not one of the core files/);
   assert.equal(read("docaxioms/mine.txt"), "mine\n");
 });
 inProject("update removes a pinned core file that the core no longer has", async ({ root, at, profile }) => {
@@ -141,7 +141,7 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
 
   // Unpinned comment fails gate -> exit 1
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));
-  // --report always exits 0
+  // --report exits 0 on findings
   execFileSync("node", [CLI, "check", "--root", root, "--report"], { stdio: "pipe" });
   // Bare pin --write without scope is refused (A7)
   assert.throws(() => execFileSync("node", [CLI, "pin", "--root", root, "--write"], { stdio: "pipe" }));
@@ -151,11 +151,15 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));
   // Pin the remaining doc
   execFileSync("node", [CLI, "pin", "--root", root, "--write", "--file", "docs/other.md"], { stdio: "pipe" });
+  // A scope that names no pin is an error; one whose pins are all up to date is not
+  assert.throws(() => execFileSync("node", [CLI, "pin", "--root", root, "--write", "--file", "README.md"], { stdio: "pipe" }));
+  assert.throws(() => execFileSync("node", [CLI, "pin", "--root", root, "--write", "--pin", "docs/guide.md:99"], { stdio: "pipe" }));
+  assert.match(execFileSync("node", [CLI, "pin", "--root", root, "--write", "--file", "docs/guide.md"], { encoding: "utf8" }), /all code pins are up to date/);
   // Now evolutionary aid triggers -> default check exits 0, --strict-aids exits 1
   const out = execFileSync("node", [CLI, "check", "--root", root], { encoding: "utf8" });
-  assert.match(out, /aid  current descriptions use evolutionary phrasing/);
-  assert.match(out, /note: no commit to compare with/);
-  assert.match(out, /^note code changes with mapped documents untouched/m);
+  assert.match(out, /aid  current descriptions narrate past changes/);
+  assert.match(out, /note: there is no commit to compare with/);
+  assert.match(out, /^note code changed, but the documents mapped to it did not/m);
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root, "--strict-aids"], { stdio: "pipe" }));
   // Remove evolutionary wording: ONLY degraded note remains -> even --strict-aids MUST exit 0 (R3)
   writeFileSync(at("docs/guide.md"), readFileSync(at("docs/guide.md"), "utf8").replace("used to be", "is"));
@@ -168,6 +172,31 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
   assert.equal(garden.descriptions.some((d) => d.file === "docs/log.md"), false);
   assert.equal(garden.descriptions.find((d) => d.file === "docs/guide.md").pins, 1);
 });
+inProject("check exits 1 when a check cannot run, even with --report or --json (A6)", async ({ root, at, profile }) => {
+  init(root, "c1");
+  writeFileSync(at("own.mjs"), "export default [{ name: \"own\", axioms: \"A6\", run: () => { throw new Error(\"boom\"); } }];\n");
+  writeFileSync(at("docaxioms.json"), JSON.stringify({ ...profile(), projectChecks: "own.mjs" }));
+  for (const flags of [[], ["--report"], ["--json"], ["--report", "--json"]]) {
+    let failed;
+    try { execFileSync("node", [CLI, "check", "--root", root, ...flags], { stdio: "pipe" }); } catch (error) { failed = error; }
+    assert.equal(failed?.status, 1, `check ${flags.join(" ")}`);
+    assert.match(String(failed.stdout), /boom/);
+  }
+});
+
+inProject("check reports an invalid profile as a finding; pin and garden refuse to run", async ({ root, at, profile }) => {
+  init(root, "c1");
+  writeFileSync(at("docaxioms.json"), JSON.stringify({ ...profile(), foo: 1 }));
+  assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));
+  assert.match(execFileSync("node", [CLI, "check", "--root", root, "--report"], { encoding: "utf8" }), /foo is not a key/);
+  for (const args of [["pin"], ["garden"]]) {
+    let failed;
+    try { execFileSync("node", [CLI, ...args, "--root", root], { stdio: "pipe" }); } catch (error) { failed = error; }
+    assert.equal(failed?.status, 1, args.join(" "));
+    assert.match(String(failed.stderr), /foo is not a key/);
+  }
+});
+
 test("a project's copy carries the licence, the same as here", () => {
   assert.equal(readFileSync(new URL("../core/LICENSE", import.meta.url), "utf8"), readFileSync(new URL("../LICENSE", import.meta.url), "utf8"));
 });

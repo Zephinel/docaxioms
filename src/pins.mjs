@@ -12,7 +12,7 @@
 // reports the shift and `pin --relocate` updates only the line numbers without altering the hash.
 import { createHash } from "node:crypto";
 import { writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, normalize } from "node:path";
+import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 
 // Match `pin:` (any attempt with a colon) or `pin <path-like>` (missing colon before a path/file token),
 // while leaving ordinary prose comments like `<!-- pin the version here -->` untouched.
@@ -44,12 +44,12 @@ export function parsePinComment(comment) {
 }
 
 export function resolvePinPath(docFile, rawPath) {
-  if (isAbsolute(rawPath)) return { error: `pin path "${rawPath}" must stay inside the repository` };
+  if (isAbsolute(rawPath)) return { error: `pin path "${rawPath}" must be relative to the repository, not an absolute path` };
   const resolved = rawPath.startsWith("./") || rawPath.startsWith("../")
     ? normalize(join(dirname(docFile), rawPath)).replace(/\\/g, "/")
     : normalize(rawPath).replace(/\\/g, "/");
   if (resolved === ".." || resolved.startsWith("../") || isAbsolute(resolved)) {
-    return { error: `pin path "${rawPath}" escapes the repository root` };
+    return { error: `pin path "${rawPath}" leads outside the repository` };
   }
   return { path: resolved };
 }
@@ -81,7 +81,7 @@ export function hashSourceSlice(content, startLine, endLine) {
     return { full, short: full.slice(0, SHORT_HASH_LENGTH) };
   }
   if (startLine < 1 || endLine < startLine || endLine > lineCount) {
-    return { error: `line range L${startLine}-L${endLine} is out of bounds (file has ${lineCount} lines)` };
+    return { error: `line range L${startLine}-L${endLine} is past the end of the file, which has ${lineCount} lines` };
   }
   const slice = lines.slice(startLine - 1, endLine).join("\n");
   const full = createHash("sha256").update(slice).digest("hex");
@@ -112,24 +112,29 @@ export function formatPinComment(rawPath, startLine, endLine, shortHash) {
 }
 
 /** Inspect every pin comment across current documents and classify its exact state. */
-export function inspectPins(p) {
+export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
   const records = [];
-  for (const file of p.currentDocs) {
+  for (const file of p.currentDocs.filter(wantedDoc)) {
     const md = p.markdown(file);
     for (const comment of md.htmlComments) {
       const pin = parsePinComment(comment);
-      if (!pin) continue;
+      if (!pin || !wanted(file, pin.line)) continue;
       if (pin.malformed) {
-        records.push({ file, pin, status: "malformed", detail: `malformed pin comment \`${comment.raw.trim()}\`` });
+        records.push({ file, pin, status: "malformed", detail: `pin comment \`${comment.raw.trim()}\` is not in the form <!-- pin: path#Lstart-Lend@hash -->` });
         continue;
       }
       const resolved = resolvePinPath(file, pin.rawPath);
+      if (!resolved.error && !p.inside(resolved.path)) resolved.error = `pin path "${pin.rawPath}" leads outside the repository (through a symbolic link)`;
       if (resolved.error) {
         records.push({ file, pin, status: "outside-root", detail: resolved.error });
         continue;
       }
       if (!p.has(resolved.path)) {
-        records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} does not exist` });
+        records.push({ file, pin, status: "missing", detail: `pin target "${pin.rawPath}" does not exist` });
+        continue;
+      }
+      if (!p.isFile(resolved.path)) {
+        records.push({ file, pin, status: "missing", detail: `pin target "${pin.rawPath}" is a folder, not a file` });
         continue;
       }
       const content = p.read(resolved.path);
@@ -218,17 +223,17 @@ export function verifyPins(p) {
     if (status === "malformed" || status === "outside-root" || status === "missing" || status === "invalid-range") {
       problems.push(`${loc}: ${record.detail}`);
     } else if (status === "unpinned") {
-      problems.push(`${loc}: ${pin.rawPath} has no hash (expected @${record.actual}; review and run pin --write --file ${file})`);
+      problems.push(`${loc}: ${pin.rawPath} has no hash yet (it would be @${record.actual}); review the passage, then run docaxioms pin --write --file ${file}`);
     } else if (status === "moved") {
       const [newStart, newEnd] = record.movedTo;
       const oldRange = pin.startLine === pin.endLine ? `L${pin.startLine}` : `L${pin.startLine}-L${pin.endLine}`;
       const newRange = newStart === newEnd ? `L${newStart}` : `L${newStart}-L${newEnd}`;
-      problems.push(`${loc}: ${pin.rawPath}#${oldRange} moved to #${newRange} (identical hash @${pin.hash}; verify and run pin --relocate)`);
+      problems.push(`${loc}: ${pin.rawPath}#${oldRange} moved to #${newRange} unchanged (hash @${pin.hash}); run docaxioms pin --relocate to update the line numbers`);
     } else if (status === "ambiguous-move") {
       const locs = record.matches.map(([s, e]) => (s === e ? `L${s}` : `L${s}-L${e}`)).join(", ");
-      problems.push(`${loc}: ${pin.rawPath} hash @${pin.hash} moved ambiguously to ${locs}; update line range manually`);
+      problems.push(`${loc}: ${pin.rawPath} @${pin.hash} now matches more than one place (${locs}); set the line range by hand`);
     } else if (status === "changed") {
-      problems.push(`${loc}: ${pin.rawPath} changed (pinned @${pin.hash}, now @${record.actual})`);
+      problems.push(`${loc}: ${pin.rawPath} changed (pinned @${pin.hash}, now @${record.actual}); review the passage, then run docaxioms pin --write --file ${file}`);
     }
   }
   return problems;
@@ -241,18 +246,43 @@ export function verifyPins(p) {
  *   and also relocates `moved` pins in scope without altering their hashes.
  */
 export function syncPins(p, { write = false, relocate = false, files = [], pins = [], all = false } = {}) {
-  const fileSet = new Set(files.map((f) => normalize(f).replace(/\\/g, "/")));
+  // --file and --pin take a path relative to the repository root, with or without a leading `/`, or a full path
+  // on this machine to a file inside the repository.
+  const fromRoot = (path) => {
+    const rel = relative(p.root, resolve(path));
+    const onMachine = isAbsolute(path) && rel !== "" && rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
+    return normalize(onMachine ? rel : path).replace(/\\/g, "/").replace(/^\/+/, "");
+  };
+  const fileSet = new Set(files.map(fromRoot));
   const pinSet = new Set(pins.map((spec) => {
     const idx = spec.lastIndexOf(":");
     if (idx === -1) return spec;
-    return `${normalize(spec.slice(0, idx)).replace(/\\/g, "/")}:${spec.slice(idx + 1)}`;
+    return `${fromRoot(spec.slice(0, idx))}:${spec.slice(idx + 1)}`;
   }));
   const hasScope = fileSet.size > 0 || pinSet.size > 0;
   const inScope = (file, line) => all || (!hasScope && !write) || fileSet.has(file) || pinSet.has(`${file}:${line}`);
 
-  const records = inspectPins(p);
+  // With a scope, open and report only the documents in it, so that a problem in another document cannot fail
+  // this command.
+  const pinDocs = new Set([...pinSet].map((spec) => spec.slice(0, spec.lastIndexOf(":"))));
+  const records = inspectPins(p, (file, line) => !hasScope || inScope(file, line), (file) => !hasScope || all || fileSet.has(file) || pinDocs.has(file));
   const changes = [];
   const editsByFile = new Map();
+
+  // A scope that matches no pin would refresh nothing: report that, instead of "all code pins are up to date".
+  for (const file of fileSet) {
+    if (!records.some((record) => record.file === file)) {
+      changes.push({ file, status: "no-match", detail: `no code pin found in "${file}" (named by --file)` });
+    }
+  }
+  for (const spec of pinSet) {
+    if (!records.some((record) => `${record.file}:${record.pin.line}` === spec)) {
+      changes.push({ file: spec, status: "no-match", detail: `no code pin found at "${spec}" (named by --pin; expected <document>:<line> of a pin comment)` });
+    }
+  }
+  if (all && write && !records.length) changes.push({ file: "", status: "no-match", detail: "no code pin found in any current document (named by --all)" });
+  // If any part of the scope matches no pin, the command is wrong: write nothing until it is fixed.
+  if (changes.length) return changes;
 
   for (const record of records) {
     const { file, pin, status } = record;

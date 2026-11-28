@@ -3,13 +3,14 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { check, project, withoutFences } from "../src/check.mjs";
 import { gardenManifest } from "../src/garden.mjs";
 import { hashSourceSlice, syncPins } from "../src/pins.mjs";
+import { usableProfile, withoutNulls } from "../src/profile.mjs";
 
 const CLI_PY = "# ADR-2: the cache is kept on disk (design 1.1)\ndef ttl():\n    return 3600\n";
 const CLI_PIN = hashSourceSlice(CLI_PY, 2, 3).short;
@@ -29,6 +30,12 @@ const FILES = {
   "docs/ideas/wind.md": "# Wind\n\nStatus: open (wind)\n",
   "docs/old/first.md": "# First design\n\n> OUT OF DATE, a record.\n\nOld text, see [plan](../todo.md).\n",
   "docs/old/plain.md": "# Plain\n\n> OUT OF DATE, a record.\n\nNo newline",
+  "docs/old/refs.md": "# Refs\n\n> OUT OF DATE, a record.\n\n[Plan][p] and [odd](../todo_(1).md \"A\ntitle\").\n\n```\n[x](../keep.md)\n```\n\n[p]: ../todo.md\n\n> [q](\n> ../todo.md\n> \"Q\")\n\n![a `](../alt.md)`](../img/a.png) [s](../todo.md \"S\")\n",
+  "docs/old/label.md": "# Label\n\n> OUT OF DATE, a record.\n\n[`a]: ../todo.md\n\nSee `x` and note]: secret\n",
+  "docs/old/span.md": "# Span\n\n> OUT OF DATE, a record.\n\n![`](a.png)\n\n` ](OLD)\n\n> [r](\r> ../todo.md\r> \"R\")\n",
+  "docs/old/html.md": "# Html\n\n> OUT OF DATE, a record.\n\n![<span title=\"](OLD)\">](../img/a.png)\n",
+  "docs/old/alt.md": "# Alt\n\n> OUT OF DATE, a record.\n\n![a <https://example.com/](OLD)>](../img/a.png) [t](../todo.md)\n",
+  "docs/old/crlf.md": "# Crlf\r\n\r\n> OUT OF DATE, a record.\r\n\r\n[c](\r\n../todo.md)\r\n",
   "NOW.md": "# Now\n\nNothing active.\n",
   "law/LAW.md": "locked\n",
 };
@@ -67,6 +74,8 @@ async function runFixture(change, profile = PROFILE) {
 
 async function failing(change, profile = PROFILE, { includeAids = false } = {}) {
   const results = await runFixture(change, profile);
+  // A check that could not run has no findings to compare; it must not read as a pass.
+  assert.deepEqual(results.filter((result) => result.errors.length).map(({ name, errors }) => ({ name, errors })), []);
   return results
     .filter((result) => result.problems.length && (includeAids || result.level !== "aid"))
     .map((result) => result.name);
@@ -107,12 +116,12 @@ const FAULTS = [
   ["open research", ({ swap }) => swap("docs/todo.md", "[notes](ideas/wind.md)", "notes")],
   ["open research", ({ swap }) => swap("docs/old/first.md", "OUT OF DATE", "Fine")],
   ["every current document", ({ put }) => put("docs/lost.md", "# Lost\n")],
-  ["a decision names", ({ swap }) => swap("docs/design.md", "On disk (ADR-2).", "On disk.")],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "| active |", "| done |")],
-  ["a decision names", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind:\n- other (ADR-2)\n- more:"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
-  ["a decision names", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a data-id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a decision links", ({ swap }) => swap("docs/design.md", "On disk (ADR-2).", "On disk.")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "| active |", "| done |")],
+  ["a decision links", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind:\n- other (ADR-2)\n- more:"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a decision links", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a data-id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
   ["the stage card", ({ add }) => add("NOW.md", "line\n".repeat(12))],
-  ["bounded documents", ({ add }) => add("README.md", "line\n".repeat(25))],
+  ["documents with a size budget", ({ add }) => add("README.md", "line\n".repeat(25))],
   ["a history file", ({ swap }) => swap("docs/old/first.md", "Old text,", "New text,")],
   ["a history file", ({ swap }) => swap("docs/old/first.md", "Old text,", "Extra.\n\nOld text,")],
   ["a history file", ({ add }) => add("docs/old/first.md", "\nnot an erratum\n")],
@@ -123,15 +132,96 @@ FAULTS.push(
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[Rain]\n\n[rain]: <rain.md> \"Title\"\n")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[Rain][rain]\n\n[rain]: rain.md\n")],
   ["documents named in code", ({ add }) => add("weather/cli.py", "# see docs/gone.md\n")],
-  ["a decision names", ({ add }) => add("docs/adr.md", "\n## Later\n\n| ADR-4 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "# Decisions" } }],
-  ["a decision names", ({ add }) => add("docs/adr.md", "\n## Second\n\n| ADR-4 | x | y | active | [here](#nowhere) |\n")],
-  ["a decision names", ({ add }) => add("docs/adr.md", "\n## Now\n\n| ADR-4 | x | y | active | [d](design.md#1-cache) |\n\n## Then\n\n| ADR-5 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "## Now" } }],
+  ["a decision links", ({ add }) => add("docs/adr.md", "\n## Later\n\n| ADR-4 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "# Decisions" } }],
+  ["a decision links", ({ add }) => add("docs/adr.md", "\n## Second\n\n| ADR-4 | x | y | active | [here](#nowhere) |\n")],
+  ["a decision links", ({ add }) => add("docs/adr.md", "\n## Now\n\n| ADR-4 | x | y | active | [d](design.md#1-cache) |\n\n## Then\n\n| ADR-5 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "## Now" } }],
   ["cited sections", ({ add, swap }) => { add("docs/design.md", "\n### 1.2 Rows\n\n| 1 | a |\n\n### 1.3 Other\n\n| 2 | b |\n"); swap("weather/cli.py", "design 1.1", "design 1.2-2"); }, "rows"],
   ["a history file", ({ add, swap }) => { add("docs/old/first.md", "\n## Erratum 2026-11-23\n\nIt was two hours.\n"); swap("docs/old/first.md", "Old text,", "It was two hours.\n\nOld text,"); }],
   ["a history file", ({ swap, bare }) => { swap("docs/old/first.md", "Old text,", "New text,"); bare(); }, { ...PROFILE, history: { ...PROFILE.history, base: "origin/main" } }],
 );
+// The iteration reference of 2026-11-26, first batch: checks that did not hold what they say.
+FAULTS.push(
+  ["the profile", () => {}, { ...PROFILE, commmands: PROFILE.commands }],
+  ["the profile", () => {}, { ...PROFILE, card: { ...PROFILE.card, maxLines: "10" } }],
+  ["the profile", () => {}, { ...PROFILE, research: { dir: "docs/ideas" } }],
+  ["the profile", () => {}, { ...PROFILE, pathExempt: "(" }],
+  ["the profile", () => {}, { ...PROFILE, commands: [{ prefix: "make " }] }],
+  ["the profile", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, idd: "X-" } }],
+  ["paths named", ({ add }) => add("NOW.md", "`weather/gone.py`\n")],
+  ["paths named", ({ add }) => add("README.md", "\nSee `weather/gone.py#L10`.\n")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[out](../../outside.md)\n")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[out](../../outside.md#a)\n")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "../../outside.md#a")],
+  ["a history file", ({ swap }) => swap("docs/old/refs.md", "A\ntitle", "A\nnew title")],
+  ["a history file", ({ swap }) => swap("docs/old/refs.md", "[x](../keep.md)", "[x](../other.md)")],
+  ["decision numbers", ({ drop }) => drop("docs/adr.md")],
+  ["cited sections", () => {}, { ...PROFILE, sections: [{ ...PROFILE.sections[0], document: "docs/nope.md" }] }],
+  ["open research", ({ drop }) => drop("docs/todo.md")],
+  ["open research", () => {}, { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done" } }],
+  ["open research", ({ swap, add }) => { swap("docs/todo.md", "[notes](ideas/wind.md)", "notes"); add("docs/todo.md", "\n## Done (old)\n\n- wind: [notes](ideas/wind.md)\n"); }, { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done (old)" } }],
+  ["commands named", ({ add }) => add("README.md", "\nRun `make -s deploy`.\n")],
+);
+// Review of 2026-11-27 of the first batch.
+FAULTS.push(
+  ["the profile", () => {}, { ...PROFILE, toString: true }],
+  ["the profile", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, constructor: 1 } }],
+  ["the profile", () => {}, { ...PROFILE, core: { ...PROFILE.core, files: { "LAW.md": ["a".repeat(64)] } } }],
+  ["a history file", ({ swap }) => swap("docs/old/refs.md", "../alt.md", "../other.md")],
+  ["a history file", ({ swap }) => swap("docs/old/refs.md", "\"S\"", "\"New\"")],
+  ["the profile", () => {}, { ...PROFILE, research: { ...PROFILE.research, dir: "docs/ideas/" } }],
+  ["the profile", () => {}, { ...PROFILE, commmands: null }],
+  ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, dir: "docs//old" } }],
+  ["the profile", () => {}, { ...PROFILE, research: { ...PROFILE.research, dir: "docs/./ideas" } }],
+  ["the profile", () => {}, { ...PROFILE, commands: [{ prefix: "make ", makefile: "" }] }],
+  ["a history file", ({ swap }) => swap("docs/old/html.md", "(OLD)", "(NEW)")],
+  ["paths named", ({ add }) => add("README.md", "\nSee `docs/gone.md#one#two`.\n")],
+  ["code pins", ({ add }) => add("docs/design.md", "\n<!-- pin: docs -->\n")],
+  ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, dir: "  " } }],
+  ["the profile", () => {}, { ...PROFILE, card: { ...PROFILE.card, file: "C:/NOW.md" } }],
+  ["the profile", () => {}, { ...PROFILE, core: { ...PROFILE.core, files: { "../LAW.md": PROFILE.core.files["LAW.md"] } } }],
+  ["the profile", () => {}, { ...PROFILE, entries: ["../README.md"] }],
+  ["the profile", () => {}, { ...PROFILE, pathPrefixes: ["weather/", ""] }],
+  ["the profile", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "  " } }],
+  ["the profile", () => {}, { ...PROFILE, sections: [{ ...PROFILE.sections[0], rowTables: { 1.2: "" } }] }],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "https://example.com/design.md")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "//example.com/design.md")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[d](/docs#nope)\n")],
+  ["links and anchors", ({ put, add }) => { put("docs/sub.md/x.txt", "x"); add("docs/index.md", "\n[x](sub.md#a)\n"); }],
+  ["paths named", ({ add }) => add("README.md", "\nSee `docs/#gone`.\n")],
+  ["every current document is reachable", () => {}, { ...PROFILE, entries: ["READ.md"] }],
+  ["every current document is reachable", () => {}, { ...PROFILE, entries: ["docs"] }],
+  ["the stage card", () => {}, { ...PROFILE, card: { ...PROFILE.card, file: "docs" } }],
+  ["decision numbers", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, file: "docs" } }],
+  ["core files", ({ swap }) => swap("law/LAW.md", "locked", "changed"), { ...PROFILE, core: { ...PROFILE.core, foo: 1 } }],
+  ["the profile", () => {}, { ...PROFILE, budgets: [{ files: [""], maxLines: 10 }] }],
+  ["the profile", () => {}, { ...PROFILE, budgets: [{ files: [], maxLines: 10 }] }],
+  ["the profile", () => {}, { ...PROFILE, garden: { exempt: [""] } }],
+  ["the profile", () => {}, { ...PROFILE, ignore: ["docs/"] }],
+  ["the profile", () => {}, { ...PROFILE, ".oops": 1, "": 2 }],
+  ["the profile", () => {}, { ...PROFILE, gonePaths: ["./weather/legacy/"] }],
+  ["a history file", ({ swap }) => swap("docs/old/alt.md", "(OLD)", "(NEW)")],
+  ["a history file", ({ swap }) => swap("docs/old/span.md", "(OLD)", "(NEW)")],
+  ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, banner: "" } }],
+  ["the profile", () => {}, { ...PROFILE, budgets: [{ files: "README.md" }] }],
+  ["the profile", () => {}, { ...PROFILE, ignore: "docs" }],
+  ["a history file", ({ add }) => add("docs/old/first.md", "\nhttps://example.com/added\n")],
+  ["a history file", ({ swap }) => swap("docs/old/label.md", "secret", "other")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[x](/docs/gone.md)\n")],
+  ["links and anchors", ({ add }) => add("docs/index.md", "\n[x](/docs/design.md#nope)\n")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "/")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "img/diagram.png")],
+  ["paths named", ({ add }) => add("README.md", "\nSee `docs/gone.md#1-cache`.\n")],
+  ["paths named", ({ add }) => add("README.md", "\nSee `docs/../../outside.md`.\n")],
+  ["the stage card", () => {}, { ...PROFILE, card: { ...PROFILE.card, file: "GONE.md" } }],
+  ["commands named", () => {}, { ...PROFILE, commands: [{ prefix: "make ", makefile: "Makfile" }] }],
+  ["open research", ({ add }) => add("docs/todo.md", "\n## Done (later)\n\n- rain\n"), { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done" } }],
+);
 const rows = (profile) => (profile === "rows" ? { ...PROFILE, sections: [{ ...PROFILE.sections[0], cite: "\\bdesign (\\d+(?:\\.\\d+)*(?:-\\d+)?)\\b", rowTables: { 1.2: "### 1.2", 2: "## 2" } }] } : profile);
-for (const [name, change, profile] of FAULTS) test(`caught: ${name} (${change.toString().slice(change.toString().indexOf("=>") + 3, 90)})`, async () => {
+// A case that changes only the profile is labelled by the settings it changes; one that changes files, by its code.
+const label = (change, profile) => (change.toString() === "() => {}" && profile && profile !== "rows"
+  ? JSON.stringify(Object.fromEntries(Object.entries(profile).filter(([key, value]) => PROFILE[key] !== value))).slice(0, 90)
+  : change.toString().slice(change.toString().indexOf("=>") + 3, 90));
+for (const [name, change, profile] of FAULTS) test(`caught: ${name} (${label(change, profile)})`, async () => {
   assert.ok((await failing(change, rows(profile))).some((one) => one.startsWith(name)));
 });
 
@@ -164,6 +254,32 @@ ALLOWED.push(
   ["an erratum after a file with no newline at its end", ({ add }) => add("docs/old/plain.md", "\n\n## Erratum 2026-11-23\n\nx\n")],
   ["a second erratum", ({ add }) => add("docs/old/first.md", "\n## Erratum 2026-11-23\n\nx\n\n## Erratum 2026-11-24\n\ny\n")],
   ["a folder the profile ignores by its path", ({ put }) => put("docs/tmp/lost.md", "# Lost\n\n[x](gone.md)\n"), { ...PROFILE, ignore: ["docs/tmp"] }],
+);
+ALLOWED.push(
+  ["a project's own x- key", () => {}, { ...PROFILE, "x-mine": { any: 1 } }],
+  ["a log, a plan and research that name paths that do not exist", ({ add }) => { add("docs/log.md", "- 2026-11-24: removed `weather/old.py`.\n"); add("docs/todo.md", "- later: `weather/wind.py`\n"); add("docs/ideas/wind.md", "\nIn `weather/wind.py`.\n"); }],
+  ["a path with a line fragment", ({ add }) => add("README.md", "\nSee `weather/cli.py#L2-L3`.\n")],
+  ["a command after an option", ({ add }) => add("README.md", "\nRun `make -s test`.\n")],
+  ["a link from the repository root", ({ add }) => add("docs/index.md", "\n[design](/docs/design.md#1-cache)\n")],
+  ["a reference definition fixed in history", ({ swap }) => swap("docs/old/refs.md", "[p]: ../todo.md", "[p]: ../design.md")],
+  ["a target with parentheses fixed in history", ({ swap }) => swap("docs/old/refs.md", "../todo_(1).md", "../plan_(1)/x.md")],
+  ["a target on its own line in a block quote fixed in history", ({ swap }) => swap("docs/old/refs.md", "> ../todo.md", "> ../design.md")],
+  ["a target after a CRLF line ending fixed in history", ({ swap }) => swap("docs/old/crlf.md", "\r\n../todo.md)", "\r\n../design.md)")],
+  ["a history file whose image target changes, with inline code in the image text", ({ swap }) => swap("docs/old/refs.md", "../img/a.png", "../img/b.png")],
+  ["optional profile keys set to null", () => {}, { ...PROFILE, core: { ...PROFILE.core, source: null }, sections: [{ ...PROFILE.sections[0], rowTables: null }], history: { ...PROFILE.history, base: null } }],
+  ["a link to another site that starts with //", ({ add }) => add("docs/index.md", "\n[x](//example.com/a.md)\n")],
+  ["a history file whose image target changes, with HTML in the image text", ({ swap }) => swap("docs/old/html.md", "../img/a.png", "../img/b.png")],
+  ["a history file whose link target changes after a lone CR in a block quote", ({ swap }) => swap("docs/old/span.md", "> ../todo.md", "> ../design.md")],
+  ["a history file whose link target changes to one in angle brackets", ({ swap }) => swap("docs/old/alt.md", "[t](../todo.md)", "[t](<../to do.md>)")],
+  ["a link to the repository root, which reaches README.md", ({ add }) => add("NOW.md", "[home](/)\n"), { ...PROFILE, entries: ["NOW.md"], reachable: "^(README\\.md|docs/)" }],
+  ["a landing with a query", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "design.md?plain=1#1-cache")],
+  ["a link to a heading of a folder's README", ({ put, add }) => { put("docs/README.md", "# Docs\n\n## Here\n"); add("docs/index.md", "\n[d](/docs#here)\n"); }],
+  ["a path with a placeholder in its fragment", ({ add }) => add("README.md", "\nSee `weather/gone.py#<line>`.\n")],
+  ["a path under a gone folder, written with ./", ({ add }) => add("README.md", "\nOnce `weather/./legacy/a.py`.\n")],
+  ["a word that starts with a command prefix that has no trailing space", ({ add }) => add("README.md", "\nThe `makefile` is plain.\n"), { ...PROFILE, commands: [{ prefix: "make", makefile: "Makefile" }] }],
+  ["a link with a query", ({ add }) => add("docs/index.md", "\n[d](design.md?plain=1#1-cache)\n")],
+  ["a history file whose definition target changes, with a backtick in its label", ({ swap }) => swap("docs/old/label.md", "../todo.md", "../design.md")],
+  ["open items that end at a heading with parentheses", ({ add }) => add("docs/todo.md", "\n## Done (old)\n\n- rain\n"), { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done (old)" } }],
 );
 for (const [name, change, profile] of ALLOWED) test(`allowed: ${name}`, async () => assert.deepEqual(await failing(change, rows(profile)), []));
 
@@ -251,13 +367,13 @@ test("B2 edge: ambiguous move (duplicate identical windows) fails gate closed", 
   const dup = await runFixture(({ put }) => put("weather/cli.py", `import os\n${CLI_PY}${CLI_PY}`));
   const gate = dup.find((r) => r.name.startsWith("code pins match"));
   assert.equal(gate.problems.length, 1);
-  assert.match(gate.problems[0], /moved ambiguously/);
+  assert.match(gate.problems[0], /now matches more than one place/);
 });
 
 test("review aid: codeToDocs warns without failing gates, clears on doc edit, and reports missing base (A6)", async () => {
   const withCodeOnly = await runFixture(({ put }) => put("weather/new.py", "# helper\n"));
   assert.deepEqual(withCodeOnly.filter((r) => r.level === "gate" && r.problems.length), []);
-  const aid = withCodeOnly.find((r) => r.name.startsWith("code changes"));
+  const aid = withCodeOnly.find((r) => r.name.startsWith("code changed"));
   assert.equal(aid.level, "aid");
   assert.equal(aid.problems.length, 1);
 
@@ -265,16 +381,252 @@ test("review aid: codeToDocs warns without failing gates, clears on doc edit, an
     put("weather/new.py", "# helper\n");
     add("docs/design.md", "\nHelper note.\n");
   });
-  assert.equal(withDocUpdated.find((r) => r.name.startsWith("code changes")).problems.length, 0);
+  assert.equal(withDocUpdated.find((r) => r.name.startsWith("code changed")).problems.length, 0);
 
   const degraded = await runFixture(() => {}, {
     ...PROFILE,
     codeToDocs: [{ code: "weather/**", docs: ["docs/design.md"], base: "origin/missing" }],
   });
-  const codeToDocsResult = degraded.find((r) => r.name.startsWith("code changes"));
+  const codeToDocsResult = degraded.find((r) => r.name.startsWith("code changed"));
   assert.deepEqual(codeToDocsResult.problems, []);
   assert.equal(codeToDocsResult.notes.length, 1);
-  assert.match(codeToDocsResult.notes[0], /base "origin\/missing" not found/);
+  assert.match(codeToDocsResult.notes[0], /base "origin\/missing" was not found/);
+});
+
+test("a check that throws an error reports it, and the other checks still run (A6)", async () => {
+  const results = await runFixture(() => {}, { ...PROFILE, projectChecks: "nope.mjs" });
+  const load = results.find((r) => r.name === "project checks load");
+  assert.equal(load.errors.length, 1);
+  assert.equal(load.errors[0], "nope.mjs (projectChecks in docaxioms.json) does not exist");
+  assert.ok(results.filter((r) => r.name !== "project checks load").every((r) => Array.isArray(r.errors) && !r.errors.length));
+  const thrown = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"own\", axioms: \"A6\", run: () => { throw new Error(\"boom\"); } }];\n"), { ...PROFILE, projectChecks: "own.mjs" });
+  assert.deepEqual(thrown.find((r) => r.name === "own").errors, ["boom"]);
+});
+
+test("a link that leads outside the repository fails, and the file there is not read (A2, A4)", async () => {
+  let outside;
+  const run = (change) => runFixture((tools) => {
+    outside = `${tools.root}-outside.md`;
+    const name = outside.split(/[\\/]/).pop();
+    writeFileSync(outside, `# A\n\n[back](${tools.root.split(/[\\/]/).pop()}/docs/orphan.md)\n`);
+    tools.put("docs/orphan.md", "# Orphan\n");
+    change(tools, `../../${name}`);
+  });
+  try {
+    const named = (results, start) => results.find((r) => r.name.startsWith(start)).problems;
+    const linked = await run(({ add }, target) => add("docs/index.md", `\n[out](${target}#a)\n`));
+    assert.deepEqual(named(linked, "links and anchors").filter((one) => /outside/.test(one)).length, 1);
+    assert.ok(named(linked, "every current document is reachable").some((one) => one.includes("docs/orphan.md")));
+    const landed = await run(({ swap }, target) => swap("docs/adr.md", "design.md#1-cache", `${target}#a`));
+    assert.ok(named(landed, "a decision links").some((one) => /leads outside the repository/.test(one)));
+  } finally { if (outside) rmSync(outside, { force: true }); }
+});
+
+test("the command name is the first word after the prefix that is not an option", async () => {
+  const results = await runFixture(({ add }) => add("README.md", "\nRun `make -s deploy`.\n"));
+  const found = results.find((r) => r.name.startsWith("commands named")).problems;
+  assert.equal(found.length, 1);
+  assert.match(found[0], /\bdeploy\b/);
+  assert.doesNotMatch(found[0], /-s\b/);
+});
+
+test("a link through a symbolic link that leads outside the repository fails, and the target is not read (A2, A4)", async () => {
+  let outside;
+  try {
+    const results = await runFixture(({ root, add }) => {
+      outside = mkdtempSync(join(tmpdir(), "docaxioms-out-"));
+      writeFileSync(join(outside, "a.md"), "# A\n");
+      symlinkSync(outside, join(root, "external"));
+      add("docs/index.md", "\n[x](/external/a.md#a)\n");
+    });
+    assert.ok(results.find((r) => r.name.startsWith("links and anchors")).problems.some((one) => /external\/a\.md#a leads outside/.test(one)));
+  } finally { if (outside) rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("an invalid profile setting is ignored and the other checks run; only a profile that is not an object stops them (A6, A7)", async () => {
+  const none = await runFixture(() => {}, []);
+  assert.match(none[0].problems.join("\n"), /the profile must be a JSON object/);
+  assert.ok(none.slice(1).every((r) => r.errors.length === 1 && !r.problems.length));
+  const one = await runFixture(({ add }) => add("docs/index.md", "\n[x](gone.md)\n"), { ...PROFILE, codeExtensions: ".py", foo: 1 });
+  assert.match(one[0].problems.join("\n"), /codeExtensions must be a list of strings/);
+  assert.match(one[0].problems.join("\n"), /foo is not a key/);
+  assert.deepEqual(one.filter((r) => r.errors.length).map((r) => r.name), []);
+  assert.ok(one.find((r) => r.name.startsWith("links and anchors")).problems.some((x) => /gone\.md/.test(x)));
+  assert.equal(project(process.cwd(), { ignore: 1, entries: ["README.md"] }).profile.ignore, undefined);
+  assert.throws(() => project(process.cwd(), null), /the profile must be a JSON object/);
+});
+
+test("reachability does not follow a folder's README.md that links outside the repository (A2, A4)", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-readme-"));
+  try {
+    writeFileSync(join(outside, "README.md"), "# Out\n\n[o](orphan.md)\n");
+    const results = await runFixture(({ root, put, add }) => {
+      put("docs/orphan.md", "# Orphan\n");
+      symlinkSync(join(outside, "README.md"), join(root, "docs/README.md"));
+      add("README.md", "\n[d](docs)\n");
+    });
+    assert.ok(results.find((r) => r.name.startsWith("every current document is reachable")).problems.includes("docs/orphan.md"));
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("an entry that links outside the repository, or a broken link, is not followed (A2, A4)", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-entry-"));
+  try {
+    writeFileSync(join(outside, "START.md"), "# Out\n\n[o](docs/orphan.md)\n");
+    const results = await runFixture(({ root, put, add }) => {
+      put("docs/orphan.md", "# Orphan\n");
+      symlinkSync(join(outside, "START.md"), join(root, "START.md"));
+      symlinkSync(join(outside, "nothing"), join(root, "external"));
+      add("docs/index.md", "\n[x](/external/missing.md)\n");
+    }, { ...PROFILE, entries: ["README.md", "START.md"] });
+    assert.ok(results.find((r) => r.name.startsWith("every current document is reachable")).problems.includes("docs/orphan.md"));
+    assert.ok(results.find((r) => r.name.startsWith("links and anchors")).problems.some((one) => /external\/missing\.md leads outside/.test(one)));
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("project checks whose export is not a list of checks are refused, and none of them runs", async () => {
+  for (const exported of ["{}", "[null]", "new Set([{ name: \"own\", axioms: \"A6\", run: () => [\"ran\"] }])"]) {
+    const results = await runFixture(({ put }) => put("own.mjs", `export default ${exported};\n`), { ...PROFILE, projectChecks: "own.mjs" });
+    assert.match(results.find((r) => r.name === "project checks load").errors[0], /not a list of checks/);
+    assert.equal(results.find((r) => r.name === "own"), undefined);
+  }
+});
+
+test("pin --write with a scope does not read the pins of other documents", () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-scope2-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(at(file)), { recursive: true }); writeFileSync(at(file), text); }
+    writeFileSync(at("docs/other.md"), "# Other\n\n<!-- pin: docs -->\n");
+    const scoped = syncPins(project(root, PROFILE), { write: true, files: ["docs/design.md"] });
+    assert.deepEqual(scoped, []);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a file named in the profile that links outside the repository is reported, not read (A2, A4)", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-core-"));
+  try {
+    writeFileSync(join(outside, "LAW.md"), FILES["law/LAW.md"]);
+    const results = await runFixture(({ root, drop }) => { drop("law/LAW.md"); symlinkSync(join(outside, "LAW.md"), join(root, "law/LAW.md")); });
+    const core = results.find((r) => r.name.startsWith("core files"));
+    assert.deepEqual(core.errors, []);
+    assert.ok(core.problems.some((one) => one.startsWith("law/LAW.md")), core.problems.join("\n"));
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("an invalid setting drops only that setting, or the one list item that holds it", async () => {
+  const results = await runFixture(() => {}, { ...PROFILE, "commands.foo": 1, commands: [...PROFILE.commands, { prefix: "" }] });
+  assert.equal(results[0].problems.length, 3);
+  assert.deepEqual(results.filter((r) => r.errors.length).map((r) => r.name), []);
+  const bad = await runFixture(({ add }) => add("README.md", "\nRun `make deploy`.\n"), { ...PROFILE, "commands.foo": 1, commands: [{ prefix: "make", makefile: "Makefile" }, { prefix: "" }] });
+  assert.deepEqual(bad.find((r) => r.name.startsWith("commands named")).problems, ["README.md:5: `make deploy` is not a defined command"]);
+});
+
+test("project checks load only from a file inside the repository, and a sparse array is refused", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-own-"));
+  try {
+    writeFileSync(join(outside, "own.mjs"), "export default [{ name: \"ext\", axioms: \"A6\", run: () => [\"ran\"] }];\n");
+    const linked = await runFixture(({ root }) => symlinkSync(join(outside, "own.mjs"), join(root, "own.mjs")), { ...PROFILE, projectChecks: "own.mjs" });
+    assert.match(linked.find((r) => r.name === "project checks load").errors[0], /is not a file|leads outside the repository/);
+    assert.equal(linked.find((r) => r.name === "ext"), undefined);
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+  const holes = await runFixture(({ put }) => put("own.mjs", "export default [,];\n"), { ...PROFILE, projectChecks: "own.mjs" });
+  assert.match(holes.find((r) => r.name === "project checks load").errors[0], /not a list of checks/);
+});
+
+test("scoped pin --write opens no other document, and accepts a full path to a file whose name starts with ..", { skip: process.platform === "win32" || process.getuid?.() === 0 }, () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-scope3-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(at(file)), { recursive: true }); writeFileSync(at(file), text); }
+    writeFileSync(at("docs/..notes.md"), "# Notes\n\n<!-- pin: weather/cli.py#L2-L3@000000000000 -->\n");
+    writeFileSync(at("docs/locked.md"), "# Locked\n");
+    chmodSync(at("docs/locked.md"), 0o000);
+    const changes = syncPins(project(root, PROFILE), { write: true, files: [at("docs/..notes.md")] });
+    assert.deepEqual(changes.map((one) => [one.file, one.status]), [["docs/..notes.md", "updated"]]);
+    chmodSync(at("docs/locked.md"), 0o644);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("an invalid setting that limits its object, such as core.dir or an exempt list, drops the whole object", async () => {
+  const results = await runFixture(() => {}, { ...PROFILE, core: { ...PROFILE.core, dir: "law/" } });
+  assert.match(results[0].problems.join("\n"), /core\.dir/);
+  // Left with core.files but no core.dir, the check would look for LAW.md at the root and count law/ as current.
+  assert.deepEqual(results.filter((r) => r.name !== results[0].name && (r.problems.length || r.errors.length)).map((r) => r.name), []);
+  assert.equal(usableProfile({ evolutionary: { phrases: ["used to"], exempt: [""] } }).evolutionary, undefined);
+});
+
+test("a project's own x- values are passed on unchanged, even ones that cannot be copied", () => {
+  const helper = () => true;
+  assert.equal(usableProfile({ "x-helper": helper })["x-helper"], helper);
+});
+
+test("garden lists no stage card when the card names a folder", () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-gardencard-"));
+  try {
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), text); }
+    assert.equal(gardenManifest(root, { ...PROFILE, card: { file: "docs", maxLines: 10 } }).stageCard, null);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a symbolic link to a folder inside the repository is treated as that folder, for anchors and for code pins", async () => {
+  const results = await runFixture(({ root, put, add }) => {
+    put("docs/sub/README.md", "# Sub\n\n## Here\n");
+    symlinkSync(join(root, "docs/sub"), join(root, "docs/alias"));
+    add("docs/index.md", "\n[s](sub#here) [a](alias#missing)\n\n<!-- pin: docs/alias -->\n");
+  });
+  assert.deepEqual(results.filter((r) => r.errors.length).map((r) => r.name), []);
+  assert.ok(results.find((r) => r.name.startsWith("links and anchors")).problems.some((one) => /alias#missing names a heading/.test(one)));
+  assert.ok(results.find((r) => r.name.startsWith("code pins")).problems.some((one) => /docs\/alias/.test(one)));
+});
+
+test("a sparse array in the profile is not valid", () => {
+  assert.equal(usableProfile({ budgets: [{ files: new Array(1), maxLines: 1 }] }).budgets.length, 0);
+});
+
+test("withoutNulls keeps a project's own x- data as it is", () => {
+  assert.deepEqual(withoutNulls({ a: null, b: { c: null }, "x-own": { d: null }, "x-none": null }), { b: {}, "x-own": { d: null }, "x-none": null });
+});
+
+test("a code pin through a symbolic link out of the repository is not read (A2, A4)", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-pinout-"));
+  try {
+    writeFileSync(join(outside, "secret.txt"), "one\ntwo\n");
+    const results = await runFixture(({ root, add }) => {
+      symlinkSync(join(outside, "secret.txt"), join(root, "docs/secret.txt"));
+      add("docs/design.md", "\n<!-- pin: docs/secret.txt#L1-L2 -->\n");
+    });
+    const pins = results.find((r) => r.name.startsWith("code pins")).problems;
+    assert.ok(pins.some((one) => /leads outside the repository/.test(one)), pins.join("\n"));
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("scoped pin --write reports only its scope, and writes nothing if part of the scope matches no pin", () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-scope-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(at(file)), { recursive: true }); writeFileSync(at(file), text); }
+    writeFileSync(at("docs/other.md"), "# Other\n\n<!-- pin: weather/gone.py#L1@000000000000 -->\n");
+    writeFileSync(at("docs/stale.md"), "# Stale\n\n<!-- pin: weather/cli.py#L2-L3@000000000000 -->\n");
+    const scoped = syncPins(project(root, PROFILE), { write: true, files: ["/docs/stale.md"] });
+    writeFileSync(at("docs/stale.md"), "# Stale\n\n<!-- pin: weather/cli.py#L2-L3@000000000000 -->\n");
+    const onMachine = syncPins(project(root, PROFILE), { write: true, files: [at("docs/stale.md")] });
+    assert.deepEqual(onMachine.map((one) => [one.file, one.status, one.written]), [["docs/stale.md", "updated", true]]);
+    assert.deepEqual(scoped.map((one) => [one.file, one.status, one.written]), [["docs/stale.md", "updated", true]]);
+    writeFileSync(at("docs/stale.md"), "# Stale\n\n<!-- pin: weather/cli.py#L2-L3@000000000000 -->\n");
+    const typo = syncPins(project(root, PROFILE), { write: true, files: ["docs/stale.md", "docs/typo.md"] });
+    assert.deepEqual(typo.map((one) => one.status), ["no-match"]);
+    assert.match(readFileSync(at("docs/stale.md"), "utf8"), /@000000000000/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a check that throws something other than an Error is still reported, and the next check runs", async () => {
+  const results = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"first\", axioms: \"A6\", run: () => { throw null; } }, { name: \"second\", axioms: \"A6\", run: () => [] }];\n"), { ...PROFILE, projectChecks: "own.mjs" });
+  assert.deepEqual(results.find((r) => r.name === "first").errors, ["null"]);
+  const bare = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"first\", axioms: \"A6\", run: () => { throw Object.create(null); } }, { name: \"second\", axioms: \"A6\", run: () => [] }];\n"), { ...PROFILE, projectChecks: "own.mjs" });
+  assert.equal(bare.find((r) => r.name === "first").errors.length, 1);
+  assert.deepEqual(bare.find((r) => r.name === "second").errors, []);
+  assert.deepEqual(results.find((r) => r.name === "second").errors, []);
 });
 
 test("history gate says when its base is missing instead of comparing silently against HEAD (A6)", async () => {
@@ -284,12 +636,12 @@ test("history gate says when its base is missing instead of comparing silently a
   const missing = history(await runFixture(() => {}, { ...PROFILE, history: { ...PROFILE.history, base: "origin/missing" } }));
   assert.deepEqual(missing.problems, []);
   assert.equal(missing.notes.length, 1);
-  assert.match(missing.notes[0], /base "origin\/missing" not found/);
+  assert.match(missing.notes[0], /base "origin\/missing" was not found/);
   const changed = history(await runFixture(({ swap }) => swap("docs/old/first.md", "Old text,", "New text,"), { ...PROFILE, history: { ...PROFILE.history, base: "origin/missing" } }));
   assert.equal(changed.problems.length, 1);
   assert.equal(changed.notes.length, 1);
   const unset = history(await runFixture(() => {}, { ...PROFILE, history: { ...PROFILE.history, base: null } }));
-  assert.match(unset.notes[0], /base "origin\/main" not found/);
+  assert.match(unset.notes[0], /base "origin\/main" was not found/);
 });
 
 test("history gate says when there is no commit to compare with", async () => {

@@ -1,6 +1,6 @@
 # Decisions
 
-<a id="the-owners-words"></a>What the owner decided about docaxioms. Each row states the decision in summary; the owner's words are not published and are kept where each was decided (AD-6). The exception is a decision that changes `core/AXIOMS.lock.md`: its row quotes the owner's word, as that file requires.
+<a id="the-owners-words"></a>What the owner decided about docaxioms. Each row states the decision in summary; the owner's words are not published and are kept where each was decided. The exception is a decision that changes `core/AXIOMS.lock.md`: its row quotes the owner's word, as that file requires (AD-6).
 
 | Id | What was asked | What was decided | Status | Landing |
 |---|---|---|---|---|

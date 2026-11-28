@@ -7,8 +7,8 @@ import { parsePinComment } from "./pins.mjs";
 
 export function gardenManifest(root, profile) {
   const p = project(resolve(root), profile);
-  const docs = descriptionDocs(p, profile.garden?.exempt ?? []);
-  const mappings = profile.codeToDocs ?? [];
+  const docs = descriptionDocs(p, p.profile.garden?.exempt ?? []);
+  const mappings = p.profile.codeToDocs ?? [];
 
   const items = docs.map((file) => {
     const text = p.read(file);
@@ -26,10 +26,10 @@ export function gardenManifest(root, profile) {
     };
   });
 
-  const coreDir = profile.core?.dir;
-  const guidePath = coreDir && p.has(`${coreDir}/GARDEN.md`) ? `${coreDir}/GARDEN.md` : null;
-  const cardFile = profile.card?.file;
-  const stageCard = cardFile && p.has(cardFile)
+  const coreDir = p.profile.core?.dir;
+  const guidePath = coreDir && p.isFile(`${coreDir}/GARDEN.md`) ? `${coreDir}/GARDEN.md` : null;
+  const cardFile = p.profile.card?.file;
+  const stageCard = cardFile && p.isFile(cardFile)
     ? {
       file: cardFile,
       lines: p.read(cardFile).trimEnd().split("\n").length,
@@ -41,7 +41,7 @@ export function gardenManifest(root, profile) {
     root: p.root,
     guidePath,
     descriptions: items,
-    decisionsFile: profile.decisions?.file ?? null,
+    decisionsFile: p.profile.decisions?.file ?? null,
     stageCard,
   };
 }

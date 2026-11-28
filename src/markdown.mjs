@@ -1,6 +1,8 @@
 // Markdown parsing built on remark (CommonMark + GFM) and github-slugger.
 // Replaces regex-based Markdown scanning while preserving exact source offsets and line ranges.
 import GithubSlugger from "github-slugger";
+import { parse, postprocess, preprocess } from "micromark";
+import { gfm } from "micromark-extension-gfm";
 import { toString } from "mdast-util-to-string";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
@@ -169,6 +171,38 @@ export function parseMarkdown(text) {
     withoutCode,
     proseSegments,
   };
+}
+
+// The parser tokens that hold a link target: the destination of an inline link or a definition (with its `<...>`, if
+// any), and the address inside an autolink `<...>`. A bare address is visible prose, so it is not a target here.
+const DESTINATIONS = new Set(["resourceDestination", "definitionDestination"]);
+const AUTOLINKS = new Set(["autolinkProtocol", "autolinkEmail"]);
+
+/**
+ * `text` with the target of every link, image and link definition removed. Everything else stays: link text,
+ * titles, code and prose. Comparing two such texts therefore shows whether anything other than link targets changed.
+ * The positions come from the parser's own tokens. An autolink inside an image's text is part of its alternative
+ * text, so it stays too.
+ */
+export function withoutLinkTargets(text) {
+  const events = postprocess(parse({ extensions: [gfm()] }).document().write(preprocess()(text, undefined, true)));
+  const entered = events.filter(([kind]) => kind === "enter").map(([, token]) => token);
+  const imageLabels = entered
+    .filter((token, index) => token.type === "label" && entered[index - 1]?.type === "image")
+    .map((token) => [token.start.offset, token.end.offset]);
+  const inImageLabel = (token) => imageLabels.some(([start, end]) => token.start.offset >= start && token.end.offset <= end);
+  const ranges = entered
+    .filter((token) => DESTINATIONS.has(token.type) || (AUTOLINKS.has(token.type) && !inImageLabel(token)))
+    .map((token) => [token.start.offset, token.end.offset])
+    .sort((a, b) => a[0] - b[0]);
+  let out = "";
+  let cursor = 0;
+  for (const [start, end] of ranges) {
+    if (start < cursor) continue;
+    out += text.slice(cursor, start);
+    cursor = end;
+  }
+  return out + text.slice(cursor);
 }
 
 /** Blank ONLY fenced code blocks (``` / ~~~) from arbitrary text while preserving line numbers and indented code. */
