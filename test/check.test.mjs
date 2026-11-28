@@ -10,7 +10,7 @@ import test from "node:test";
 import { check, project, withoutFences } from "../src/check.mjs";
 import { gardenManifest } from "../src/garden.mjs";
 import { hashSourceSlice, syncPins } from "../src/pins.mjs";
-import { withoutNulls } from "../src/profile.mjs";
+import { usableProfile, withoutNulls } from "../src/profile.mjs";
 
 const CLI_PY = "# ADR-2: the cache is kept on disk (design 1.1)\ndef ttl():\n    return 3600\n";
 const CLI_PIN = hashSourceSlice(CLI_PY, 2, 3).short;
@@ -198,6 +198,7 @@ FAULTS.push(
   ["the profile", () => {}, { ...PROFILE, garden: { exempt: [""] } }],
   ["the profile", () => {}, { ...PROFILE, ignore: ["docs/"] }],
   ["the profile", () => {}, { ...PROFILE, ".oops": 1, "": 2 }],
+  ["the profile", () => {}, { ...PROFILE, gonePaths: ["./weather/legacy/"] }],
   ["a history file", ({ swap }) => swap("docs/old/alt.md", "(OLD)", "(NEW)")],
   ["a history file", ({ swap }) => swap("docs/old/span.md", "(OLD)", "(NEW)")],
   ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, banner: "" } }],
@@ -541,6 +542,42 @@ test("pin --write with a scope does not open other documents, and takes a full p
     assert.deepEqual(changes.map((one) => [one.file, one.status]), [["docs/..notes.md", "updated"]]);
     chmodSync(at("docs/locked.md"), 0o644);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a wrong setting that bounds its object leaves out the object, not just the bound", async () => {
+  const results = await runFixture(() => {}, { ...PROFILE, core: { ...PROFILE.core, dir: "law/" } });
+  assert.match(results[0].problems.join("\n"), /core\.dir/);
+  // Left with core.files but no core.dir, the check would look for LAW.md at the root and count law/ as current.
+  assert.deepEqual(results.filter((r) => r.name !== results[0].name && (r.problems.length || r.errors.length)).map((r) => r.name), []);
+  assert.equal(usableProfile({ evolutionary: { phrases: ["used to"], exempt: [""] } }).evolutionary, undefined);
+});
+
+test("a project's own x- values are passed on as they are, even ones that cannot be copied", () => {
+  const helper = () => true;
+  assert.equal(usableProfile({ "x-helper": helper })["x-helper"], helper);
+});
+
+test("garden lists no stage card when the card names a folder", () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-gardencard-"));
+  try {
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), text); }
+    assert.equal(gardenManifest(root, { ...PROFILE, card: { file: "docs", maxLines: 10 } }).stageCard, null);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a link inside the repository to a folder is that folder: its anchors are its README's, and a pin on it is an error", async () => {
+  const results = await runFixture(({ root, put, add }) => {
+    put("docs/sub/README.md", "# Sub\n\n## Here\n");
+    symlinkSync(join(root, "docs/sub"), join(root, "docs/alias"));
+    add("docs/index.md", "\n[s](sub#here) [a](alias#missing)\n\n<!-- pin: docs/alias -->\n");
+  });
+  assert.deepEqual(results.filter((r) => r.errors.length).map((r) => r.name), []);
+  assert.ok(results.find((r) => r.name.startsWith("links and anchors")).problems.some((one) => /alias#missing names a heading/.test(one)));
+  assert.ok(results.find((r) => r.name.startsWith("code pins")).problems.some((one) => /docs\/alias/.test(one)));
+});
+
+test("a list with a hole in the profile is not valid", () => {
+  assert.equal(usableProfile({ budgets: [{ files: new Array(1), maxLines: 1 }] }).budgets.length, 0);
 });
 
 test("withoutNulls keeps a project's own x- data as it is", () => {

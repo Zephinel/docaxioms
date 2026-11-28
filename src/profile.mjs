@@ -4,7 +4,8 @@
 
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const isString = (value) => typeof value === "string";
-const isStrings = (value) => Array.isArray(value) && value.every(isString);
+// `Array.from` reads a hole in a list as a member that is not there, which no kind accepts.
+const isStrings = (value) => Array.isArray(value) && Array.from(value).every(isString);
 const isRegex = (value) => {
   if (!isString(value)) return false;
   try { new RegExp(value); return true; } catch { return false; }
@@ -20,40 +21,44 @@ const PATH = "from the repository root, such as docs/old: no empty, . or .. part
 const KINDS = {
   string: [isString, "a string"],
   text: [isText, "a string that is not empty"],
-  texts: [(value) => Array.isArray(value) && value.every(isText), "a list of strings that are not empty"],
+  texts: [(value) => Array.isArray(value) && Array.from(value).every(isText), "a list of strings that are not empty"],
   dir: [isPath, `a folder ${PATH}`],
   file: [isPath, `a file ${PATH}`],
-  files: [(value) => Array.isArray(value) && value.every(isPath), `a list of files ${PATH}`],
+  files: [(value) => Array.isArray(value) && Array.from(value).every(isPath), `a list of files ${PATH}`],
+  // A folder may be named with a trailing `/`, as gone paths are.
+  folders: [(value) => Array.isArray(value) && Array.from(value).every((one) => isString(one) && isPath(one.replace(/\/$/, ""))), `a list of paths ${PATH} but an optional trailing /`],
   strings: [isStrings, "a list of strings"],
-  globs: [(value) => isText(value) || (Array.isArray(value) && value.every(isText)), "a pattern or a list of patterns, none empty"],
-  patterns: [(value) => isText(value) || (Array.isArray(value) && value.length > 0 && value.every(isText)), "a pattern or a list of patterns, at least one and none empty"],
+  globs: [(value) => isText(value) || (Array.isArray(value) && Array.from(value).every(isText)), "a pattern or a list of patterns, none empty"],
+  patterns: [(value) => isText(value) || (Array.isArray(value) && value.length > 0 && Array.from(value).every(isText)), "a pattern or a list of patterns, at least one and none empty"],
   regex: [isRegex, "a valid regular expression"],
   count: [(value) => Number.isInteger(value) && value > 0, "a whole number above 0"],
   hashes: [(value) => isObject(value) && Object.entries(value).every(([file, hash]) => isPath(file) && isString(hash) && /^[0-9a-f]{64}$/.test(hash)), `an object of files ${PATH}, to SHA-256 hashes`],
   headings: [(value) => isObject(value) && Object.values(value).every(isText), "an object of section numbers to headings"],
 };
 
-// A field ending in `!` is required where its object is given. An array of one shape is a list of such objects.
+// A field ending in `!` is required where its object is given. One ending in `^` is optional, but bounds what the rest of
+// its object means (the folder of the core, what is exempt), so a wrong value leaves the whole object unusable rather
+// than widening it. An array of one shape is a list of such objects.
 const SCHEMA = {
-  core: { dir: "dir", source: "string", version: "string", commit: "string", files: "hashes" },
+  core: { dir: "dir^", source: "string", version: "string", commit: "string", files: "hashes" },
   entries: "files",
   reachable: "regex",
   codeExtensions: "texts",
   ignore: "files",
-  decisions: { file: "file!", id: "text!", landedSection: "text", citeExempt: "regex" },
+  decisions: { file: "file!", id: "text!", landedSection: "text^", citeExempt: "regex^" },
   log: "globs",
   sections: [{ cite: "regex!", files: "regex!", document: "file!", rowTables: "headings" }],
   pathPrefixes: "texts",
   pathExempt: "regex",
-  gonePaths: "texts",
+  gonePaths: "folders",
   codeDocExempt: "regex",
   commands: [{ prefix: "text!", jsonFile: "file", key: "string", makefile: "file", list: "texts", exempt: "globs" }],
-  research: { dir: "dir!", items: "file!", openUntil: "text" },
+  research: { dir: "dir!", items: "file!", openUntil: "text^" },
   history: { dir: "dir!", banner: "text!", erratum: "text!", base: "text" },
   card: { file: "file!", maxLines: "count", maxChars: "count" },
   budgets: [{ files: "patterns!", maxLines: "count", maxChars: "count", exempt: "globs" }],
   codeToDocs: [{ code: "patterns!", docs: "patterns!", base: "text" }],
-  evolutionary: { phrases: "texts", exempt: "globs" },
+  evolutionary: { phrases: "texts", exempt: "globs^" },
   garden: { exempt: "globs" },
   projectChecks: "file",
 };
@@ -77,7 +82,7 @@ function validate(value, shape, path, problems) {
     }
     for (const [key, field] of Object.entries(shape)) {
       const at = [...path, key];
-      const kind = isString(field) ? field.replace(/!$/, "") : field;
+      const kind = isString(field) ? field.replace(/[!^]$/, "") : field;
       // JSON null leaves an optional key unset.
       if (value[key] === undefined || value[key] === null) {
         if (isString(field) && field.endsWith("!")) problems.push({ path: at, drop: path, text: `${named(at)} is required` });
@@ -86,7 +91,7 @@ function validate(value, shape, path, problems) {
       if (isString(kind)) {
         const [test, what] = KINDS[kind];
         // A required value that is wrong leaves its object unusable, as a missing one does.
-        if (!test(value[key])) problems.push({ path: at, drop: field.endsWith("!") ? path : at, text: `${named(at)} must be ${what}` });
+        if (!test(value[key])) problems.push({ path: at, drop: /[!^]$/.test(field) ? path : at, text: `${named(at)} must be ${what}` });
       } else {
         validate(value[key], kind, at, problems);
       }
@@ -118,7 +123,9 @@ export function profileProblems(profile) {
  */
 export function usableProfile(profile) {
   if (!isObject(profile)) return undefined;
-  const usable = structuredClone(withoutNulls(profile));
+  // A project's own `x-` values are its own, kept as they are and not copied.
+  const own = Object.entries(profile).filter(([key]) => key.startsWith("x-"));
+  const usable = structuredClone(withoutNulls(Object.fromEntries(Object.entries(profile).filter(([key]) => !key.startsWith("x-")))));
   const drops = problemsOf(profile).map(({ drop }) => {
     const item = drop.findIndex((key) => typeof key === "number");
     return item === -1 ? drop : drop.slice(0, item + 1);
@@ -137,7 +144,7 @@ export function usableProfile(profile) {
     if (isObject(node)) return Object.fromEntries(Object.entries(node).map(([key, one]) => [key, sweep(one)]));
     return node;
   };
-  return sweep(usable);
+  return { ...sweep(usable), ...Object.fromEntries(own) };
 }
 
 function problemsOf(profile) {

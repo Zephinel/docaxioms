@@ -113,6 +113,8 @@ export function project(root, given) {
   const has = (file) => inside(file) && existsSync(at(file));
   // A file the profile or a link names must be a file, not a folder.
   const isFile = (file) => has(file) && statSync(at(file)).isFile();
+  // A folder, or a link inside the repository to one.
+  const isFolder = (file) => has(file) && statSync(at(file)).isDirectory();
   const markdown = (file) => {
     if (!mdCache.has(file)) mdCache.set(file, parseMarkdown(read(file)));
     return mdCache.get(file);
@@ -171,6 +173,7 @@ export function project(root, given) {
     read,
     has,
     isFile,
+    isFolder,
     all,
     inHistory,
     inCore,
@@ -351,7 +354,7 @@ const CHECKS = [
       if (!p.has(path)) return [`${file}: ${target} leads nowhere`];
       if (!anchor) return [];
       // A folder's headings are those of its README.
-      const doc = lstatSync(p.at(path)).isDirectory() ? readmeOf(path) : path;
+      const doc = p.isFolder(path) ? readmeOf(path) : path;
       if (!doc.endsWith(".md")) return [];
       return p.isFile(doc) && p.passage(doc, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
     })),
@@ -544,7 +547,7 @@ const CHECKS = [
       while (queue.length) {
         for (const { path, outside } of p.links(queue.pop())) {
           if (outside) continue;
-          const next = p.has(path) && lstatSync(p.at(path)).isDirectory() ? readmeOf(path) : path;
+          const next = p.isFolder(path) ? readmeOf(path) : path;
           if (next.endsWith(".md") && p.isFile(next) && !p.inHistory(next) && !seen.has(next)) {
             seen.add(next);
             queue.push(next);
@@ -579,7 +582,7 @@ const CHECKS = [
             const { path: file, anchor, outside } = where;
             if (outside) { problems.push(`${name}: ${target} leads outside the repository`); continue; }
             if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }
-            if (!file.endsWith(".md") || lstatSync(p.at(file)).isDirectory()) { problems.push(`${name}: ${target} is not a document`); continue; }
+            if (!file.endsWith(".md") || !p.isFile(file)) { problems.push(`${name}: ${target} is not a document`); continue; }
             const text = anchor ? p.passage(file, anchor) : p.read(file);
             if (text === undefined) problems.push(`${name}: ${target} names a heading that is not there`);
             else if (!new RegExp(`\\b${escape(name)}\\b`).test(text)) problems.push(`${name}: ${target} does not name ${name}`);

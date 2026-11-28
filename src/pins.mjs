@@ -11,7 +11,7 @@
 // unrelated identical lines elsewhere. When a unique identical-hash window exists elsewhere in the file, the gate
 // reports the shift and `pin --relocate` updates only the line numbers without altering the hash.
 import { createHash } from "node:crypto";
-import { lstatSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 
 // Match `pin:` (any attempt with a colon) or `pin <path-like>` (missing colon before a path/file token),
@@ -133,7 +133,7 @@ export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
         records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} does not exist` });
         continue;
       }
-      if (lstatSync(p.at(resolved.path)).isDirectory()) {
+      if (!p.isFile(resolved.path)) {
         records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} is a folder, not a file` });
         continue;
       }

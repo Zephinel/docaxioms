@@ -27,9 +27,9 @@ export function gardenManifest(root, profile) {
   });
 
   const coreDir = p.profile.core?.dir;
-  const guidePath = coreDir && p.has(`${coreDir}/GARDEN.md`) ? `${coreDir}/GARDEN.md` : null;
+  const guidePath = coreDir && p.isFile(`${coreDir}/GARDEN.md`) ? `${coreDir}/GARDEN.md` : null;
   const cardFile = p.profile.card?.file;
-  const stageCard = cardFile && p.has(cardFile)
+  const stageCard = cardFile && p.isFile(cardFile)
     ? {
       file: cardFile,
       lines: p.read(cardFile).trimEnd().split("\n").length,
