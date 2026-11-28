@@ -1,0 +1,131 @@
+[
+  {
+    "id": "docaxioms@0.1.0-alpha.0",
+    "name": "docaxioms",
+    "version": "0.1.0-alpha.0",
+    "size": 28511,
+    "unpackedSize": 89897,
+    "shasum": "ad22c9cc2e5a29fc8c01d1abb2b9272cadb1461e",
+    "integrity": "sha512-ZYptpQGYbriTHK/UDA83Qd+OdXJGNTW/XvD7mvXtqyW85VK6CDXYhfyFSmtx5+hqZzV//UnojPfj3t5jDI7NRg==",
+    "filename": "docaxioms-0.1.0-alpha.0.tgz",
+    "files": [
+      {
+        "path": "LICENSE",
+        "size": 1065,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 6971,
+        "mode": 420
+      },
+      {
+        "path": "bin/docaxioms.mjs",
+        "size": 8091,
+        "mode": 493
+      },
+      {
+        "path": "core/AXIOMS.lock.md",
+        "size": 3460,
+        "mode": 420
+      },
+      {
+        "path": "core/GARDEN.md",
+        "size": 2346,
+        "mode": 420
+      },
+      {
+        "path": "core/GUIDE.md",
+        "size": 7091,
+        "mode": 420
+      },
+      {
+        "path": "core/LICENSE",
+        "size": 1065,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 1027,
+        "mode": 420
+      },
+      {
+        "path": "src/check.mjs",
+        "size": 28036,
+        "mode": 420
+      },
+      {
+        "path": "src/garden.mjs",
+        "size": 1687,
+        "mode": 420
+      },
+      {
+        "path": "src/index.mjs",
+        "size": 414,
+        "mode": 420
+      },
+      {
+        "path": "src/manage.mjs",
+        "size": 6106,
+        "mode": 420
+      },
+      {
+        "path": "src/markdown.mjs",
+        "size": 7289,
+        "mode": 420
+      },
+      {
+        "path": "src/pins.mjs",
+        "size": 12983,
+        "mode": 420
+      },
+      {
+        "path": "templates/AGENTS.md",
+        "size": 552,
+        "mode": 420
+      },
+      {
+        "path": "templates/CLAUDE.md",
+        "size": 11,
+        "mode": 420
+      },
+      {
+        "path": "templates/CURRENT.md",
+        "size": 224,
+        "mode": 420
+      },
+      {
+        "path": "templates/docaxioms.json",
+        "size": 605,
+        "mode": 420
+      },
+      {
+        "path": "templates/docs/decisions.md",
+        "size": 200,
+        "mode": 420
+      },
+      {
+        "path": "templates/docs/history/README.md",
+        "size": 237,
+        "mode": 420
+      },
+      {
+        "path": "templates/docs/log.md",
+        "size": 101,
+        "mode": 420
+      },
+      {
+        "path": "templates/docs/plan.md",
+        "size": 71,
+        "mode": 420
+      },
+      {
+        "path": "templates/docs/README.md",
+        "size": 265,
+        "mode": 420
+      }
+    ],
+    "entryCount": 23,
+    "bundled": []
+  }
+]

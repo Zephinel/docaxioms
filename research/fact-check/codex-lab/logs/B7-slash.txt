@@ -1,0 +1,4 @@
+### CASE B7-slash
+init return: ["GENTS.md","LAUDE.md","URRENT.md","ocs/README.md","ocs/decisions.md","ocs/history/README.md","ocs/log.md","ocs/plan.md"]
+AGENTS.md exists: true
+GENTS.md exists: false

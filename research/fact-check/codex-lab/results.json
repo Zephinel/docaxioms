@@ -1,0 +1,999 @@
+[
+  {
+    "case": "B1-plan",
+    "root": "<lab>/cases/B1-plan-GD1GnJ",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B1-plan-GD1GnJ"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nFAIL paths named in current documents exist (A2, A7): 1\n       docs/plan.md: `docs/api.md`\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B1-log",
+    "root": "<lab>/cases/B1-log-PKbMzu",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B1-log-PKbMzu"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nFAIL paths named in current documents exist (A2, A7): 1\n       docs/log.md: `docs/old.md`\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B1-decisions",
+    "root": "<lab>/cases/B1-decisions-JDeE6j",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B1-decisions-JDeE6j"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nFAIL paths named in current documents exist (A2, A7): 1\n       docs/decisions.md: `docs/old.md`\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B1-research",
+    "root": "<lab>/cases/B1-research-HfjNEB",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B1-research-HfjNEB"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nFAIL paths named in current documents exist (A2, A7): 1\n       docs/research/a.md: `docs/external.md`\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B2-title",
+    "root": "<lab>/cases/B2-title-MpuRqf",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B2-title-MpuRqf"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nok   a history file changes only in link targets, or grows by a dated erratum (A5)\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B2-outside-link",
+    "root": "<lab>/cases/B2-outside-link-4HpZAY",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B2-outside-link-4HpZAY"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nFAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1\n       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B2-reference",
+    "root": "<lab>/cases/B2-reference-rtE29p",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B2-reference-rtE29p"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nFAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1\n       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B2-balanced",
+    "root": "<lab>/cases/B2-balanced-1YdkSi",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B2-balanced-1YdkSi"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nFAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1\n       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B2-link-valid",
+    "root": "<lab>/cases/B2-link-valid-FwkTZ3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B2-link-valid-FwkTZ3"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nok   a history file changes only in link targets, or grows by a dated erratum (A5)\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B3-doc",
+    "root": "<lab>/cases/B3-doc-wHfs4r",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B3-doc-wHfs4r"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nFAIL decision numbers are unique and every one cited exists (A4): 3\n       README.md: D1\n       README.md: D2\n       README.md: D3\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B3-code",
+    "root": "<lab>/cases/B3-code-EHNsf3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B3-code-EHNsf3"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nFAIL decision numbers are unique and every one cited exists (A4): 2\n       src/a.mjs: D0\n       src/a.mjs: D9999\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B3-boundary",
+    "root": "<lab>/cases/B3-boundary-aFDKCN",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B3-boundary-aFDKCN"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B4-crlf",
+    "root": "<lab>/cases",
+    "command": "git",
+    "args": [
+      "clone",
+      "-c",
+      "core.autocrlf=true",
+      "--no-local",
+      "<lab>/cases/B4-crlf-a7xcxD",
+      "<lab>/cases/B4-crlf-clone-1795596675127"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": "Cloning into '<lab>/cases/B4-crlf-clone-1795596675127'...\n"
+  },
+  {
+    "case": "B4-crlf",
+    "root": "<lab>/cases/B4-crlf-clone-1795596675127",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B4-crlf-clone-1795596675127"
+    ],
+    "exit": 1,
+    "stdout": "FAIL core files are the pinned version (A4, A6): 4\n       docaxioms/AXIOMS.lock.md: not the pinned version (it comes from docaxioms; change it there, then update)\n       docaxioms/GARDEN.md: not the pinned version (it comes from docaxioms; change it there, then update)\n       docaxioms/GUIDE.md: not the pinned version (it comes from docaxioms; change it there, then update)\n       docaxioms/LICENSE: not the pinned version (it comes from docaxioms; change it there, then update)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nok   a history file changes only in link targets, or grows by a dated erratum (A5)\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B4-crlf",
+    "root": "<lab>/cases/B4-crlf-clone-1795596675127",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "update",
+      "<lab>/cases/B4-crlf-clone-1795596675127"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "docaxioms/AXIOMS.lock.md was changed in the project: take that change to docaxioms first\n"
+  },
+  {
+    "case": "B4-crlf",
+    "root": "<lab>/cases/B4-crlf-clone-1795596675127",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B4-crlf-clone-1795596675127"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nFAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1\n       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B4-lf-control",
+    "root": "<lab>/cases/B4-lf-control-rahhlY",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B4-lf-control-rahhlY"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nok   a history file changes only in link targets, or grows by a dated erratum (A5)\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B5-overlap",
+    "root": "<lab>/cases/B5-overlap-16BeFR",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B5-overlap-16BeFR"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B5-plain",
+    "root": "<lab>/cases/B5-plain-uPVDCx",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B5-plain-uPVDCx"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B5-inline-control",
+    "root": "<lab>/cases/B5-inline-control-YSVxws",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B5-inline-control-YSVxws"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nFAIL open research is linked from an open item; history carries its banner (A3, A5): 1\n       docs/research/a.md: no open item links to it\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B6-code",
+    "root": "<lab>/cases/B6-code-RZoY1f",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B6-code-RZoY1f"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B6-dir",
+    "root": "<lab>/cases/B6-dir-q1dnNG",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B6-dir-q1dnNG"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B6-md-control",
+    "root": "<lab>/cases/B6-md-control-MqZVeH",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B6-md-control-MqZVeH"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nFAIL a decision names where it landed, and that passage names it (A0, A4): 1\n       D1: ../README.md does not name D1\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B6-root",
+    "root": "<lab>/cases/B6-root-pTj2Dt",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B6-root-pTj2Dt"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nFAIL links and anchors resolve (A2, A4): 1\n       docs/index.md: /docs/design.md leads nowhere\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B6-query",
+    "root": "<lab>/cases/B6-query-Ei8sTD",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B6-query-Ei8sTD"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nFAIL links and anchors resolve (A2, A4): 1\n       README.md: docs/design.md?plain=1 leads nowhere\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "B7-empty",
+    "root": "<lab>/cases/B7-empty-P07yJ6",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "garden",
+      "--root",
+      "<lab>/cases/B7-empty-P07yJ6",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"root\": \"<lab>/cases/B7-empty-P07yJ6\",\n  \"guidePath\": \"docaxioms/GARDEN.md\",\n  \"descriptions\": [\n    {\n      \"file\": \"AGENTS.md\",\n      \"lines\": 11,\n      \"chars\": 552,\n      \"pins\": 0,\n      \"mappedCode\": []\n    },\n    {\n      \"file\": \"README.md\",\n      \"lines\": 1,\n      \"chars\": 0,\n      \"pins\": 0,\n      \"mappedCode\": []\n    },\n    {\n      \"file\": \"docs/README.md\",\n      \"lines\": 6,\n      \"chars\": 265,\n      \"pins\": 0,\n      \"mappedCode\": []\n    }\n  ],\n  \"decisionsFile\": \"docs/decisions.md\",\n  \"stageCard\": {\n    \"file\": \"CURRENT.md\",\n    \"lines\": 1,\n    \"chars\": 0\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "case": "B7-empty",
+    "root": "<lab>/cases/B7-empty-P07yJ6",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/B7-empty-P07yJ6"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nFAIL the stage card stays a card (A3): 1\n       CURRENT.md: 1 lines, at most 0.5\nFAIL bounded documents stay within budget (A3, M4): 1\n       README.md: 1 lines, at most 0.5\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-notes",
+    "root": "<lab>/cases/A-notes-CrULqK",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-notes-CrULqK"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-notes",
+    "root": "<lab>/cases/A-notes-CrULqK",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-notes-CrULqK",
+      "--strict-aids"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-notes",
+    "root": "<lab>/cases/A-notes-CrULqK",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-notes-CrULqK",
+      "--strict-aids"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: base \"origin/main\" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-shallow",
+    "root": "<lab>/cases/A-shallow-arkt19",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-shallow-arkt19",
+      "--strict-aids"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nFAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1\n       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end\naid  code changes with mapped documents untouched (A2, A6, M2): 1\n       README.md: review after code change in src/a.mjs\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-shallow",
+    "root": "<lab>/cases",
+    "command": "git",
+    "args": [
+      "clone",
+      "--depth",
+      "1",
+      "--branch",
+      "feature",
+      "file://<lab>/cases/A-shallow-arkt19",
+      "<lab>/cases/A-shallow-clone-1795596679291"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": "Cloning into '<lab>/cases/A-shallow-clone-1795596679291'...\n"
+  },
+  {
+    "case": "A-shallow",
+    "root": "<lab>/cases/A-shallow-clone-1795596679291",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-shallow-clone-1795596679291",
+      "--strict-aids"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: base \"origin/main\" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)\nnote code changes with mapped documents untouched (A2, A6, M2)\n       note: base \"origin/main\" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-shallow",
+    "root": "<lab>/cases/A-shallow-clone-1795596679291",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-shallow-clone-1795596679291",
+      "--strict-aids"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nFAIL a history file changes only in link targets, or grows by a dated erratum (A5): 1\n       docs/history/old.md: changed other than in a link target, or grew other than by a dated erratum at its end\n       note: base \"origin/main\" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)\nnote code changes with mapped documents untouched (A2, A6, M2)\n       note: base \"origin/main\" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-codeExtensions",
+    "root": "<lab>/cases/A-codeExtensions-xpYdpj",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-codeExtensions-xpYdpj"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-codeExtensions",
+    "root": "<lab>/cases/A-codeExtensions-xpYdpj",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-codeExtensions-xpYdpj"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nFAIL documents named in code exist (A2, A7): 1\n       src/a.mjs: docs/missing.md\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-pin-preview",
+    "root": "<lab>/cases/A-pin-preview-qKBBAb",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "pin",
+      "--root",
+      "<lab>/cases/A-pin-preview-qKBBAb",
+      "--write"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "pin --write requires an explicit scope (--file <doc>, --pin <doc:line>, or --all) so changed pins are only refreshed after review (A7); use --relocate for unchanged line shifts\n"
+  },
+  {
+    "case": "A-pin-preview",
+    "root": "<lab>/cases/A-pin-preview-qKBBAb",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "pin",
+      "--root",
+      "<lab>/cases/A-pin-preview-qKBBAb",
+      "--write",
+      "--all"
+    ],
+    "exit": 0,
+    "stdout": "wrote README.md:3 src/a.txt#L1-L15 (@a5190eb48d9a)\n       1 | line 1\n       2 | line 2\n       3 | line 3\n       4 | line 4\n       5 | line 5\n       6 | line 6\n       7 | line 7\n       8 | line 8\n       9 | line 9\n       10 | line 10\n       11 | line 11\n       12 | line 12\n       ... (+3 more lines)\nwrote README.md:4 src/a.txt (@bf767ef1fad9)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-guards",
+    "root": "<lab>/cases/A-guards-2qy9op",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "init",
+      "<lab>/cases/A-guards-2qy9op"
+    ],
+    "exit": 0,
+    "stdout": "made CLAUDE.md\nmade CURRENT.md\nmade docs/README.md\nmade docs/decisions.md\nmade docs/history/README.md\nmade docs/log.md\nmade docs/plan.md\ndocaxioms/ is pinned to v0.1.0-alpha.0 (8336bed3); run: npx --no-install docaxioms check\nNothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it\nin CI, and optionally run it from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-guards",
+    "root": "<lab>/cases/A-guards-2qy9op",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "init",
+      "<lab>/cases/A-guards-2qy9op"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "the project has a docaxioms.json: use update\n"
+  },
+  {
+    "case": "A-guards",
+    "root": "<lab>/cases/A-guards-folder-1ijIa2",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "init",
+      "<lab>/cases/A-guards-folder-1ijIa2"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "the project has a docaxioms/ folder of its own\n"
+  },
+  {
+    "case": "A-tamper",
+    "root": "<lab>/cases/A-tamper-vMCfnc",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-tamper-vMCfnc"
+    ],
+    "exit": 1,
+    "stdout": "FAIL core files are the pinned version (A4, A6): 1\n       docaxioms/AXIOMS.lock.md: not the pinned version (it comes from docaxioms; change it there, then update)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-tamper",
+    "root": "<lab>/cases/A-tamper-vMCfnc",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-tamper-vMCfnc"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-withdrawn",
+    "root": "<lab>/cases/A-withdrawn-GmSy23",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-withdrawn-GmSy23"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nFAIL a decision names where it landed, and that passage names it (A0, A4): 1\n       D1: no landing passage\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-withdrawn",
+    "root": "<lab>/cases/A-withdrawn-GmSy23",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-withdrawn-GmSy23"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-pin-motion",
+    "root": "<lab>/cases/A-pin-motion-DOyFaa",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-pin-motion-DOyFaa"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nFAIL code pins match the current source (A2, A6, A7): 1\n       README.md:3: src/a.txt#L1-L2 moved to #L2-L3 (identical hash @bbfb79e82216; verify and run pin --relocate)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-pin-motion",
+    "root": "<lab>/cases/A-pin-motion-DOyFaa",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "pin",
+      "--root",
+      "<lab>/cases/A-pin-motion-DOyFaa",
+      "--relocate"
+    ],
+    "exit": 0,
+    "stdout": "moved README.md:3 src/a.txt#L1-L2 -> #L2-L3 (@bbfb79e82216 unchanged)\n       2 | alpha\n       3 | beta\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-pin-motion",
+    "root": "<lab>/cases/A-pin-motion-DOyFaa",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-pin-motion-DOyFaa"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "A-pin-motion",
+    "root": "<lab>/cases/A-pin-motion-DOyFaa",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/A-pin-motion-DOyFaa"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nFAIL code pins match the current source (A2, A6, A7): 1\n       README.md:3: src/a.txt changed (pinned @bbfb79e82216, now @90b48519e2ce)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-json-schema",
+    "root": "<lab>/cases/M-json-schema-AC2WrC",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-json-schema-AC2WrC",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-json-schema",
+    "root": "<lab>/cases/M-json-schema-AC2WrC",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-json-schema-AC2WrC",
+      "--json"
+    ],
+    "exit": 1,
+    "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"README.md:3: `make missing` is not defined\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": [\n      \"no commit to compare with (not a git repository, or no commits yet); nothing was compared\"\n    ]\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-json-schema",
+    "root": "<lab>/cases/M-json-schema-AC2WrC",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "garden",
+      "--root",
+      "<lab>/cases/M-json-schema-AC2WrC",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\n  \"root\": \"<lab>/cases/M-json-schema-AC2WrC\",\n  \"guidePath\": \"docaxioms/GARDEN.md\",\n  \"descriptions\": [\n    {\n      \"file\": \"AGENTS.md\",\n      \"lines\": 11,\n      \"chars\": 552,\n      \"pins\": 0,\n      \"mappedCode\": []\n    },\n    {\n      \"file\": \"README.md\",\n      \"lines\": 3,\n      \"chars\": 28,\n      \"pins\": 0,\n      \"mappedCode\": []\n    },\n    {\n      \"file\": \"docs/README.md\",\n      \"lines\": 6,\n      \"chars\": 265,\n      \"pins\": 0,\n      \"mappedCode\": []\n    }\n  ],\n  \"decisionsFile\": \"docs/decisions.md\",\n  \"stageCard\": {\n    \"file\": \"CURRENT.md\",\n    \"lines\": 15,\n    \"chars\": 224\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-commands-fence",
+    "root": "<lab>/cases/M-commands-fence-XckpfA",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-commands-fence-XckpfA"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-commands-fence",
+    "root": "<lab>/cases/M-commands-fence-XckpfA",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-commands-fence-XckpfA"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nFAIL commands named in current documents exist (A2, A7): 1\n       README.md:7: `make missing` is not defined\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-missing-cli",
+    "root": "<lab>/cases/M-missing-cli-1GlEm3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "demo"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "usage:\n  docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]\n  docaxioms pin    [--root <dir>] [--relocate] [--write (--file <doc> | --pin <doc:line> | --all)]\n  docaxioms garden [--root <dir>] [--json]\n  docaxioms init   <project>\n  docaxioms update <project> [--accept-axioms]\n"
+  },
+  {
+    "case": "M-missing-cli",
+    "root": "<lab>/cases/M-missing-cli-1GlEm3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-missing-cli-1GlEm3",
+      "--changed-only"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Unknown option '--changed-only'\n"
+  },
+  {
+    "case": "M-missing-cli",
+    "root": "<lab>/cases/M-missing-cli-1GlEm3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-missing-cli-1GlEm3",
+      "--format",
+      "sarif"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Unknown option '--format'\n"
+  },
+  {
+    "case": "M-missing-cli",
+    "root": "<lab>/cases/M-missing-cli-1GlEm3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-missing-cli-1GlEm3",
+      "--require-base"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Unknown option '--require-base'\n"
+  },
+  {
+    "case": "M-missing-cli",
+    "root": "<lab>/cases/M-missing-cli-1GlEm3",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "mcp"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "usage:\n  docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]\n  docaxioms pin    [--root <dir>] [--relocate] [--write (--file <doc> | --pin <doc:line> | --all)]\n  docaxioms garden [--root <dir>] [--json]\n  docaxioms init   <project>\n  docaxioms update <project> [--accept-axioms]\n"
+  },
+  {
+    "case": "M-init-detect",
+    "root": "<lab>/cases/M-init-detect-71qHcz",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "init",
+      "<lab>/cases/M-init-detect-71qHcz"
+    ],
+    "exit": 0,
+    "stdout": "made AGENTS.md\nmade CLAUDE.md\nmade CURRENT.md\nmade docs/README.md\nmade docs/decisions.md\nmade docs/history/README.md\nmade docs/log.md\nmade docs/plan.md\ndocaxioms/ is pinned to v0.1.0-alpha.0 (8336bed3); run: npx --no-install docaxioms check\nNothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it\nin CI, and optionally run it from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-init-link",
+    "root": "<lab>/cases/M-init-link-qw5viS",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "init",
+      "<lab>/cases/M-init-link-qw5viS"
+    ],
+    "exit": 0,
+    "stdout": "made AGENTS.md\nmade CLAUDE.md\nmade CURRENT.md\nmade docs/README.md\nmade docs/decisions.md\nmade docs/history/README.md\nmade docs/log.md\nmade docs/plan.md\ndocaxioms/ is pinned to v0.1.0-alpha.0 (8336bed3); run: npx --no-install docaxioms check\nNothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it\nin CI, and optionally run it from a pre-push hook. \"Run the check\" in the docaxioms README says what each holds.\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-init-link",
+    "root": "<lab>/cases/M-init-link-qw5viS",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-init-link-qw5viS"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nFAIL links and anchors resolve (A2, A4): 1\n       README.md: docs/missing.md leads nowhere\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-aid-report",
+    "root": "<lab>/cases/M-aid-report-Zk5SPB",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-aid-report-Zk5SPB"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\naid  current descriptions use evolutionary phrasing (A3, M1, M2): 1\n       README.md:3: contains \"used to\" (state what is now, or mark past behaviour as a record)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-aid-report",
+    "root": "<lab>/cases/M-aid-report-Zk5SPB",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-aid-report-Zk5SPB",
+      "--strict-aids"
+    ],
+    "exit": 1,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\naid  current descriptions use evolutionary phrasing (A3, M1, M2): 1\n       README.md:3: contains \"used to\" (state what is now, or mark past behaviour as a record)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-aid-report",
+    "root": "<lab>/cases/M-aid-report-Zk5SPB",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-aid-report-Zk5SPB",
+      "--strict-aids",
+      "--report"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\naid  current descriptions use evolutionary phrasing (A3, M1, M2): 1\n       README.md:3: contains \"used to\" (state what is now, or mark past behaviour as a record)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-aid-report",
+    "root": "<lab>/cases/M-aid-report-Zk5SPB",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-aid-report-Zk5SPB",
+      "--report"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Expected property name or '}' in JSON at position 1 (line 1 column 2)\n"
+  },
+  {
+    "case": "M-concurrency",
+    "root": "<lab>/cases/M-concurrency-au49i8",
+    "command": "git",
+    "args": [
+      "-C",
+      "<lab>/cases/M-concurrency-au49i8",
+      "-c",
+      "user.name=Lab",
+      "-c",
+      "user.email=lab@example.invalid",
+      "-c",
+      "commit.gpgsign=false",
+      "merge",
+      "--no-edit",
+      "worker-a"
+    ],
+    "exit": 1,
+    "stdout": "Auto-merging docs/decisions.md\nCONFLICT (content): Merge conflict in docs/decisions.md\nAutomatic merge failed; fix conflicts and then commit the result.\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-semantic",
+    "root": "<lab>/cases/M-semantic-Z1DKKH",
+    "command": "<lab>/runtime/node_modules/node/bin/node",
+    "args": [
+      "<lab>/repo/bin/docaxioms.mjs",
+      "check",
+      "--root",
+      "<lab>/cases/M-semantic-Z1DKKH"
+    ],
+    "exit": 0,
+    "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nnote a history file changes only in link targets, or grows by a dated erratum (A5)\n       note: no commit to compare with (not a git repository, or no commits yet); nothing was compared\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-suggestions",
+    "root": "<lab>/cases/M-suggestions-S28m62",
+    "command": "python3",
+    "args": [
+      "original.py"
+    ],
+    "exit": 0,
+    "stdout": "'a  \\nb'\n",
+    "stderr": ""
+  },
+  {
+    "case": "M-suggestions",
+    "root": "<lab>/cases/M-suggestions-S28m62",
+    "command": "python3",
+    "args": [
+      "normalized.py"
+    ],
+    "exit": 0,
+    "stdout": "'a\\nb'\n",
+    "stderr": ""
+  }
+]

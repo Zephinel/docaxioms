@@ -1,0 +1,21 @@
+### CASE A-guards
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs init <lab>/cases/A-guards-2qy9op
+exit=0
+made CLAUDE.md
+made CURRENT.md
+made docs/README.md
+made docs/decisions.md
+made docs/history/README.md
+made docs/log.md
+made docs/plan.md
+docaxioms/ is pinned to v0.1.0-alpha.0 (8336bed3); run: npx --no-install docaxioms check
+Nothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it
+in CI, and optionally run it from a pre-push hook. "Run the check" in the docaxioms README says what each holds.
+preserved: "MINE\n"
+mode: 444
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs init <lab>/cases/A-guards-2qy9op
+exit=1
+the project has a docaxioms.json: use update
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs init <lab>/cases/A-guards-folder-1ijIa2
+exit=1
+the project has a docaxioms/ folder of its own

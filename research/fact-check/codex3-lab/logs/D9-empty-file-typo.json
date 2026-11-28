@@ -1,0 +1,18 @@
+{
+  "label": "D9-empty-file-typo",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "pin",
+    "--write",
+    "--file",
+    "docs/typo.md",
+    "--root",
+    "<lab>/cases/D9-pin-f85opI"
+  ],
+  "cwd": "<lab>",
+  "exit": 0,
+  "signal": null,
+  "stdout": "all code pins are up to date\n",
+  "stderr": ""
+}

@@ -1,0 +1,274 @@
+### CASE M-json-schema
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/M-json-schema-AC2WrC --json
+exit=0
+[
+  {
+    "name": "core files are the pinned version",
+    "axioms": "A4, A6",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "links and anchors resolve",
+    "axioms": "A2, A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "decision numbers are unique and every one cited exists",
+    "axioms": "A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "cited sections exist",
+    "axioms": "A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "documents named in code exist",
+    "axioms": "A2, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "paths named in current documents exist",
+    "axioms": "A2, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "code pins match the current source",
+    "axioms": "A2, A6, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "commands named in current documents exist",
+    "axioms": "A2, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "open research is linked from an open item; history carries its banner",
+    "axioms": "A3, A5",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "every current document is reachable from an entry point",
+    "axioms": "A3",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "a decision names where it landed, and that passage names it",
+    "axioms": "A0, A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "the stage card stays a card",
+    "axioms": "A3",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "bounded documents stay within budget",
+    "axioms": "A3, M4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "a history file changes only in link targets, or grows by a dated erratum",
+    "axioms": "A5",
+    "level": "gate",
+    "problems": [],
+    "notes": [
+      "no commit to compare with (not a git repository, or no commits yet); nothing was compared"
+    ]
+  },
+  {
+    "name": "code changes with mapped documents untouched",
+    "axioms": "A2, A6, M2",
+    "level": "aid",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "current descriptions use evolutionary phrasing",
+    "axioms": "A3, M1, M2",
+    "level": "aid",
+    "problems": [],
+    "notes": []
+  }
+]
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs check --root <lab>/cases/M-json-schema-AC2WrC --json
+exit=1
+[
+  {
+    "name": "core files are the pinned version",
+    "axioms": "A4, A6",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "links and anchors resolve",
+    "axioms": "A2, A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "decision numbers are unique and every one cited exists",
+    "axioms": "A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "cited sections exist",
+    "axioms": "A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "documents named in code exist",
+    "axioms": "A2, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "paths named in current documents exist",
+    "axioms": "A2, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "code pins match the current source",
+    "axioms": "A2, A6, A7",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "commands named in current documents exist",
+    "axioms": "A2, A7",
+    "level": "gate",
+    "problems": [
+      "README.md:3: `make missing` is not defined"
+    ],
+    "notes": []
+  },
+  {
+    "name": "open research is linked from an open item; history carries its banner",
+    "axioms": "A3, A5",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "every current document is reachable from an entry point",
+    "axioms": "A3",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "a decision names where it landed, and that passage names it",
+    "axioms": "A0, A4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "the stage card stays a card",
+    "axioms": "A3",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "bounded documents stay within budget",
+    "axioms": "A3, M4",
+    "level": "gate",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "a history file changes only in link targets, or grows by a dated erratum",
+    "axioms": "A5",
+    "level": "gate",
+    "problems": [],
+    "notes": [
+      "no commit to compare with (not a git repository, or no commits yet); nothing was compared"
+    ]
+  },
+  {
+    "name": "code changes with mapped documents untouched",
+    "axioms": "A2, A6, M2",
+    "level": "aid",
+    "problems": [],
+    "notes": []
+  },
+  {
+    "name": "current descriptions use evolutionary phrasing",
+    "axioms": "A3, M1, M2",
+    "level": "aid",
+    "problems": [],
+    "notes": []
+  }
+]
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs garden --root <lab>/cases/M-json-schema-AC2WrC --json
+exit=0
+{
+  "root": "<lab>/cases/M-json-schema-AC2WrC",
+  "guidePath": "docaxioms/GARDEN.md",
+  "descriptions": [
+    {
+      "file": "AGENTS.md",
+      "lines": 11,
+      "chars": 552,
+      "pins": 0,
+      "mappedCode": []
+    },
+    {
+      "file": "README.md",
+      "lines": 3,
+      "chars": 28,
+      "pins": 0,
+      "mappedCode": []
+    },
+    {
+      "file": "docs/README.md",
+      "lines": 6,
+      "chars": 265,
+      "pins": 0,
+      "mappedCode": []
+    }
+  ],
+  "decisionsFile": "docs/decisions.md",
+  "stageCard": {
+    "file": "CURRENT.md",
+    "lines": 15,
+    "chars": 224
+  }
+}

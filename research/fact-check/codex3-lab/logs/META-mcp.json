@@ -1,0 +1,15 @@
+{
+  "label": "META-mcp",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "mcp",
+    "--root",
+    "<lab>/repo"
+  ],
+  "cwd": "<lab>",
+  "exit": 1,
+  "signal": null,
+  "stdout": "",
+  "stderr": "usage:\n  docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]\n  docaxioms pin    [--root <dir>] [--relocate] [--write (--file <doc> | --pin <doc:line> | --all)]\n  docaxioms garden [--root <dir>] [--json]\n  docaxioms init   <project>\n  docaxioms update <project> [--accept-axioms]\n"
+}

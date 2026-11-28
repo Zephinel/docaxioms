@@ -1,0 +1,12 @@
+### CASE M-suggestions
+$ python3 original.py
+exit=0
+'a  \nb'
+$ python3 normalized.py
+exit=0
+'a\nb'
+old/new hashes: d0d63d20d3b9 ed86eecb1326
+GUIDE profile section bytes: 1983
+template total bytes: 11592 GUIDE percent: 61.171497584541065
+bootstrap total bytes: 20700
+template budget-chain chars: 20816

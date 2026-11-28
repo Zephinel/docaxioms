@@ -1,0 +1,16 @@
+{
+  "label": "D6-span",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "check",
+    "--json",
+    "--root",
+    "<lab>/cases/D6-PXKL8A"
+  ],
+  "cwd": "<lab>",
+  "exit": 1,
+  "signal": null,
+  "stdout": "[\n  {\n    \"name\": \"core files are the pinned version\",\n    \"axioms\": \"A4, A6\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"links and anchors resolve\",\n    \"axioms\": \"A2, A4\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"decisions.md: README.md#arch names a heading that is not there\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"decision numbers are unique and every one cited exists\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"cited sections exist\",\n    \"axioms\": \"A4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"documents named in code exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"paths named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code pins match the current source\",\n    \"axioms\": \"A2, A6, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"commands named in current documents exist\",\n    \"axioms\": \"A2, A7\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"open research is linked from an open item; history carries its banner\",\n    \"axioms\": \"A3, A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"every current document is reachable from an entry point\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a decision names where it landed, and that passage names it\",\n    \"axioms\": \"A0, A4\",\n    \"level\": \"gate\",\n    \"problems\": [\n      \"AD-1: README.md#arch names a heading that is not there\"\n    ],\n    \"notes\": []\n  },\n  {\n    \"name\": \"the stage card stays a card\",\n    \"axioms\": \"A3\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"bounded documents stay within budget\",\n    \"axioms\": \"A3, M4\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"a history file changes only in link targets, or grows by a dated erratum\",\n    \"axioms\": \"A5\",\n    \"level\": \"gate\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"code changes with mapped documents untouched\",\n    \"axioms\": \"A2, A6, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  },\n  {\n    \"name\": \"current descriptions use evolutionary phrasing\",\n    \"axioms\": \"A3, M1, M2\",\n    \"level\": \"aid\",\n    \"problems\": [],\n    \"notes\": []\n  }\n]\n",
+  "stderr": ""
+}

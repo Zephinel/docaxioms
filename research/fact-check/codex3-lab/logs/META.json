@@ -1,0 +1,36 @@
+{
+  "node": "v22.23.5",
+  "platform": "darwin",
+  "arch": "arm64",
+  "sourceLines": {
+    "src/check.mjs": 678,
+    "src/garden.mjs": 47,
+    "src/index.mjs": 5,
+    "src/manage.mjs": 130,
+    "src/markdown.mjs": 193,
+    "src/pins.mjs": 323
+  },
+  "srcTotal": 1376,
+  "bin": 186,
+  "coreMarkdown": 127,
+  "dependencies": {
+    "github-slugger": "^2.0.0",
+    "mdast-util-to-string": "^4.0.0",
+    "picomatch": "^4.0.7",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.2.0"
+  },
+  "count": 16,
+  "gates": 14,
+  "aids": 2,
+  "resultKeys": [
+    "name",
+    "axioms",
+    "level",
+    "problems",
+    "notes"
+  ],
+  "templateDecision": "# Decisions\n\nOnly what the owner decided, in the order it was decided. First change the passage, then add the row.\n\n| Id | What was asked | What was decided | Status | Landing |\n|---|---|---|---|---|\n"
+}

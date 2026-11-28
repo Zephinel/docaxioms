@@ -1,0 +1,16 @@
+{
+  "label": "D4-sections-report",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "check",
+    "--report",
+    "--root",
+    "<lab>/cases/D4-sections-rHQms2"
+  ],
+  "cwd": "<lab>",
+  "exit": 1,
+  "signal": null,
+  "stdout": "",
+  "stderr": "ENOENT: no such file or directory, open '<lab>/cases/D4-sections-rHQms2/docs/spec.md'\n"
+}

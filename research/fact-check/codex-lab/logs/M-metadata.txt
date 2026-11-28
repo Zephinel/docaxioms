@@ -1,0 +1,31 @@
+### CASE M-metadata
+runtime: v22.23.5 darwin arm64
+HEAD: 8336bed3bbcfc7ff99a01fb9549142c7260a5aa9
+bytes/chars templates/AGENTS.md 552 552
+bytes/chars core/AXIOMS.lock.md 3460 3460
+bytes/chars core/GUIDE.md 7091 7091
+bytes/chars templates/CURRENT.md 224 224
+bytes/chars templates/docs/README.md 265 265
+bytes/chars core/GARDEN.md 2346 2346
+bytes/chars README.md 6971 6969
+bytes/chars AGENTS.md 832 832
+bytes/chars core/LICENSE 1065 1065
+bytes/chars templates/CLAUDE.md 11 11
+tracked: 32 engine-files: 7 engine-bytes: 64606
+gate [
+  262, 293, 304, 325,
+  355, 371, 401, 409,
+  433, 461, 482, 514,
+  530, 550
+]
+aid [ 588, 627 ]
+runtime check count: 16 gates: 14 aids: 2
+built-in check names: [[1,"gate","core files are the pinned version"],[2,"gate","links and anchors resolve"],[3,"gate","decision numbers are unique and every one cited exists"],[4,"gate","cited sections exist"],[5,"gate","documents named in code exist"],[6,"gate","paths named in current documents exist"],[7,"gate","code pins match the current source"],[8,"gate","commands named in current documents exist"],[9,"gate","open research is linked from an open item; history carries its banner"],[10,"gate","every current document is reachable from an entry point"],[11,"gate","a decision names where it landed, and that passage names it"],[12,"gate","the stage card stays a card"],[13,"gate","bounded documents stay within budget"],[14,"gate","a history file changes only in link targets, or grows by a dated erratum"],[15,"aid","code changes with mapped documents untouched"],[16,"aid","current descriptions use evolutionary phrasing"]]
+exports: check, decisionRows, descriptionDocs, extractLinkTargets, findRelocatedWindows, formatPinComment, gardenManifest, hashSourceSlice, init, inspectPins, packageVersion, parseMarkdown, parsePinComment, project, source, syncPins, update, verifyPins, withoutFences
+exists action.yml false
+exists action.yaml false
+exists .github/workflows/check.yml true
+exists Dockerfile false
+exists .gitattributes false
+exists .agents/skills false
+templates: templates/AGENTS.md, templates/CLAUDE.md, templates/CURRENT.md, templates/docaxioms.json, templates/docs/README.md, templates/docs/decisions.md, templates/docs/history/README.md, templates/docs/log.md, templates/docs/plan.md

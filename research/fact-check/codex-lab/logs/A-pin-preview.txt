@@ -1,0 +1,21 @@
+### CASE A-pin-preview
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs pin --root <lab>/cases/A-pin-preview-qKBBAb --write
+exit=1
+pin --write requires an explicit scope (--file <doc>, --pin <doc:line>, or --all) so changed pins are only refreshed after review (A7); use --relocate for unchanged line shifts
+$ <lab>/runtime/node_modules/node/bin/node <lab>/repo/bin/docaxioms.mjs pin --root <lab>/cases/A-pin-preview-qKBBAb --write --all
+exit=0
+wrote README.md:3 src/a.txt#L1-L15 (@a5190eb48d9a)
+       1 | line 1
+       2 | line 2
+       3 | line 3
+       4 | line 4
+       5 | line 5
+       6 | line 6
+       7 | line 7
+       8 | line 8
+       9 | line 9
+       10 | line 10
+       11 | line 11
+       12 | line 12
+       ... (+3 more lines)
+wrote README.md:4 src/a.txt (@bf767ef1fad9)

@@ -1,0 +1,468 @@
+{
+  "inventoryMatches": true,
+  "baselineCount": 32,
+  "oldCount": 31,
+  "fileLevelChanges": "M\tAGENTS.md\nM\tREADME.md\nM\tdocs/decisions.md\nM\tpackage.json\nA\ttest/self.test.mjs\n",
+  "identicalTrees": [
+    "d0d496def89344827ebcad62d927d3b34da3b9a6",
+    "d0d496def89344827ebcad62d927d3b34da3b9a6"
+  ],
+  "baseline": "8336bed3bbcfc7ff99a01fb9549142c7260a5aa9",
+  "worktree": "?? node_modules\n",
+  "references": [
+    {
+      "file": "README.md",
+      "lo": 60,
+      "hi": 65,
+      "inRange": true,
+      "text": "60: ### Protect the axioms\n61: \n62: `init` makes `AXIOMS.lock.md` read-only, and the check fails when it no longer matches its hash in `docaxioms.json`. That stops an accidental edit, not a deliberate one: changing the file and its hash together passes, and git does not keep the read-only mode. For a stronger hold, use what your tools offer and say in the project what it does not hold, for example:"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 258,
+      "hi": 657,
+      "inRange": true,
+      "text": "258: const CHECKS = [\n259:   {\n260:     name: \"core files are the pinned version\","
+    },
+    {
+      "file": "core/GARDEN.md",
+      "lo": 1,
+      "hi": 28,
+      "inRange": true,
+      "text": "1: # Gardening protocol\n2: \n3: A read-only audit procedure for checking current descriptions (K3) and the stage card against the software as it is now. Derived from [`AXIOMS.lock.md`](AXIOMS.lock.md): A0 (authority vs behaviour), A1 (scoped evidence), A2 (dependence), A3 (finite attention), A5 (immutable records), A6 (limits of mechanical gates), M1 and M2."
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 1,
+      "hi": 112,
+      "inRange": true,
+      "text": "1: // Deterministic code content hash pins embedded in Markdown HTML comments.\n2: // Syntax:\n3: //   <!-- pin: path/to/file.ext#L10-L30@a1b2c3d4e5f6 -->   (line range, 1-based inclusive)"
+    },
+    {
+      "file": "core/GARDEN.md",
+      "lo": 15,
+      "hi": 15,
+      "inRange": true,
+      "text": "15: - **Never silently change intent.** When code and an owner decision disagree, report the discrepancy as a defect to resolve with the owner; do not rewrite the decision to match the code (A0)."
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 1,
+      "hi": 12,
+      "inRange": true,
+      "text": "1: // Deterministic code content hash pins embedded in Markdown HTML comments.\n2: // Syntax:\n3: //   <!-- pin: path/to/file.ext#L10-L30@a1b2c3d4e5f6 -->   (line range, 1-based inclusive)"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 238,
+      "hi": 256,
+      "inRange": true,
+      "text": "238: export function descriptionDocs(p, extraExempt = []) {\n239:   const { core, decisions, log, research, card } = p.profile;\n240:   const coreDir = core?.dir ?? \"\";"
+    },
+    {
+      "file": "core/GARDEN.md",
+      "lo": 13,
+      "hi": 15,
+      "inRange": true,
+      "text": "13: - **Audit only K3 descriptions and the stage card.** Leave `AXIOMS.lock.md`, active owner decisions (K2), dated logs (K1), and the history folder (K1) untouched unless reporting a contradiction to the owner (A0, A5).\n14: - **Never guess behaviour from prose.** Verify every claim against source code, tests, or a dated run (A0, A1).\n15: - **Never silently change intent.** When code and an owner decision disagree, report the discrepancy as a defect to resolve with the owner; do not rewrite the decision to match the code (A0)."
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 480,
+      "hi": 509,
+      "inRange": true,
+      "text": "480:     name: \"a decision names where it landed, and that passage names it\",\n481:     axioms: \"A0, A4\",\n482:     level: \"gate\","
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 48,
+      "hi": 67,
+      "inRange": true,
+      "text": "48: function resolveBase(root, wantedBase) {\n49:   const target = wantedBase ?? \"origin/main\";\n50:   const base = runGit(root, [\"merge-base\", target, \"HEAD\"])?.trim();"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 77,
+      "hi": 77,
+      "inRange": true,
+      "text": "77:   const has = (file) => existsSync(at(file));"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 120,
+      "hi": 120,
+      "inRange": true,
+      "text": "120:         path: path ? normalize(join(dirname(file), safeDecode(path))).replace(/\\\\/g, \"/\").replace(/\\/$/, \"\") : file,"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 295,
+      "hi": 297,
+      "inRange": true,
+      "text": "295:       if (!p.has(path)) return [`${file}: ${target} leads nowhere`];\n296:       if (!anchor || !path.endsWith(\".md\")) return [];\n297:       return p.passage(path, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 498,
+      "hi": 504,
+      "inRange": true,
+      "text": "498:               ? normalize(join(dirname(p.profile.decisions.file), safeDecode(path))).replace(/\\\\/g, \"/\")\n499:               : p.profile.decisions.file;\n500:             if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }"
+    },
+    {
+      "file": "test/self.test.mjs",
+      "lo": 28,
+      "hi": 32,
+      "inRange": true,
+      "text": "28:   // A code pin whose file is gone, or outside the repository, is a path that leads nowhere; a pin whose code changed or moved is only reported.\n29:   const missingPins = inspectPins(project(ROOT, profile))\n30:     .filter((r) => r.status === \"missing\" || r.status === \"outside-root\")"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 557,
+      "hi": 557,
+      "inRange": true,
+      "text": "557:       const bare = (text) => text.replace(/\\n+$/, \"\").replace(/\\]\\([^)]*\\)/g, \"]()\");"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 25,
+      "hi": 25,
+      "inRange": true,
+      "text": "25: When it stops describing the present: move what is still true to its owner, move the file to history, put the banner under its title with where the present is described, and fix what pointed at it. Look at who cites it first: an old document can still be the authority. After that it is a record: only a link target may change, and an erratum with its date may be added at its end (A5)."
+    },
+    {
+      "file": "src/markdown.mjs",
+      "lo": 55,
+      "hi": 58,
+      "inRange": true,
+      "text": "55:       } else if (node.type === \"linkReference\" || node.type === \"imageReference\") {\n56:         const url = definitions.get(node.identifier.toLowerCase());\n57:         if (url) urls.push(url);"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 25,
+      "hi": 25,
+      "inRange": true,
+      "text": "25: When it stops describing the present: move what is still true to its owner, move the file to history, put the banner under its title with where the present is described, and fix what pointed at it. Look at who cites it first: an old document can still be the authority. After that it is a record: only a link target may change, and an erratum with its date may be added at its end (A5)."
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 557,
+      "hi": 557,
+      "inRange": true,
+      "text": "557:       const bare = (text) => text.replace(/\\n+$/, \"\").replace(/\\]\\([^)]*\\)/g, \"]()\");"
+    },
+    {
+      "file": "templates/docaxioms.json",
+      "lo": 6,
+      "hi": 6,
+      "inRange": true,
+      "text": "6:   \"decisions\": { \"file\": \"docs/decisions.md\", \"id\": \"D\" },"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 311,
+      "hi": 316,
+      "inRange": true,
+      "text": "311:       const cite = new RegExp(`\\\\b${escape(p.profile.decisions.id)}(\\\\d{1,4})\\\\b`, \"g\");\n312:       const exempt = new RegExp(p.profile.decisions.citeExempt ?? \"^$\");\n313:       const missing = new Set();"
+    },
+    {
+      "file": "docaxioms.json",
+      "lo": 25,
+      "hi": 25,
+      "inRange": true,
+      "text": "25:     \"id\": \"AD-\""
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 56,
+      "hi": 56,
+      "inRange": true,
+      "text": "56: | `decisions` | `file`, `id` (the prefix, such as `ADR-`), `landedSection` (the heading from which rows have a status and a landing; none: all), `citeExempt` |"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 311,
+      "hi": 316,
+      "inRange": true,
+      "text": "311:       const cite = new RegExp(`\\\\b${escape(p.profile.decisions.id)}(\\\\d{1,4})\\\\b`, \"g\");\n312:       const exempt = new RegExp(p.profile.decisions.citeExempt ?? \"^$\");\n313:       const missing = new Set();"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 149,
+      "hi": 149,
+      "inRange": true,
+      "text": "149:   const md = p.markdown(file);"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 328,
+      "hi": 328,
+      "inRange": true,
+      "text": "328:         p.sections(document)"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 438,
+      "hi": 438,
+      "inRange": true,
+      "text": "438:         const open = p.markdown(research.items).withoutCode.split(new RegExp(`^${research.openUntil ?? \"\\\\u0000\"}`, \"m\"))[0];"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 49,
+      "hi": 49,
+      "inRange": true,
+      "text": "49: Every key is optional; a check with nothing to look at passes."
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 49,
+      "hi": 49,
+      "inRange": true,
+      "text": "49: Every key is optional; a check with nothing to look at passes."
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 77,
+      "hi": 77,
+      "inRange": true,
+      "text": "77:   const has = (file) => existsSync(at(file));"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 97,
+      "hi": 102,
+      "inRange": true,
+      "text": "97:   const listed = runGit(root, [\"ls-files\", \"-z\", \"--cached\", \"--others\", \"--exclude-standard\"]);\n98:   const all = listed !== undefined\n99:     ? listed"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 295,
+      "hi": 295,
+      "inRange": true,
+      "text": "295:       if (!p.has(path)) return [`${file}: ${target} leads nowhere`];"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 389,
+      "hi": 389,
+      "inRange": true,
+      "text": "389:               || p.has(literal)"
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 131,
+      "hi": 131,
+      "inRange": true,
+      "text": "131:       if (!p.has(resolved.path)) {"
+    },
+    {
+      "file": "src/markdown.mjs",
+      "lo": 66,
+      "hi": 80,
+      "inRange": true,
+      "text": "66:   const blockTypes = new Set([\"paragraph\", \"listItem\", \"tableRow\", \"blockquote\"]);\n67:   const walkAnchors = (node, enclosing) => {\n68:     const nextEnclosing = blockTypes.has(node.type) ? node : enclosing;"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 502,
+      "hi": 505,
+      "inRange": true,
+      "text": "502:             const text = anchor ? p.passage(file, anchor) : p.read(file);\n503:             if (text === undefined) problems.push(`${name}: ${target} names a heading that is not there`);\n504:             else if (!new RegExp(`\\\\b${escape(name)}\\\\b`).test(text)) problems.push(`${name}: ${target} does not name ${name}`);"
+    },
+    {
+      "file": "docs/decisions.md",
+      "lo": 3,
+      "hi": 3,
+      "inRange": true,
+      "text": "3: <a id=\"the-owners-words\"></a>What the owner decided about docaxioms. Each row states the decision in summary; the owner's words are not published and are kept where each was decided (AD-6). The exception is a decision that changes `core/AXIOMS.lock.md`: its row quotes the owner's word, as that file requires."
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 438,
+      "hi": 444,
+      "inRange": true,
+      "text": "438:         const open = p.markdown(research.items).withoutCode.split(new RegExp(`^${research.openUntil ?? \"\\\\u0000\"}`, \"m\"))[0];\n439:         for (const file of p.currentDocs.filter((name) => name.startsWith(`${research.dir}/`) && !name.endsWith(\"/README.md\"))) {\n440:           if (!/^Status: open \\(.+\\)$/m.test(p.read(file).split(\"\\n\").slice(0, 12).join(\"\\n\"))) {"
+    },
+    {
+      "file": "docs/decisions.md",
+      "lo": 7,
+      "hi": 12,
+      "inRange": true,
+      "text": "7: | AD-1 | What the documentation system is built on | Principles that do not go stale and need no proof, taken as axioms and made hard gates; the structure, and the standards for updating and accepting documents, are derived from them. The axioms are a read-only lock file (2026-11-23) | active | [AGENTS.md](../AGENTS.md) |\n8: | AD-2 | Whether it is for one project | Portable: other software projects use it as it is, the axioms too, without designing it again (2026-11-23) | active | [AGENTS.md](../AGENTS.md) |\n9: | AD-3 | Where it lives | In a repository of its own, which projects depend on: this one, public, under the MIT licence (2026-11-23) | active | [AGENTS.md](../AGENTS.md) |"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 14,
+      "hi": 14,
+      "inRange": true,
+      "text": "14: | A decision is overturned | The status of the old row | `superseded by <id>`, or `partly superseded (<what> by <id>)`. The old text stays (A5) |"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 489,
+      "hi": 489,
+      "inRange": true,
+      "text": "489:           const problems = new RegExp(`^(active|superseded by ${id}\\\\d+|partly superseded \\\\(.+ by ${id}\\\\d+\\\\)|withdrawn)$`).test(status)"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 14,
+      "hi": 14,
+      "inRange": true,
+      "text": "14: | A decision is overturned | The status of the old row | `superseded by <id>`, or `partly superseded (<what> by <id>)`. The old text stays (A5) |"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 489,
+      "hi": 489,
+      "inRange": true,
+      "text": "489:           const problems = new RegExp(`^(active|superseded by ${id}\\\\d+|partly superseded \\\\(.+ by ${id}\\\\d+\\\\)|withdrawn)$`).test(status)"
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 244,
+      "hi": 252,
+      "inRange": true,
+      "text": "244:   const fileSet = new Set(files.map((f) => normalize(f).replace(/\\\\/g, \"/\")));\n245:   const pinSet = new Set(pins.map((spec) => {\n246:     const idx = spec.lastIndexOf(\":\");"
+    },
+    {
+      "file": "bin/docaxioms.mjs",
+      "lo": 89,
+      "hi": 125,
+      "inRange": true,
+      "text": "89:     if (!changes.length) {\n90:       console.log(\"all code pins are up to date\");\n91:       process.exit(0);"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 387,
+      "hi": 388,
+      "inRange": true,
+      "text": "387:             const literal = path.replace(/(:\\d+)+(-\\d+)?$/, \"\").replace(/\\/$/, \"\");\n388:             return /[*<>{}…()|$#]|\\.\\.\\./.test(literal)"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 417,
+      "hi": 423,
+      "inRange": true,
+      "text": "417:           if (!value.startsWith(rule.prefix)) continue;\n418:           const rest = value.slice(rule.prefix.length).trim();\n419:           const command = rest.split(/\\s+/)[0];"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 388,
+      "hi": 388,
+      "inRange": true,
+      "text": "388:             return /[*<>{}…()|$#]|\\.\\.\\./.test(literal)"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 417,
+      "hi": 423,
+      "inRange": true,
+      "text": "417:           if (!value.startsWith(rule.prefix)) continue;\n418:           const rest = value.slice(rule.prefix.length).trim();\n419:           const command = rest.split(/\\s+/)[0];"
+    },
+    {
+      "file": "src/manage.mjs",
+      "lo": 45,
+      "hi": 45,
+      "inRange": true,
+      "text": "45:   return `cd ${quoted} && ${run}`;"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 114,
+      "hi": 114,
+      "inRange": true,
+      "text": "114:     .filter((target) => !/^[a-z][a-z0-9+.-]*:/i.test(target))"
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 46,
+      "hi": 55,
+      "inRange": true,
+      "text": "46: export function resolvePinPath(docFile, rawPath) {\n47:   if (isAbsolute(rawPath)) return { error: `pin path \"${rawPath}\" must stay inside the repository` };\n48:   const resolved = rawPath.startsWith(\"./\") || rawPath.startsWith(\"../\")"
+    },
+    {
+      "file": "src/markdown.mjs",
+      "lo": 65,
+      "hi": 80,
+      "inRange": true,
+      "text": "65:   const explicitAnchors = new Map();\n66:   const blockTypes = new Set([\"paragraph\", \"listItem\", \"tableRow\", \"blockquote\"]);\n67:   const walkAnchors = (node, enclosing) => {"
+    },
+    {
+      "file": "templates/docaxioms.json",
+      "lo": 6,
+      "hi": 6,
+      "inRange": true,
+      "text": "6:   \"decisions\": { \"file\": \"docs/decisions.md\", \"id\": \"D\" },"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 56,
+      "hi": 56,
+      "inRange": true,
+      "text": "56: | `decisions` | `file`, `id` (the prefix, such as `ADR-`), `landedSection` (the heading from which rows have a status and a landing; none: all), `citeExempt` |"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 314,
+      "hi": 316,
+      "inRange": true,
+      "text": "314:       for (const file of [...p.code, ...p.currentDocs].filter((name) => !exempt.test(name))) {\n315:         const text = file.endsWith(\".md\") ? p.markdown(file).withoutFences : withoutFences(p.read(file));\n316:         for (const [name] of text.matchAll(cite)) if (!known.has(name)) missing.add(`${file}: ${name}`);"
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 243,
+      "hi": 252,
+      "inRange": true,
+      "text": "243: export function syncPins(p, { write = false, relocate = false, files = [], pins = [], all = false } = {}) {\n244:   const fileSet = new Set(files.map((f) => normalize(f).replace(/\\\\/g, \"/\")));\n245:   const pinSet = new Set(pins.map((spec) => {"
+    },
+    {
+      "file": "src/check.mjs",
+      "lo": 387,
+      "hi": 387,
+      "inRange": true,
+      "text": "387:             const literal = path.replace(/(:\\d+)+(-\\d+)?$/, \"\").replace(/\\/$/, \"\");"
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 31,
+      "hi": 31,
+      "inRange": true,
+      "text": "31: - **Notes** (A6): when a check, gate or aid, cannot compare as configured (for instance, a missing comparison base), it prints a note stating what it did not compare, and shows `note` instead of `ok`. A note is not a finding and does not fail; read it, because a check with a note held less than its name says."
+    },
+    {
+      "file": "core/GUIDE.md",
+      "lo": 14,
+      "hi": 17,
+      "inRange": true,
+      "text": "14: | A decision is overturned | The status of the old row | `superseded by <id>`, or `partly superseded (<what> by <id>)`. The old text stays (A5) |\n15: | How something behaves | The one document that describes it | In the same task as the change (A2). State what is now; if a passage must mention past behaviour, mark it as a record where it mixes, or keep past changes in decisions or history (M1, A3) |\n16: | A limit that is known | The document of limits or design | Not the plan, which holds only what is to be done (M1) |"
+    },
+    {
+      "file": "bin/docaxioms.mjs",
+      "lo": 63,
+      "hi": 126,
+      "inRange": true,
+      "text": "63:   if (command === \"pin\") {\n64:     const { values } = parseArgs({\n65:       args: rest,"
+    },
+    {
+      "file": "src/pins.mjs",
+      "lo": 314,
+      "hi": 320,
+      "inRange": true,
+      "text": "314:   for (const [file, edits] of editsByFile.entries()) {\n315:     let updated = p.read(file);\n316:     for (const edit of edits.sort((a, b) => b.start - a.start)) {"
+    },
+    {
+      "file": "README.md",
+      "lo": 60,
+      "hi": 65,
+      "inRange": true,
+      "text": "60: ### Protect the axioms\n61: \n62: `init` makes `AXIOMS.lock.md` read-only, and the check fails when it no longer matches its hash in `docaxioms.json`. That stops an accidental edit, not a deliberate one: changing the file and its hash together passes, and git does not keep the read-only mode. For a stronger hold, use what your tools offer and say in the project what it does not hold, for example:"
+    }
+  ],
+  "outOfRangeReferences": [],
+  "lockPackages": 71,
+  "hasInstallScript": [],
+  "optionalPackages": [],
+  "workflow": "name: check\n\non:\n  pull_request:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          # Full history, so that checks comparing with origin/main have a base on pull requests (A6).\n          fetch-depth: 0\n      - uses: actions/setup-node@v4\n        with:\n          # The lowest major version package.json supports.\n          node-version: 22\n          cache: npm\n      - run: npm ci\n      - run: npm run check\n",
+  "blockingTest": "// This repository's own check: while docaxioms is in development, only these checks block a merge (AD-7).\n// `npm run check` prints the rest as a report.\nimport assert from \"node:assert/strict\";\nimport { readFileSync } from \"node:fs\";\nimport test from \"node:test\";\nimport { fileURLToPath } from \"node:url\";\nimport { check, project } from \"../src/check.mjs\";\nimport { inspectPins } from \"../src/pins.mjs\";\n\nconst ROOT = fileURLToPath(new URL(\"..\", import.meta.url));\nconst BLOCKING = [\n  \"core files are the pinned version\",\n  \"links and anchors resolve\",\n  \"documents named in code exist\",\n  \"paths named in current documents exist\",\n  \"commands named in current documents exist\",\n];\n\ntest(\"this repository passes the checks that block a merge\", async () => {\n  const profile = JSON.parse(readFileSync(new URL(\"../docaxioms.json\", import.meta.url), \"utf8\"));\n  // Without its entry the axiom pin checks nothing.\n  assert.match(profile.core?.files?.[\"core/AXIOMS.lock.md\"] ?? \"\", /^[0-9a-f]{64}$/, \"docaxioms.json pins core/AXIOMS.lock.md\");\n  const results = await check(ROOT, profile);\n  const failing = BLOCKING.map((name) => {\n    const matches = results.filter((r) => r.name === name);\n    return [name, matches.length === 1 ? matches[0].problems : [`${matches.length} checks have this name`]];\n  });\n  // A code pin whose file is gone, or outside the repository, is a path that leads nowhere; a pin whose code changed or moved is only reported.\n  const missingPins = inspectPins(project(ROOT, profile))\n    .filter((r) => r.status === \"missing\" || r.status === \"outside-root\")\n    .map((r) => `${r.file}:${r.pin.line}: ${r.detail}`);\n  failing.push([\"code pins name files that are there\", missingPins]);\n  assert.deepEqual(failing.filter(([, problems]) => problems.length), []);\n});\n"
+}

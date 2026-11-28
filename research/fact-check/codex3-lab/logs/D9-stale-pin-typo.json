@@ -1,0 +1,18 @@
+{
+  "label": "D9-stale-pin-typo",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "pin",
+    "--write",
+    "--pin",
+    "README.md:99",
+    "--root",
+    "<lab>/cases/D9-pin-f85opI"
+  ],
+  "cwd": "<lab>",
+  "exit": 0,
+  "signal": null,
+  "stdout": "stale README.md:2 src/a.mjs#L1 (@2bf28849cade -> @f7aaae68baf5)\nreview changed passages against code, then run `docaxioms pin --write --file <doc>`\n",
+  "stderr": ""
+}

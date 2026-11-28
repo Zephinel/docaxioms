@@ -1,0 +1,15 @@
+{
+  "label": "META-zero-text",
+  "command": [
+    "<lab1>/runtime/node_modules/node/bin/node",
+    "<lab>/repo/bin/docaxioms.mjs",
+    "check",
+    "--root",
+    "<lab>/cases/META-zero-hOhWLw"
+  ],
+  "cwd": "<lab>",
+  "exit": 0,
+  "signal": null,
+  "stdout": "ok   core files are the pinned version (A4, A6)\nok   links and anchors resolve (A2, A4)\nok   decision numbers are unique and every one cited exists (A4)\nok   cited sections exist (A4)\nok   documents named in code exist (A2, A7)\nok   paths named in current documents exist (A2, A7)\nok   code pins match the current source (A2, A6, A7)\nok   commands named in current documents exist (A2, A7)\nok   open research is linked from an open item; history carries its banner (A3, A5)\nok   every current document is reachable from an entry point (A3)\nok   a decision names where it landed, and that passage names it (A0, A4)\nok   the stage card stays a card (A3)\nok   bounded documents stay within budget (A3, M4)\nok   a history file changes only in link targets, or grows by a dated erratum (A5)\nok   code changes with mapped documents untouched (A2, A6, M2)\nok   current descriptions use evolutionary phrasing (A3, M1, M2)\n",
+  "stderr": ""
+}

@@ -1,0 +1,10 @@
+{
+  "hash": "2bf28849cade",
+  "listed": [
+    ".gitignore",
+    "README.md",
+    "docaxioms.json"
+  ],
+  "hasIgnored": true,
+  "checkIgnore": "build/gen.js"
+}

@@ -1,0 +1,6 @@
+### CASE M-concurrency
+$ git -C <lab>/cases/M-concurrency-au49i8 -c user.name=Lab -c user.email=lab@example.invalid -c commit.gpgsign=false merge --no-edit worker-a
+exit=1
+Auto-merging docs/decisions.md
+CONFLICT (content): Merge conflict in docs/decisions.md
+Automatic merge failed; fix conflicts and then commit the result.
