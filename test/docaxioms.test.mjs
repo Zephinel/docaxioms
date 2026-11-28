@@ -184,6 +184,19 @@ inProject("a check that cannot run fails the command even with --report or --jso
   }
 });
 
+inProject("a profile with a fault is a finding of the check, and pin and garden refuse it", async ({ root, at, profile }) => {
+  init(root, "c1");
+  writeFileSync(at("docaxioms.json"), JSON.stringify({ ...profile(), foo: 1 }));
+  assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));
+  assert.match(execFileSync("node", [CLI, "check", "--root", root, "--report"], { encoding: "utf8" }), /foo is not a key/);
+  for (const args of [["pin"], ["garden"]]) {
+    let failed;
+    try { execFileSync("node", [CLI, ...args, "--root", root], { stdio: "pipe" }); } catch (error) { failed = error; }
+    assert.equal(failed?.status, 1, args.join(" "));
+    assert.match(String(failed.stderr), /foo is not a key/);
+  }
+});
+
 test("a project's copy carries the licence, the same as here", () => {
   assert.equal(readFileSync(new URL("../core/LICENSE", import.meta.url), "utf8"), readFileSync(new URL("../LICENSE", import.meta.url), "utf8"));
 });

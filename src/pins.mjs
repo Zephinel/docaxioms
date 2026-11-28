@@ -12,7 +12,7 @@
 // reports the shift and `pin --relocate` updates only the line numbers without altering the hash.
 import { createHash } from "node:crypto";
 import { lstatSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, normalize } from "node:path";
+import { dirname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 
 // Match `pin:` (any attempt with a colon) or `pin <path-like>` (missing colon before a path/file token),
 // while leaving ordinary prose comments like `<!-- pin the version here -->` untouched.
@@ -246,8 +246,12 @@ export function verifyPins(p) {
  *   and also relocates `moved` pins in scope without altering their hashes.
  */
 export function syncPins(p, { write = false, relocate = false, files = [], pins = [], all = false } = {}) {
-  // A document is named from the repository root, with or without a leading `/`.
-  const fromRoot = (path) => normalize(path).replace(/\\/g, "/").replace(/^\/+/, "");
+  // A document is named from the repository root, with or without a leading `/`, or by its full path on the machine.
+  const fromRoot = (path) => {
+    const rel = relative(p.root, resolve(path));
+    const onMachine = isAbsolute(path) && rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
+    return normalize(onMachine ? rel : path).replace(/\\/g, "/").replace(/^\/+/, "");
+  };
   const fileSet = new Set(files.map(fromRoot));
   const pinSet = new Set(pins.map((spec) => {
     const idx = spec.lastIndexOf(":");

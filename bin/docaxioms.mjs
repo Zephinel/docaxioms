@@ -12,6 +12,7 @@ import { check, project } from "../src/check.mjs";
 import { gardenManifest } from "../src/garden.mjs";
 import { checkCommand, init, packageVersion, source, update } from "../src/manage.mjs";
 import { syncPins } from "../src/pins.mjs";
+import { profileProblems } from "../src/profile.mjs";
 
 const USAGE = `usage:
   docaxioms check  [--root <dir>] [--report] [--strict-aids] [--json]
@@ -20,10 +21,14 @@ const USAGE = `usage:
   docaxioms init   <project>
   docaxioms update <project> [--accept-axioms]`;
 
-function loadProfile(root) {
+function loadProfile(root, { strict = false } = {}) {
   const file = join(root, "docaxioms.json");
   if (!existsSync(file)) throw new Error(`${file} is not there`);
-  return JSON.parse(readFileSync(file, "utf8"));
+  const profile = JSON.parse(readFileSync(file, "utf8"));
+  // The check reports a profile's problems as findings; a command that writes or lists from it refuses it instead.
+  const problems = strict ? profileProblems(profile) : [];
+  if (problems.length) throw new Error(problems.join("\n"));
+  return profile;
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -81,7 +86,7 @@ try {
       );
     }
     const root = resolve(values.root);
-    const p = project(root, loadProfile(root));
+    const p = project(root, loadProfile(root, { strict: true }));
     const changes = syncPins(p, {
       write: values.write,
       relocate: values.relocate,
@@ -140,7 +145,7 @@ try {
       },
     });
     const root = resolve(values.root);
-    const manifest = gardenManifest(root, loadProfile(root));
+    const manifest = gardenManifest(root, loadProfile(root, { strict: true }));
     if (values.json) {
       console.log(JSON.stringify(manifest, null, 2));
       process.exit(0);

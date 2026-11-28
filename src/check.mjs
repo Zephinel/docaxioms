@@ -13,7 +13,7 @@ import { toString } from "mdast-util-to-string";
 import picomatch from "picomatch";
 import { extractLinkTargets, parseMarkdown, withoutFences, withoutLinkTargets } from "./markdown.mjs";
 import { verifyPins } from "./pins.mjs";
-import { profileProblems, withoutNulls } from "./profile.mjs";
+import { profileProblems, usableProfile } from "./profile.mjs";
 
 export { withoutFences };
 
@@ -79,15 +79,15 @@ function changedFiles(root, baseRef) {
 }
 
 export function project(root, given) {
-  // Every command reads the project through here, so a profile that is not valid goes no further (A6).
-  const invalid = profileProblems(given);
-  if (invalid.length) throw new Error(invalid.join("\n"));
-  // JSON null leaves a key unset (profile.mjs); dropping it here gives every reader that one meaning.
-  const profile = withoutNulls(given);
+  // The checks read only what of the profile is valid; the profile check names the rest (profile.mjs).
+  const profile = usableProfile(given);
+  if (!profile) throw new Error("docaxioms.json: the profile must be an object");
   const at = (file) => join(root, file);
   const cache = new Map();
   const mdCache = new Map();
+  // Every read goes through here, so nothing outside the repository is read, whoever names it.
   const read = (file) => {
+    if (!inside(file)) throw new Error(`${file} leads outside the repository`);
     if (!cache.has(file)) cache.set(file, readFileSync(at(file), "utf8"));
     return cache.get(file);
   };
@@ -143,20 +143,24 @@ export function project(root, given) {
     const target = resolveTarget(fromFile, rawPath);
     return target.outside || inside(target.path) ? target : { ...target, outside: true };
   };
+  // Where a link target in `file` leads, or undefined when it is on another site: it has a scheme, or starts with `//`.
+  // A query is not part of the path.
+  const targetOf = (file, target) => {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith("//")) return undefined;
+    const [address, anchor] = target.split("#");
+    const path = address.split("?")[0];
+    return { target, anchor, ...(path ? locate(file, path) : { path: file }) };
+  };
   const sections = (file) => markdown(file).sections;
   const passage = (file, anchor) => markdown(file).passage(anchor);
   const links = (file) => markdown(file)
     .links()
-    // A target with a scheme, or one that starts with `//`, is on another site.
-    .filter((target) => !/^[a-z][a-z0-9+.-]*:/i.test(target) && !target.startsWith("//"))
-    .map((target) => {
-      const [address, anchor] = target.split("#");
-      const path = address.split("?")[0];
-      return { target, anchor, ...(path ? locate(file, path) : { path: file }) };
-    });
+    .map((target) => targetOf(file, target))
+    .filter(Boolean);
 
   return {
     root,
+    given,
     profile,
     read,
     has,
@@ -169,6 +173,7 @@ export function project(root, given) {
     sections,
     passage,
     links,
+    targetOf,
     inside,
     locate,
     match: makeMatcher,
@@ -296,7 +301,7 @@ const CHECKS = [
     name: "the profile names only keys docaxioms knows, each with a value of its kind",
     axioms: "A6",
     level: "gate",
-    run: ({ profile }) => profileProblems(profile),
+    run: ({ given }) => profileProblems(given),
   },
 
   {
@@ -337,8 +342,12 @@ const CHECKS = [
     run: (p) => p.currentDocs.flatMap((file) => p.links(file).flatMap(({ target, path, anchor, outside }) => {
       if (outside) return [`${file}: ${target} leads outside the repository`];
       if (!p.has(path)) return [`${file}: ${target} leads nowhere`];
-      if (!anchor || !path.endsWith(".md")) return [];
-      return p.passage(path, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
+      if (!anchor) return [];
+      // A folder's headings are those of its README.
+      const folder = lstatSync(p.at(path)).isDirectory();
+      const doc = folder ? `${path}/README.md` : path;
+      if (!doc.endsWith(".md")) return [];
+      return p.has(doc) && p.passage(doc, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
     })),
   },
 
@@ -431,14 +440,15 @@ const CHECKS = [
           .filter((file) => !elsewhere.test(file))
           .flatMap((file) => p.markdown(file).inlineCodes.flatMap(({ value: path }) => {
             if (!named.test(path)) return [];
-            const literal = path.replace(/#.*$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
-            if (/[*<>{}…()|$#]|\.\.\./.test(literal)) return [];
+            // A placeholder anywhere, `#<line>` too, makes it an example; a fragment after a name is not part of the path.
+            if (/[*<>{}…()|$]|\.\.\./.test(path)) return [];
+            const literal = path.replace(/(?<=[^/])#.*$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
             const lexical = normalize(literal).replace(/\\/g, "/");
             if (lexical === ".." || lexical.startsWith("../") || isAbsolute(literal) || !p.inside(lexical)) {
               return [`${file}: \`${path}\` leads outside the repository`];
             }
-            return p.has(literal)
-              || gone.some((one) => `${literal}/`.startsWith(one.replace(/\/?$/, "/")))
+            return p.has(lexical)
+              || gone.some((one) => `${lexical}/`.startsWith(one.replace(/\/?$/, "/")))
               ? []
               : [`${file}: \`${path}\``];
           })),
@@ -465,7 +475,8 @@ const CHECKS = [
       const problems = [];
       for (const file of descriptionDocs(p, rule.exempt)) {
         for (const { value, line } of p.markdown(file).inlineCodes) {
-          if (!value.startsWith(rule.prefix)) continue;
+          // The prefix is a word of its own: `make` does not name a command in `makefile`.
+          if (!value.startsWith(rule.prefix) || /\S/.test(value[rule.prefix.length] ?? " ") && /\S$/.test(rule.prefix)) continue;
           const rest = value.slice(rule.prefix.length).trim();
           // The first word that is not an option, such as `--silent`, names the command.
           const command = rest.split(/\s+/).find((word) => !word.startsWith("-"));
@@ -519,7 +530,10 @@ const CHECKS = [
     axioms: "A3",
     level: "gate",
     run: (p) => {
-      const seen = new Set((p.profile.entries ?? []).filter((file) => p.inside(file) && p.has(file)));
+      const entries = p.profile.entries ?? [];
+      const seen = new Set(entries.filter((file) => p.inside(file) && p.has(file)));
+      // Entries are candidates, and a project need not have them all; it must have one of them.
+      if (entries.length && !seen.size) return [`none of the entries in docaxioms.json is there: ${entries.join(", ")}`];
       const queue = [...seen];
       while (queue.length) {
         for (const { path, outside } of p.links(queue.pop())) {
@@ -554,8 +568,9 @@ const CHECKS = [
           const targets = landingTargets ?? [];
           if (!targets.length) problems.push(`${name}: no landing passage`);
           for (const target of targets) {
-            const [path, anchor] = target.split("#");
-            const { path: file, outside } = path ? p.locate(p.profile.decisions.file, path) : { path: p.profile.decisions.file };
+            const where = p.targetOf(p.profile.decisions.file, target);
+            if (!where) { problems.push(`${name}: ${target} is not in the repository`); continue; }
+            const { path: file, anchor, outside } = where;
             if (outside) { problems.push(`${name}: ${target} leads outside the repository`); continue; }
             if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }
             if (!file.endsWith(".md") || lstatSync(p.at(file)).isDirectory()) { problems.push(`${name}: ${target} is not a document`); continue; }
@@ -738,9 +753,9 @@ async function runCheck({ name, axioms, level = "gate", run }, p) {
 }
 
 export async function check(root, given) {
-  // The checks read the profile; one that is not valid leaves them unable to run, which fails even a report (A6).
+  // A profile that is not an object leaves the checks nothing to read: none can run, which fails even a report (A6).
   const invalid = profileProblems(given);
-  if (invalid.length) {
+  if (!usableProfile(given)) {
     const [first, ...rest] = CHECKS;
     return [
       { name: first.name, axioms: first.axioms, level: first.level, problems: invalid, notes: [], errors: [] },
