@@ -16,7 +16,7 @@ const stop = (why) => { throw new Error(why); };
 
 export function packageVersion(from = HERE) {
   const pkgPath = join(from, "package.json");
-  if (!existsSync(pkgPath)) stop("package.json is not there");
+  if (!existsSync(pkgPath)) stop("package.json of this docaxioms checkout does not exist");
   return JSON.parse(readFileSync(pkgPath, "utf8")).version;
 }
 
@@ -83,8 +83,8 @@ function putCore(project, profile, commit) {
 }
 
 export function init(project, commit) {
-  if (existsSync(join(project, "docaxioms.json"))) stop("the project has a docaxioms.json: use update");
-  if (existsSync(join(project, DIR))) stop(`the project has a ${DIR}/ folder of its own`);
+  if (existsSync(join(project, "docaxioms.json"))) stop("the project already has a docaxioms.json: run docaxioms update instead");
+  if (existsSync(join(project, DIR))) stop(`the project already has a ${DIR}/ folder of its own; move it first`);
   const made = [];
   const copy = (from, to) => {
     for (const entry of readdirSync(from, { withFileTypes: true })) {
@@ -105,7 +105,7 @@ export function init(project, commit) {
 
 export function update(project, commit, { acceptAxioms = false } = {}) {
   const file = join(project, "docaxioms.json");
-  if (!existsSync(file)) stop("the project has no docaxioms.json: use init");
+  if (!existsSync(file)) stop("the project has no docaxioms.json: run docaxioms init first");
   const profile = JSON.parse(readFileSync(file, "utf8"));
   const pinned = profile.core?.files ?? {};
   const where = folder(project, profile);
@@ -115,12 +115,12 @@ export function update(project, commit, { acceptAxioms = false } = {}) {
   }
   for (const [name, pin] of Object.entries(pinned)) {
     if (existsSync(join(dir, name)) && hash(join(dir, name)) !== pin) {
-      stop(`${where}/${name} was changed in the project: take that change to docaxioms first`);
+      stop(`${where}/${name} was changed in the project: make that change in docaxioms first, then update`);
     }
   }
   if (existsSync(dir)) {
     for (const name of readdirSync(dir).filter((one) => one !== ".DS_Store")) {
-      if (!(name in pinned)) stop(`${where}/${name} is not part of the core: move it out first`);
+      if (!(name in pinned)) stop(`${where}/${name} is not one of the core files: move it out of ${where}/ first`);
     }
   }
   if (pinned[AXIOMS] && pinned[AXIOMS] !== hash(join(HERE, "core", AXIOMS)) && !acceptAxioms) {

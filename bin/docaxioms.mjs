@@ -23,7 +23,7 @@ const USAGE = `usage:
 
 function loadProfile(root, { strict = false } = {}) {
   const file = join(root, "docaxioms.json");
-  if (!existsSync(file)) throw new Error(`${file} is not there`);
+  if (!existsSync(file)) throw new Error(`${file} does not exist (run docaxioms init, or pass --root <dir>)`);
   const profile = JSON.parse(readFileSync(file, "utf8"));
   // check reports problems in the profile as findings; pin and garden, which write or list from it, refuse to run.
   const problems = strict ? profileProblems(profile) : [];
@@ -172,7 +172,7 @@ try {
     });
     const target = positionals[0];
     if (!target) throw new Error(USAGE);
-    if (!existsSync(target)) throw new Error(`${target} is not there`);
+    if (!existsSync(target)) throw new Error(`${target} does not exist`);
     const root = resolve(target);
     const commit = source();
     const version = packageVersion();

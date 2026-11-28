@@ -8,17 +8,31 @@ Read the axioms, then the stage card, then what the index leads to for the task.
 
 ## Which document owns what
 
-| What changed | Update | How |
-|---|---|---|
-| The owner decided something | The passage it changes, then the decisions | First the passage, naming the decision's id; then a row: id, what was asked, what was decided in the owner's words, status, landing. Only what the owner decided (A0) |
-| A decision is overturned | The status of the old row | `superseded by <id>`, or `partly superseded (<what> by <id>)`. The old text stays (A5) |
-| How something behaves | The one document that describes it | In the same task as the change (A2). State what is now; if a passage must mention past behaviour, mark it as a record where it mixes, or keep past changes in decisions or history (M1, A3) |
-| A limit that is known | The document of limits or design | Not the plan, which holds only what is to be done (M1) |
-| A step is finished | The log | One short entry under the date; what was run and what was not (A1) |
-| Something is to be done | The plan | One item; its research links back to it |
-| Research for an open item | The research folder | `Status: open (<item>)` under the title |
-| An item is done or dropped | The plan, then its research | Delete the item; move what is still true to its owner; move the research to history |
-| What is active, what is next | The stage card | Rewrite it, short: no commit ids, counts or ranges that another document owns (A4) |
+Each fact is kept by hand in one document, its owner; other documents link to it instead of repeating it (M3). After a change, find the row for what changed, and update the documents that row names, in the order given.
+
+- **What changed**: the kind of change that just happened.
+- **Update**: the document that owns that fact. Where a row names two, update them in that order.
+- **What to write**: what the change looks like in that document.
+- **Why**: the axioms the row follows from.
+
+Documents are named here by their role. The profile says which file plays each role in a project.
+
+- **Decisions**: a table of what the owner decided, one row per decision. A row's **landing** is a link to the **passage**, the part of a document, that now says what was decided.
+- **Description**: a document that says what the software does now.
+- **Log**: dated entries of finished steps. **Plan**: the open items, what is still to be done. **Research folder**: notes for an open item.
+- **History**: documents that no longer describe the present, kept as records. **Stage card**: a short page that says what is active and what comes next.
+
+| What changed | Update | What to write | Why |
+|---|---|---|---|
+| The owner decided something | 1. The passage it changes<br>2. The decisions | In the passage: what is now so, with the decision's id. In the decisions: a new row with the id, what was asked, what was decided in the owner's words, its status, and its landing. Record only what the owner decided. | A0 |
+| A decision is overturned | The old decision's row | Set its status to `superseded by <id>` or `partly superseded (<what> by <id>)`. Leave the rest of the old row as it is. | A5 |
+| How something behaves | The one description of it | Change it in the same task as the behaviour. Say what is true now. If the passage must mention past behaviour, mark that part as a record; better, leave past changes to the decisions or history. | A2, A3, M1 |
+| A limit became known | The document of limits, or the design | The limit, written there and not in the plan: the plan holds only what is still to be done. | M1 |
+| A step is finished | The log | One short entry under the date: what was run, and what was not. | A1 |
+| Something is to be done | The plan | One item. Research for it links back to this item. | M1 |
+| Research starts for an open item | The research folder | A note with `Status: open (<item>)` under its title. | M4 |
+| An item is done or dropped | 1. The plan<br>2. Its research | Delete the item. Move what is still true to the document that owns it. Move the research to history. | M3, A5 |
+| What is active or next | The stage card | Rewrite it, short. Leave out commit ids, counts and ranges: another document owns them. | A3, A4 |
 
 ## Retire a document
 

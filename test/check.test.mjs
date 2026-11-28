@@ -116,12 +116,12 @@ const FAULTS = [
   ["open research", ({ swap }) => swap("docs/todo.md", "[notes](ideas/wind.md)", "notes")],
   ["open research", ({ swap }) => swap("docs/old/first.md", "OUT OF DATE", "Fine")],
   ["every current document", ({ put }) => put("docs/lost.md", "# Lost\n")],
-  ["a decision names", ({ swap }) => swap("docs/design.md", "On disk (ADR-2).", "On disk.")],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "| active |", "| done |")],
-  ["a decision names", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind:\n- other (ADR-2)\n- more:"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
-  ["a decision names", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a data-id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a decision links", ({ swap }) => swap("docs/design.md", "On disk (ADR-2).", "On disk.")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "| active |", "| done |")],
+  ["a decision links", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a id=\"wind\"></a>wind:\n- other (ADR-2)\n- more:"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
+  ["a decision links", ({ swap }) => { swap("docs/todo.md", "- wind:", "- <a data-id=\"wind\"></a>wind (ADR-2):"); swap("docs/adr.md", "design.md#1-cache", "todo.md#wind"); }],
   ["the stage card", ({ add }) => add("NOW.md", "line\n".repeat(12))],
-  ["bounded documents", ({ add }) => add("README.md", "line\n".repeat(25))],
+  ["documents with a size budget", ({ add }) => add("README.md", "line\n".repeat(25))],
   ["a history file", ({ swap }) => swap("docs/old/first.md", "Old text,", "New text,")],
   ["a history file", ({ swap }) => swap("docs/old/first.md", "Old text,", "Extra.\n\nOld text,")],
   ["a history file", ({ add }) => add("docs/old/first.md", "\nnot an erratum\n")],
@@ -132,9 +132,9 @@ FAULTS.push(
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[Rain]\n\n[rain]: <rain.md> \"Title\"\n")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[Rain][rain]\n\n[rain]: rain.md\n")],
   ["documents named in code", ({ add }) => add("weather/cli.py", "# see docs/gone.md\n")],
-  ["a decision names", ({ add }) => add("docs/adr.md", "\n## Later\n\n| ADR-4 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "# Decisions" } }],
-  ["a decision names", ({ add }) => add("docs/adr.md", "\n## Second\n\n| ADR-4 | x | y | active | [here](#nowhere) |\n")],
-  ["a decision names", ({ add }) => add("docs/adr.md", "\n## Now\n\n| ADR-4 | x | y | active | [d](design.md#1-cache) |\n\n## Then\n\n| ADR-5 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "## Now" } }],
+  ["a decision links", ({ add }) => add("docs/adr.md", "\n## Later\n\n| ADR-4 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "# Decisions" } }],
+  ["a decision links", ({ add }) => add("docs/adr.md", "\n## Second\n\n| ADR-4 | x | y | active | [here](#nowhere) |\n")],
+  ["a decision links", ({ add }) => add("docs/adr.md", "\n## Now\n\n| ADR-4 | x | y | active | [d](design.md#1-cache) |\n\n## Then\n\n| ADR-5 | x | y | done | - |\n"), { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "## Now" } }],
   ["cited sections", ({ add, swap }) => { add("docs/design.md", "\n### 1.2 Rows\n\n| 1 | a |\n\n### 1.3 Other\n\n| 2 | b |\n"); swap("weather/cli.py", "design 1.1", "design 1.2-2"); }, "rows"],
   ["a history file", ({ add, swap }) => { add("docs/old/first.md", "\n## Erratum 2026-11-23\n\nIt was two hours.\n"); swap("docs/old/first.md", "Old text,", "It was two hours.\n\nOld text,"); }],
   ["a history file", ({ swap, bare }) => { swap("docs/old/first.md", "Old text,", "New text,"); bare(); }, { ...PROFILE, history: { ...PROFILE.history, base: "origin/main" } }],
@@ -151,7 +151,7 @@ FAULTS.push(
   ["paths named", ({ add }) => add("README.md", "\nSee `weather/gone.py#L10`.\n")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[out](../../outside.md)\n")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[out](../../outside.md#a)\n")],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "../../outside.md#a")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "../../outside.md#a")],
   ["a history file", ({ swap }) => swap("docs/old/refs.md", "A\ntitle", "A\nnew title")],
   ["a history file", ({ swap }) => swap("docs/old/refs.md", "[x](../keep.md)", "[x](../other.md)")],
   ["decision numbers", ({ drop }) => drop("docs/adr.md")],
@@ -183,8 +183,8 @@ FAULTS.push(
   ["the profile", () => {}, { ...PROFILE, pathPrefixes: ["weather/", ""] }],
   ["the profile", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, landedSection: "  " } }],
   ["the profile", () => {}, { ...PROFILE, sections: [{ ...PROFILE.sections[0], rowTables: { 1.2: "" } }] }],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "https://example.com/design.md")],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "//example.com/design.md")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "https://example.com/design.md")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "//example.com/design.md")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[d](/docs#nope)\n")],
   ["links and anchors", ({ put, add }) => { put("docs/sub.md/x.txt", "x"); add("docs/index.md", "\n[x](sub.md#a)\n"); }],
   ["paths named", ({ add }) => add("README.md", "\nSee `docs/#gone`.\n")],
@@ -208,8 +208,8 @@ FAULTS.push(
   ["a history file", ({ swap }) => swap("docs/old/label.md", "secret", "other")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[x](/docs/gone.md)\n")],
   ["links and anchors", ({ add }) => add("docs/index.md", "\n[x](/docs/design.md#nope)\n")],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "/")],
-  ["a decision names", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "img/diagram.png")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "/")],
+  ["a decision links", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "img/diagram.png")],
   ["paths named", ({ add }) => add("README.md", "\nSee `docs/gone.md#1-cache`.\n")],
   ["paths named", ({ add }) => add("README.md", "\nSee `docs/../../outside.md`.\n")],
   ["the stage card", () => {}, { ...PROFILE, card: { ...PROFILE.card, file: "GONE.md" } }],
@@ -367,13 +367,13 @@ test("B2 edge: ambiguous move (duplicate identical windows) fails gate closed", 
   const dup = await runFixture(({ put }) => put("weather/cli.py", `import os\n${CLI_PY}${CLI_PY}`));
   const gate = dup.find((r) => r.name.startsWith("code pins match"));
   assert.equal(gate.problems.length, 1);
-  assert.match(gate.problems[0], /moved ambiguously/);
+  assert.match(gate.problems[0], /now matches more than one place/);
 });
 
 test("review aid: codeToDocs warns without failing gates, clears on doc edit, and reports missing base (A6)", async () => {
   const withCodeOnly = await runFixture(({ put }) => put("weather/new.py", "# helper\n"));
   assert.deepEqual(withCodeOnly.filter((r) => r.level === "gate" && r.problems.length), []);
-  const aid = withCodeOnly.find((r) => r.name.startsWith("code changes"));
+  const aid = withCodeOnly.find((r) => r.name.startsWith("code changed"));
   assert.equal(aid.level, "aid");
   assert.equal(aid.problems.length, 1);
 
@@ -381,16 +381,16 @@ test("review aid: codeToDocs warns without failing gates, clears on doc edit, an
     put("weather/new.py", "# helper\n");
     add("docs/design.md", "\nHelper note.\n");
   });
-  assert.equal(withDocUpdated.find((r) => r.name.startsWith("code changes")).problems.length, 0);
+  assert.equal(withDocUpdated.find((r) => r.name.startsWith("code changed")).problems.length, 0);
 
   const degraded = await runFixture(() => {}, {
     ...PROFILE,
     codeToDocs: [{ code: "weather/**", docs: ["docs/design.md"], base: "origin/missing" }],
   });
-  const codeToDocsResult = degraded.find((r) => r.name.startsWith("code changes"));
+  const codeToDocsResult = degraded.find((r) => r.name.startsWith("code changed"));
   assert.deepEqual(codeToDocsResult.problems, []);
   assert.equal(codeToDocsResult.notes.length, 1);
-  assert.match(codeToDocsResult.notes[0], /base "origin\/missing" not found/);
+  assert.match(codeToDocsResult.notes[0], /base "origin\/missing" was not found/);
 });
 
 test("a check that throws an error reports it, and the other checks still run (A6)", async () => {
@@ -418,7 +418,7 @@ test("a link that leads outside the repository fails, and the file there is not 
     assert.deepEqual(named(linked, "links and anchors").filter((one) => /outside/.test(one)).length, 1);
     assert.ok(named(linked, "every current document is reachable").some((one) => one.includes("docs/orphan.md")));
     const landed = await run(({ swap }, target) => swap("docs/adr.md", "design.md#1-cache", `${target}#a`));
-    assert.ok(named(landed, "a decision names").some((one) => /leads outside the repository/.test(one)));
+    assert.ok(named(landed, "a decision links").some((one) => /leads outside the repository/.test(one)));
   } finally { if (outside) rmSync(outside, { force: true }); }
 });
 
@@ -519,7 +519,7 @@ test("an invalid setting drops only that setting, or the one list item that hold
   assert.equal(results[0].problems.length, 3);
   assert.deepEqual(results.filter((r) => r.errors.length).map((r) => r.name), []);
   const bad = await runFixture(({ add }) => add("README.md", "\nRun `make deploy`.\n"), { ...PROFILE, "commands.foo": 1, commands: [{ prefix: "make", makefile: "Makefile" }, { prefix: "" }] });
-  assert.deepEqual(bad.find((r) => r.name.startsWith("commands named")).problems, ["README.md:5: `make deploy` is not defined"]);
+  assert.deepEqual(bad.find((r) => r.name.startsWith("commands named")).problems, ["README.md:5: `make deploy` is not a defined command"]);
 });
 
 test("project checks load only from a file inside the repository, and a sparse array is refused", async () => {
@@ -636,12 +636,12 @@ test("history gate says when its base is missing instead of comparing silently a
   const missing = history(await runFixture(() => {}, { ...PROFILE, history: { ...PROFILE.history, base: "origin/missing" } }));
   assert.deepEqual(missing.problems, []);
   assert.equal(missing.notes.length, 1);
-  assert.match(missing.notes[0], /base "origin\/missing" not found/);
+  assert.match(missing.notes[0], /base "origin\/missing" was not found/);
   const changed = history(await runFixture(({ swap }) => swap("docs/old/first.md", "Old text,", "New text,"), { ...PROFILE, history: { ...PROFILE.history, base: "origin/missing" } }));
   assert.equal(changed.problems.length, 1);
   assert.equal(changed.notes.length, 1);
   const unset = history(await runFixture(() => {}, { ...PROFILE, history: { ...PROFILE.history, base: null } }));
-  assert.match(unset.notes[0], /base "origin\/main" not found/);
+  assert.match(unset.notes[0], /base "origin\/main" was not found/);
 });
 
 test("history gate says when there is no commit to compare with", async () => {

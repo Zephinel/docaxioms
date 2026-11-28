@@ -74,8 +74,8 @@ function resolveBase(root, wantedBase) {
   const base = runGit(root, ["merge-base", target, "HEAD"])?.trim();
   if (base) return { base, degraded: null };
   const head = runGit(root, ["rev-parse", "HEAD"])?.trim();
-  if (!head) return { base: null, degraded: "no commit to compare with (not a git repository, or no commits yet); nothing was compared" };
-  return { base: head, degraded: `base "${target}" not found, or it shares no history with HEAD; fell back to HEAD (committed changes are not compared)` };
+  if (!head) return { base: null, degraded: "there is no commit to compare with (this is not a git repository, or it has no commits yet), so nothing was compared" };
+  return { base: head, degraded: `base "${target}" was not found, or it shares no history with HEAD, so HEAD was used instead (committed changes were not compared)` };
 }
 
 /** Changed files relative to base (including untracked files in working tree), reporting any fallback (A6). */
@@ -331,13 +331,13 @@ const CHECKS = [
       const { dir = "", files = {}, version, commit } = profile.core ?? {};
       const at = (file) => (dir ? `${dir}/${file}` : file);
       const versionProblem = version && version !== PACKAGE_VERSION
-        ? [`docaxioms.json pins core version ${version}, but running CLI is ${PACKAGE_VERSION} (run update or match installed CLI version)`]
+        ? [`docaxioms.json pins docaxioms version ${version}, but the docaxioms running is version ${PACKAGE_VERSION}: run docaxioms update, or run version ${version}`]
         : [];
       const runningCommit = commit && FULL_SHA.test(commit) && existsSync(join(PACKAGE_ROOT, ".git"))
         ? runGit(PACKAGE_ROOT, ["rev-parse", "HEAD"])?.trim()
         : undefined;
       const commitProblem = runningCommit && runningCommit.toLowerCase() !== commit.toLowerCase()
-        ? [`docaxioms.json pins commit ${commit.slice(0, 8)}, but running checkout is ${runningCommit.slice(0, 8)} (run update or match checkout)`]
+        ? [`docaxioms.json pins docaxioms commit ${commit.slice(0, 8)}, but the docaxioms checkout running is at ${runningCommit.slice(0, 8)}: run docaxioms update, or check out ${commit.slice(0, 8)}`]
         : [];
       return [
         ...versionProblem,
@@ -346,10 +346,10 @@ const CHECKS = [
           ? [fileFault({ inside, isFolder, isFile }, at(file), "core.files")]
           : createHash("sha256").update(read(at(file))).digest("hex") === hash
             ? []
-            : [`${at(file)}: not the pinned version (it comes from docaxioms; change it there, then update)`])),
+            : [`${at(file)}: differs from the pinned version. It is a copy from docaxioms: change it in docaxioms, then run docaxioms update`])),
         ...all
           .filter((file) => inCore(file) && !(file.slice(dir.length + 1) in files))
-          .map((file) => `${file}: not part of the core`),
+          .map((file) => `${file}: is in the core folder but is not one of the core files`),
       ];
     },
   },
@@ -360,17 +360,17 @@ const CHECKS = [
     level: "gate",
     run: (p) => p.currentDocs.flatMap((file) => p.links(file).flatMap(({ target, path, anchor, outside }) => {
       if (outside) return [`${file}: ${target} leads outside the repository`];
-      if (!p.has(path)) return [`${file}: ${target} leads nowhere`];
+      if (!p.has(path)) return [`${file}: ${target} leads to a file that does not exist`];
       if (!anchor) return [];
       // A folder's headings are those of its README.
       const doc = p.isFolder(path) ? readmeOf(path) : path;
       if (!doc.endsWith(".md")) return [];
-      return p.isFile(doc) && p.passage(doc, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
+      return p.isFile(doc) && p.passage(doc, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that does not exist`];
     })),
   },
 
   {
-    name: "decision numbers are unique and every one cited exists",
+    name: "decision numbers are unique, and every cited decision exists",
     axioms: "A4",
     level: "gate",
     run: (p) => {
@@ -380,13 +380,13 @@ const CHECKS = [
       const rows = decisionRows(p);
       const names = rows.map((row) => row.name);
       const known = new Set(names);
-      const problems = names.filter((name, index) => names.indexOf(name) !== index).map((name) => `${name} has two rows`);
+      const problems = names.filter((name, index) => names.indexOf(name) !== index).map((name) => `${name} has more than one row`);
       const cite = new RegExp(`\\b${escape(p.profile.decisions.id)}(\\d{1,4})\\b`, "g");
       const exempt = new RegExp(p.profile.decisions.citeExempt ?? "^$");
       const missing = new Set();
       for (const file of [...p.code, ...p.currentDocs].filter((name) => !exempt.test(name))) {
         const text = file.endsWith(".md") ? p.markdown(file).withoutFences : withoutFences(p.read(file));
-        for (const [name] of text.matchAll(cite)) if (!known.has(name)) missing.add(`${file}: ${name}`);
+        for (const [name] of text.matchAll(cite)) if (!known.has(name)) missing.add(`${file}: cites ${name}, which is not in ${p.profile.decisions.file}`);
       }
       return [...problems, ...missing];
     },
@@ -417,8 +417,8 @@ const CHECKS = [
       return p.code.filter((file) => new RegExp(files).test(file)).flatMap((file) => [...p.read(file).matchAll(new RegExp(cite, "g"))].flatMap(([whole, section]) => {
         const [head, row] = section.split("-");
         return row && rows[head]
-          ? (rows[head].has(row) ? [] : [`${file}: ${whole}`])
-          : heads.has(head) ? [] : [`${file}: ${whole}`];
+          ? (rows[head].has(row) ? [] : [`${file}: cites "${whole}", but that table row is not in ${document}`])
+          : heads.has(head) ? [] : [`${file}: cites "${whole}", but that section is not in ${document}`];
       }));
     }),
   },
@@ -435,7 +435,7 @@ const CHECKS = [
         .filter((file) => !exempt.test(file))
         .flatMap((file) => [...p.read(file).matchAll(/(?<![\w./-])((?:[\w.-]+\/)+[\w.-]+\.md)\b/g)]
           .filter(([, path]) => folders.has(dirname(path)) && !p.has(path))
-          .map(([, path]) => `${file}: ${path}`));
+          .map(([, path]) => `${file}: names ${path}, which does not exist`));
     },
   },
 
@@ -452,7 +452,7 @@ const CHECKS = [
       const elsewhere = new RegExp(p.profile.pathExempt ?? "^$");
       const back = gone
         .filter((path) => p.has(path.replace(/\/$/, "")))
-        .map((path) => `${path} is declared gone in docaxioms.json and is there`);
+        .map((path) => `${path} is listed in gonePaths in docaxioms.json, but it still exists`);
       const card = p.profile.card?.file;
       return [
         ...back,
@@ -470,7 +470,7 @@ const CHECKS = [
             return p.has(lexical)
               || gone.some((one) => `${lexical}/`.startsWith(one.replace(/\/?$/, "/")))
               ? []
-              : [`${file}: \`${path}\``];
+              : [`${file}: \`${path}\` does not exist`];
           })),
       ];
     },
@@ -502,7 +502,7 @@ const CHECKS = [
           const command = rest.split(/\s+/).find((word) => !word.startsWith("-"));
           if (!command || /[*<>{}…()|$#]|\.\.\./.test(command)) continue;
           if (!valid.has(command)) {
-            problems.push(`${file}:${line}: \`${rule.prefix}${/\s$/.test(rule.prefix) ? "" : " "}${command}\` is not defined`);
+            problems.push(`${file}:${line}: \`${rule.prefix}${/\s$/.test(rule.prefix) ? "" : " "}${command}\` is not a defined command`);
           }
         }
       }
@@ -511,7 +511,7 @@ const CHECKS = [
   },
 
   {
-    name: "open research is linked from an open item; history carries its banner",
+    name: "open research is linked from an open item, and every history file has its banner",
     axioms: "A3, A5",
     level: "gate",
     run: (p) => {
@@ -528,16 +528,16 @@ const CHECKS = [
         const open = until ? items.withoutCode.split("\n").slice(0, until.start).join("\n") : research.openUntil ? "" : items.withoutCode;
         for (const file of p.currentDocs.filter((name) => name.startsWith(`${research.dir}/`) && !name.endsWith("/README.md"))) {
           if (!/^Status: open \(.+\)$/m.test(p.read(file).split("\n").slice(0, 12).join("\n"))) {
-            problems.push(`${file}: its first lines need \`Status: open (<item>)\`; done or dropped research belongs in history`);
+            problems.push(`${file}: open research must have \`Status: open (<item>)\` in its first lines; move done or dropped research to history`);
           } else if (!open.includes(file.split("/").pop())) {
-            problems.push(`${file}: no open item links to it`);
+            problems.push(`${file}: no open item in ${research.items} links to this research`);
           }
         }
       }
       if (history) {
         for (const file of p.all.filter((name) => p.inHistory(name) && name.endsWith(".md") && !name.endsWith("/README.md"))) {
           if (!p.read(file).split("\n").slice(0, 10).join("\n").includes(history.banner)) {
-            problems.push(`${file}: needs the out-of-date banner under its title`);
+            problems.push(`${file}: a history file needs the banner "${history.banner}" under its title (within its first 10 lines)`);
           }
         }
       }
@@ -571,7 +571,7 @@ const CHECKS = [
   },
 
   {
-    name: "a decision names where it landed, and that passage names it",
+    name: "a decision links to where it landed, and that passage mentions it",
     axioms: "A0, A4",
     level: "gate",
     run: (p) => {
@@ -583,10 +583,10 @@ const CHECKS = [
           const id = escape(p.profile.decisions.id);
           const problems = new RegExp(`^(active|superseded by ${id}\\d+|partly superseded \\(.+ by ${id}\\d+\\)|withdrawn)$`).test(status)
             ? []
-            : [`${name}: status "${status}" is not one of the four`];
+            : [`${name}: status "${status}" must be one of: active, superseded by <id>, partly superseded (<what> by <id>), withdrawn`];
           if (!/^(active|partly superseded)/.test(status)) return problems;
           const targets = landingTargets ?? [];
-          if (!targets.length) problems.push(`${name}: no landing passage`);
+          if (!targets.length) problems.push(`${name}: has no landing; an active decision links to the passage where it landed`);
           for (const target of targets) {
             const where = p.targetOf(p.profile.decisions.file, target);
             if (!where) { problems.push(`${name}: landing ${target} is an external link; a decision must land in a document in the repository`); continue; }
@@ -595,8 +595,8 @@ const CHECKS = [
             if (!p.has(file)) { problems.push(`${name}: landing ${target} does not exist`); continue; }
             if (!file.endsWith(".md") || !p.isFile(file)) { problems.push(`${name}: landing ${target} is not a Markdown document`); continue; }
             const text = anchor ? p.passage(file, anchor) : p.read(file);
-            if (text === undefined) problems.push(`${name}: ${target} names a heading that is not there`);
-            else if (!new RegExp(`\\b${escape(name)}\\b`).test(text)) problems.push(`${name}: ${target} does not name ${name}`);
+            if (text === undefined) problems.push(`${name}: landing ${target} names a heading that does not exist`);
+            else if (!new RegExp(`\\b${escape(name)}\\b`).test(text)) problems.push(`${name}: landing ${target} does not mention ${name}`);
           }
           return problems;
         });
@@ -604,7 +604,7 @@ const CHECKS = [
   },
 
   {
-    name: "the stage card stays a card",
+    name: "the stage card stays within its size limits",
     axioms: "A3",
     level: "gate",
     run: (p) => {
@@ -615,14 +615,14 @@ const CHECKS = [
       const text = p.read(card.file);
       const lines = text.trimEnd().split("\n").length;
       return [
-        ...(card.maxLines && lines > card.maxLines ? [`${card.file}: ${lines} lines, at most ${card.maxLines}`] : []),
-        ...(card.maxChars && text.length > card.maxChars ? [`${card.file}: ${text.length} characters, at most ${card.maxChars}`] : []),
+        ...(card.maxLines && lines > card.maxLines ? [`${card.file}: ${lines} lines, more than the ${card.maxLines} allowed`] : []),
+        ...(card.maxChars && text.length > card.maxChars ? [`${card.file}: ${text.length} characters, more than the ${card.maxChars} allowed`] : []),
       ];
     },
   },
 
   {
-    name: "bounded documents stay within budget",
+    name: "documents with a size budget stay within it",
     axioms: "A3, M4",
     level: "gate",
     run: (p) => (p.profile.budgets ?? []).flatMap((rule) => {
@@ -634,8 +634,8 @@ const CHECKS = [
           const text = p.read(file);
           const lines = text.trimEnd().split("\n").length;
           return [
-            ...(rule.maxLines && lines > rule.maxLines ? [`${file}: ${lines} lines, at most ${rule.maxLines}`] : []),
-            ...(rule.maxChars && text.length > rule.maxChars ? [`${file}: ${text.length} characters, at most ${rule.maxChars}`] : []),
+            ...(rule.maxLines && lines > rule.maxLines ? [`${file}: ${lines} lines, more than the ${rule.maxLines} allowed`] : []),
+            ...(rule.maxChars && text.length > rule.maxChars ? [`${file}: ${text.length} characters, more than the ${rule.maxChars} allowed`] : []),
           ];
         });
     }),
@@ -661,7 +661,7 @@ const CHECKS = [
         .reduce((pairs, part, index, parts) => (index % 2 ? pairs : [...pairs, [part, parts[index + 1]]]), [])
         .flatMap(([kind, file]) => {
           if (file.endsWith("/README.md")) return [];
-          if (kind === "D") return [`${file}: deleted`];
+          if (kind === "D") return [`${file}: a history file was deleted; history files are kept as records`];
           const before = bare(runGit(p.root, ["show", `${base}:${file}`]) ?? "");
           const now = bare(p.read(file));
           // As it was, then nothing, or a dated erratum: the whole text, so that no line elsewhere can pass as part of it.
@@ -672,7 +672,7 @@ const CHECKS = [
               && /^\n/.test(grown)
               && /^\d{4}-\d{2}-\d{2}/.test(grown.trimStart().slice(history.erratum.length)))
           ) return [];
-          return [`${file}: changed other than in a link target, or grew other than by a dated erratum at its end`];
+          return [`${file}: a history file may change only in its link targets, or by adding a dated erratum at its end`];
         });
       return { problems, notes };
     },
@@ -681,7 +681,7 @@ const CHECKS = [
   // --- Review Aids (M2: advisory signals measured before they may become gates) ---
 
   {
-    name: "code changes with mapped documents untouched",
+    name: "code changed, but the documents mapped to it did not",
     axioms: "A2, A6, M2",
     level: "aid",
     run: (p) => {
@@ -709,9 +709,9 @@ const CHECKS = [
         const sample = touchedCode.slice(0, 3).join(", ") + (touchedCode.length > 3 ? ` (+${touchedCode.length - 3})` : "");
         for (const doc of asArray(mapping.docs)) {
           if (!p.has(doc)) {
-            problems.push(`${doc}: mapped in codeToDocs but file does not exist`);
+            problems.push(`${doc}: is listed in codeToDocs but does not exist`);
           } else if (!changed.has(doc)) {
-            problems.push(`${doc}: review after code change in ${sample}`);
+            problems.push(`${doc}: code it describes changed (${sample}); review this document against it`);
           }
         }
       }
@@ -720,7 +720,7 @@ const CHECKS = [
   },
 
   {
-    name: "current descriptions use evolutionary phrasing",
+    name: "current descriptions narrate past changes",
     axioms: "A3, M1, M2",
     level: "aid",
     run: (p) => {

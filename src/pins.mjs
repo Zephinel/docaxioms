@@ -81,7 +81,7 @@ export function hashSourceSlice(content, startLine, endLine) {
     return { full, short: full.slice(0, SHORT_HASH_LENGTH) };
   }
   if (startLine < 1 || endLine < startLine || endLine > lineCount) {
-    return { error: `line range L${startLine}-L${endLine} is out of bounds (file has ${lineCount} lines)` };
+    return { error: `line range L${startLine}-L${endLine} is past the end of the file, which has ${lineCount} lines` };
   }
   const slice = lines.slice(startLine - 1, endLine).join("\n");
   const full = createHash("sha256").update(slice).digest("hex");
@@ -120,7 +120,7 @@ export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
       const pin = parsePinComment(comment);
       if (!pin || !wanted(file, pin.line)) continue;
       if (pin.malformed) {
-        records.push({ file, pin, status: "malformed", detail: `malformed pin comment \`${comment.raw.trim()}\`` });
+        records.push({ file, pin, status: "malformed", detail: `pin comment \`${comment.raw.trim()}\` is not in the form <!-- pin: path#Lstart-Lend@hash -->` });
         continue;
       }
       const resolved = resolvePinPath(file, pin.rawPath);
@@ -130,7 +130,7 @@ export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
         continue;
       }
       if (!p.has(resolved.path)) {
-        records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} does not exist` });
+        records.push({ file, pin, status: "missing", detail: `pin target "${pin.rawPath}" does not exist` });
         continue;
       }
       if (!p.isFile(resolved.path)) {
@@ -223,17 +223,17 @@ export function verifyPins(p) {
     if (status === "malformed" || status === "outside-root" || status === "missing" || status === "invalid-range") {
       problems.push(`${loc}: ${record.detail}`);
     } else if (status === "unpinned") {
-      problems.push(`${loc}: ${pin.rawPath} has no hash (expected @${record.actual}; review and run pin --write --file ${file})`);
+      problems.push(`${loc}: ${pin.rawPath} has no hash yet (it would be @${record.actual}); review the passage, then run docaxioms pin --write --file ${file}`);
     } else if (status === "moved") {
       const [newStart, newEnd] = record.movedTo;
       const oldRange = pin.startLine === pin.endLine ? `L${pin.startLine}` : `L${pin.startLine}-L${pin.endLine}`;
       const newRange = newStart === newEnd ? `L${newStart}` : `L${newStart}-L${newEnd}`;
-      problems.push(`${loc}: ${pin.rawPath}#${oldRange} moved to #${newRange} (identical hash @${pin.hash}; verify and run pin --relocate)`);
+      problems.push(`${loc}: ${pin.rawPath}#${oldRange} moved to #${newRange} unchanged (hash @${pin.hash}); run docaxioms pin --relocate to update the line numbers`);
     } else if (status === "ambiguous-move") {
       const locs = record.matches.map(([s, e]) => (s === e ? `L${s}` : `L${s}-L${e}`)).join(", ");
-      problems.push(`${loc}: ${pin.rawPath} hash @${pin.hash} moved ambiguously to ${locs}; update line range manually`);
+      problems.push(`${loc}: ${pin.rawPath} @${pin.hash} now matches more than one place (${locs}); set the line range by hand`);
     } else if (status === "changed") {
-      problems.push(`${loc}: ${pin.rawPath} changed (pinned @${pin.hash}, now @${record.actual})`);
+      problems.push(`${loc}: ${pin.rawPath} changed (pinned @${pin.hash}, now @${record.actual}); review the passage, then run docaxioms pin --write --file ${file}`);
     }
   }
   return problems;

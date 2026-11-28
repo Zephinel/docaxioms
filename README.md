@@ -21,7 +21,7 @@ npx --no-install docaxioms check
 ```text
 ok   core files are the pinned version (A4, A6)
 FAIL links and anchors resolve (A2, A4): 1
-       CURRENT.md: docs/design.md leads nowhere
+       CURRENT.md: docs/design.md leads to a file that does not exist
 ...
 ```
 
