@@ -1,14 +1,16 @@
 # Guide
 
-For whoever works in a project that uses docaxioms, a person or a model. Every rule here names the axioms it follows from ([`AXIOMS.lock.md`](AXIOMS.lock.md)). The project's profile, `docaxioms.json` at its root, says where it keeps each thing named here. The files in this folder are copies of docaxioms, pinned: change them there, never here (A4).
+For whoever works in a project that uses docaxioms, a person or a model. The project's profile, `docaxioms.json` at its root, says where it keeps each thing named here. The files in this folder are copies of docaxioms, pinned: change them there, never here (A4).
+
+Every rule here names the axioms it follows from, defined in [`AXIOMS.lock.md`](AXIOMS.lock.md): in brackets at the end of its paragraph or item, or in the **Why** column of a table.
 
 ## Before work
 
-Read the axioms, then the stage card, then what the index leads to for the task. Leave history alone unless you trace why something was decided (A3). Take every claim for what it is: a record, a norm, a description or a plan (M1).
+Read the axioms, then the stage card, then what the index leads to for the task. Leave history alone unless you trace why something was decided. Take every claim for what it is: a record, a norm, a description or a plan (A3, M1).
 
 ## Which document owns what
 
-Each fact is kept by hand in one document, its owner; other documents link to it instead of repeating it (M3). After a change, find the row for what changed, and update the documents that row names, in the order given.
+Each fact is kept by hand in one document, its owner; other documents link to it instead of repeating it. After a change, find the row for what changed, and update the documents that row names, in the order given (M3).
 
 - **What changed**: the kind of change that just happened.
 - **Update**: the document that owns that fact. Where a row names two, update them in that order.
@@ -40,10 +42,10 @@ When it stops describing the present: move what is still true to its owner, move
 
 ## Code pins, review aids, and gardening
 
-- **Code pins** (A2, A6, A7): where a description depends on a specific source slice, anchor it with an invisible comment `<!-- pin: path/to/file#Lstart-Lend@hash -->` (or `<!-- pin: path/to/file@hash -->` for a whole file; paths resolve from the repository root unless prefixed with `./` or `../`). Any mismatch fails the hard gate (A6), including shifted lines: if an identical hash exists at a unique new line range, the gate names the move and `docaxioms pin --relocate` updates only the line numbers without altering hashes. When pinned content itself changes, review the passage against the code and refresh explicitly with `docaxioms pin --write --file <doc>` (or `--pin <doc:line>`), which prints the newly covered lines for verification.
-- **Review aids** (M2, A6, A7): checks at level `aid` (such as `codeToDocs` reminders and opt-in evolutionary phrasing hints) report findings and counts without failing the gate. Measure their signal on the project before promoting any rule to a gate.
-- **Notes** (A6): when a check, gate or aid, cannot compare as configured (for instance, a missing comparison base), it prints a note stating what it did not compare, and shows `note` instead of `ok`. A note is not a finding and does not fail; read it, because a check with a note held less than its name says.
-- **Periodic gardening** (A0, A1, A6): mechanical checks do not prove that prose matches behaviour. Run `docaxioms garden` and follow [`GARDEN.md`](GARDEN.md) for a read-only audit of current descriptions and the stage card.
+- **Code pins**: where a description depends on a specific source slice, anchor it with an invisible comment `<!-- pin: path/to/file#Lstart-Lend@hash -->` (or `<!-- pin: path/to/file@hash -->` for a whole file; paths resolve from the repository root unless prefixed with `./` or `../`). Any mismatch fails the gate, including shifted lines: if an identical hash exists at a unique new line range, the gate names the move and `docaxioms pin --relocate` updates only the line numbers without altering hashes. When pinned content itself changes, review the passage against the code and refresh explicitly with `docaxioms pin --write --file <doc>` (or `--pin <doc:line>`), which prints the newly covered lines for verification (A2, A6, A7).
+- **Review aids**: checks at level `aid` (such as `codeToDocs` reminders and opt-in evolutionary phrasing hints) report findings and counts without failing the gate. Measure their signal on the project before promoting any rule to a gate (A6, A7, M2).
+- **Notes**: when a check, gate or aid, cannot compare as configured (for instance, a missing comparison base), it prints a note stating what it did not compare, and shows `note` instead of `ok`. A note is not a finding and does not fail; read it, because a check with a note held less than its name says (A6).
+- **Periodic gardening**: mechanical checks do not prove that prose matches behaviour. Run `docaxioms garden` and follow [`GARDEN.md`](GARDEN.md) for a read-only audit of current descriptions and the stage card (A0, A1, A6).
 
 ## Accept a change
 
@@ -51,17 +53,17 @@ When it stops describing the present: move what is still true to its owner, move
 - What changed was read against its owner. No check holds that a description is right, that a decision was really the owner's, or that a landing says the right thing (A6).
 - A link inside the repository points to a file or folder that exists. It is read from its own document's folder, or from the repository root when it starts with `/`. A decision's landing is a document (A2, A4).
 - From the entry point, a reader finds what the software does now without opening research or history (A3).
-- Entry documents stay concise routing maps (M4): put detail in dedicated documents and link to them.
+- Entry documents stay concise routing maps: put detail in dedicated documents and link to them (M4).
 
 When an item closes, look through the documents it touched for what is false, broken, said twice, or finished. Verify each finding against the code before you change anything (A0, A1).
 
 ## A new rule or check
 
-Name the axioms it follows from. Make it a failing check (`gate`) only when what it evaluates is the property itself and it is precise; otherwise start it as a review aid (`aid`) and count what it reports on the real project first (A6, A7, M2). Give it its own seeded fault: a check that was never seen to fail proves nothing.
+Name the axioms it follows from. Make it a failing check (`gate`) only when what it evaluates is the property itself and it is precise; otherwise start it as a review aid (`aid`) and count what it reports on the real project first. Give it its own seeded fault: a check that was never seen to fail proves nothing (A6, A7, M2).
 
 ## The profile
 
-Every key is optional, and a check with nothing to look at passes. An unknown key, or a value of the wrong type, fails the profile check, so that a typo cannot switch a check off unnoticed (A6). That setting is then ignored, and the other checks still run. A project's own keys, read by its project checks, start with `x-`.
+Every key is optional, and a check with nothing to look at passes. An unknown key, or a value of the wrong type, fails the profile check, so that a typo cannot switch a check off unnoticed. That setting is then ignored, and the other checks still run. A project's own keys, read by its project checks, start with `x-` (A6).
 
 | Key | What it says |
 |---|---|
@@ -78,7 +80,7 @@ Every key is optional, and a check with nothing to look at passes. An unknown ke
 | `history` | `dir`, `banner`, `erratum` (the heading of an erratum, before its date), `base` (the branch to compare with) |
 | `card` | `file`, `maxLines`, `maxChars` |
 | `budgets` | Size limits for entry or current documents: `[{ files, maxLines, maxChars, exempt }]` |
-| `codeToDocs` | Review aid (M2) mapping code globs to current documents: `[{ code, docs, base }]` |
-| `evolutionary` | Opt-in review aid (M2) flagging unmarked past-tense transition phrases in descriptions: `{ phrases, exempt }` |
+| `codeToDocs` | Review aid mapping code globs to current documents: `[{ code, docs, base }]` (M2) |
+| `evolutionary` | Opt-in review aid flagging unmarked past-tense transition phrases in descriptions: `{ phrases, exempt }` (M2) |
 | `garden` | Gardening scope options: `{ exempt }` |
 | `projectChecks` | A module whose default export is a list of `{ name, axioms, level?, run(project) }`: what only this project can check |
