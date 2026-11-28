@@ -159,6 +159,26 @@ docaxioms.json: commands[0] must set exactly one of jsonFile, makefile or list</
 <div class="callout warn">已知缺口（缺陷 18）：项目检查返回 <code>{}</code> 或 <code>undefined</code> 时，<code>normalizeOutcome</code> 把它当成“没有发现”，不会报错。</div>
 
 <h2 id="manage">9. init 与 update：<code>src/manage.mjs</code></h2>
+<p>一句话区分：<strong><code>init</code> 一个项目只运行一次，用来放入模板和规范副本；<code>update</code> 在 docaxioms 本身升级之后运行，只换规范副本。</strong>两者都不碰项目自己写的文档。</p>
+<p>项目里属于 docaxioms 的东西有两类：</p>
+<ul>
+  <li><strong>模板</strong>（<code>AGENTS.md</code>、<code>CURRENT.md</code>、<code>docs/</code> 下几份空文档）：复制进来以后就归项目所有，项目可以随意改，docaxioms 以后再也不碰。</li>
+  <li><strong>规范副本</strong>（<code>docaxioms/</code> 下的公理、GUIDE、GARDEN、许可证）：一直属于 docaxioms，项目不能改，用哈希钉住。</li>
+</ul>
+<p><code>init</code> 两类都放；<code>update</code> 只管规范副本。所以新版 docaxioms 即使加了新模板，<code>update</code> 也不会把它补进已经接入的项目。</p>
+<p><strong>什么时候要运行 <code>update</code></strong>：项目升级了 docaxioms 的 npm 版本以后，第一次 <code>check</code> 就会失败，并告诉你去运行它。实际输出：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> core files are the pinned version (A4, A6): 1
+       docaxioms.json pins docaxioms version 0.0.9, but the docaxioms running is version 0.1.0-alpha.0: run docaxioms update, or run version 0.0.9
+<span class="cmd">$ docaxioms update .</span>
+docaxioms/ is pinned to v0.1.0-alpha.0 (e45fec29); run: npx --no-install docaxioms check
+<span class="cmd">$ docaxioms check</span>
+ok   core files are the pinned version (A4, A6)</code></pre>
+<p>如果项目改过规范副本，<code>update</code> 会拒绝。它不会覆盖掉项目的改动，而是要求先把改动提交到 docaxioms 本身：</p>
+<pre><code><span class="cmd">$ docaxioms update .</span>
+docaxioms/GUIDE.md was changed in the project: make that change in docaxioms first, then update
+<span class="dim">[exit 1]</span></code></pre>
+<p>细节对比：</p>
 <table class="wrap">
 <tr><th></th><th><code>init</code> <span class="src">:85</span></th><th><code>update</code> <span class="src">:106</span></th></tr>
 <tr><td>前提</td><td>项目没有 <code>docaxioms.json</code>，也没有 <code>docaxioms/</code> 目录</td><td>项目有 <code>docaxioms.json</code></td></tr>

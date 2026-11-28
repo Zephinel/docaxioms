@@ -22,6 +22,9 @@
   <b>本页</b>
   <a href="#a">A. 从零开始的新项目</a>
   <a href="#b">B. 已有项目接入</a>
+  <a href="#b-who">profile 由谁来调</a>
+  <a href="#b-budget">接入时已超预算</a>
+  <a href="#b-messy">目录结构很乱</a>
   <a href="#c">C. 完成一个功能</a>
   <a href="#c1">C1 计划与调研</a>
   <a href="#c2">C2 决策与 pin</a>
@@ -30,6 +33,7 @@
   <a href="#c6">C6 收尾归档</a>
   <a href="#c7">C7 历史不可改写</a>
   <a href="#c8">C8 定期审计</a>
+  <a href="#agent">D. agent 怎么知道要更新文档</a>
   <a href="#summary">一张表总结</a>
 </aside>
 <main>
@@ -152,6 +156,65 @@ made docs/plan.md
 <span class="dim">[exit 1]</span></code></pre>
 <div class="callout">接入已有项目的要点：先跑一遍看哪些文档孤立、哪些链接已断；再按项目的语言和工具配 <code>codeExtensions</code>、<code>pathPrefixes</code>、<code>commands</code>；最后把检查接进 CI。现有文档不必一次改完，可以先用 <code>--report</code> 只看报告。</div>
 
+<h3 id="b-who">profile 由谁来调，能不能自动</h3>
+<p><strong>现在全靠手工</strong>，人或 agent 直接编辑 <code>docaxioms.json</code>。<code>init</code> 只把模板里的 profile 原样写进去（<span class="src">manage.mjs:102</span>），不看项目里有什么文件；之后的 <code>update</code> 只改 <code>core</code> 一节，其他键都不动。</p>
+<p>能不能自动，要分两类看：</p>
+<table class="wrap">
+<tr><th>设置</th><th>能从仓库推出来吗</th><th>依据</th></tr>
+<tr><td><code>codeExtensions</code></td><td>能</td><td><code>git ls-files</code> 里各种扩展名的数量</td></tr>
+<tr><td><code>commands</code></td><td>能</td><td>有没有 <code>package.json</code> 的 scripts、<code>Makefile</code>、<code>justfile</code></td></tr>
+<tr><td><code>pathPrefixes</code></td><td>大致能</td><td>顶层目录里被跟踪的那些</td></tr>
+<tr><td><code>history.base</code></td><td>能</td><td><code>git symbolic-ref refs/remotes/origin/HEAD</code>，没有远端时用本地主分支</td></tr>
+<tr><td><code>entries</code></td><td>能</td><td>候选入口里实际存在的那些</td></tr>
+<tr><td><code>reachable</code>、<code>budgets</code>、<code>ignore</code>、决策前缀、哪份文件是日志和计划</td><td>不能</td><td>这些是项目的约定，只能由 owner 决定</td></tr>
+</table>
+<p>比较稳妥的做法是：工具只<strong>提出建议</strong>，比如加一个打印建议 profile 的命令，由人确认后再写入；不要在 <code>init</code> 里悄悄写进去。原因有两个：猜错的设置会让检查漏报，而且不会有任何提示（A6）；迭代方案第九节也把写入限定为“确定性生成”和“显式命令”两类。目前代码里没有这个功能，迭代方案里也没有单独列出这一项。</p>
+
+<h3 id="b-budget">接入时文档已经超出预算</h3>
+<p>把一个故意不规范的项目接进来，实际运行的结果如下：根目录的 <code>AGENTS.md</code> 有 152 行，项目原有的 <code>CURRENT.md</code> 有 62 行，另外有 <code>frontend/AGENTS.md</code>、<code>frontend/docs/</code>、<code>backend/docs/</code>，还有一篇没人链接的 <code>docs/old.md</code>。</p>
+<pre><code><span class="cmd">$ docaxioms init .</span>        <span class="dim">（AGENTS.md、CURRENT.md 已经存在，所以不复制、不修改）</span>
+<span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> every current document is reachable from an entry point (A3): 1
+       docs/old.md
+<span class="fail">FAIL</span> the stage card stays within its size limits (A3): 1
+       CURRENT.md: 62 lines, more than the 45 allowed
+<span class="fail">FAIL</span> documents with a size budget stay within it (A3, M4): 1
+       AGENTS.md: 152 lines, more than the 100 allowed
+<span class="dim">[exit 1]</span></code></pre>
+<p>结论：<strong>不会被豁免，也没有“接入时的基线”</strong>，超出预算就是 gate 失败。<code>init</code> 写入的模板 profile 里带着预算，并且直接套用到项目原有的同名文件上。可以这样处理：</p>
+<ul>
+  <li><strong>精简</strong>（GUIDE 推荐的方向）：把细节挪到专门的文档里，入口只保留路由和链接（M4）。</li>
+  <li><strong>调整 profile</strong>：放宽 <code>maxLines</code>，或者暂时删掉这条预算，等文档整理好再加回来。</li>
+  <li><strong>过渡期用 <code>check --report</code></strong>：发现照常打印，但不让退出码失败，运行出错仍然失败。</li>
+  <li>如果项目原有的 <code>CURRENT.md</code> 写的根本不是阶段卡，就把 <code>card.file</code> 改成另一个文件；否则阶段卡的预算会套到一份不相干的文件上。</li>
+</ul>
+<p>历史检查不同：它有比较的基线（<code>history.base</code>），只管这个分支上改了什么。预算和可达性只看当前的样子，不区分哪些超出是接入前就已经存在的。</p>
+
+<h3 id="b-messy">目录结构很乱：到处都有 docs、AGENTS.md 不止一份</h3>
+<p>还是上面那个项目。用默认 profile 时，<code>frontend/docs/ui.md</code>、<code>backend/docs/api.md</code>、<code>frontend/AGENTS.md</code> <strong>都没有被报出来</strong>，原因是：</p>
+<ul>
+  <li><code>reachable</code> 默认是 <code>^docs/</code>，只要求根目录 <code>docs/</code> 下的文档必须可达；</li>
+  <li>预算的 <code>files: "AGENTS.md"</code> 是 picomatch 模式，只匹配根目录那一份。</li>
+</ul>
+<p>它们仍然算作现行文档，链接、路径、命令这些检查照样会扫，只是不要求它们可达，也不限制大小。把范围放宽之后：</p>
+<pre><code>"reachable": "(^|/)docs/",
+"budgets": [{ "files": "**/AGENTS.md", "maxLines": 100 }]
+
+<span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> every current document is reachable from an entry point (A3): 3
+       backend/docs/api.md
+       docs/old.md
+       frontend/docs/ui.md
+<span class="fail">FAIL</span> documents with a size budget stay within it (A3, M4): 2
+       AGENTS.md: 152 lines, more than the 100 allowed
+       frontend/AGENTS.md: 132 lines, more than the 100 allowed</code></pre>
+<p>所以对待结构很乱的项目，docaxioms 的态度是：<strong>不去猜结构，只按 profile 的声明去查</strong>。范围写多宽，管到哪里。它也有管不到的地方：</p>
+<ul>
+  <li>它不理解“每个子目录有一份自己的 <code>AGENTS.md</code>”这种层级关系。有些 agent 会按目录去读最近的那份，docaxioms 只把它当成一份普通文档。</li>
+  <li>同一件事在两份文档里各写了一遍（违反 M3，“一个事实只有一个所有者”），没有任何一项检查能发现。这要靠 <code>garden</code> 的人工审计。</li>
+  <li>目录要不要合并、合并成什么样，它不会提议。接入前最好先整理一遍：子目录的文档挂到根目录的索引下，或者把子目录也列进 <code>entries</code>。</li>
+</ul>
+
 <h2 id="c">C. 完成一个功能：可配置的缓存过期时间</h2>
 <p>接着 B 的项目，在分支 <code>ttl-config</code> 上做一个功能：缓存过期时间改为由环境变量 <code>WEATHER_TTL</code> 控制。下面按 GUIDE 的“Which document owns what”表一步步走。</p>
 
@@ -267,6 +330,33 @@ Stage card: CURRENT.md (15 lines)
   - docs/notes.md (3 lines, 0 pins)</code></pre>
 <p><code>garden</code> 只列清单：哪些是现行描述、各有多长、钉了几处代码、映射了哪些代码。真正的审计由人或 agent 按 <code>GARDEN.md</code> 逐条对照代码去做，结果是一份带日期的报告。机器检查保证不了“文字说的是对的”，garden 补的就是这一块。</p>
 
+<h2 id="agent">D. agent 怎么知道要更新这些文档</h2>
+<p><code>templates/docs/</code> 下的决策、计划、日志、索引，以及 <code>CURRENT.md</code>，都不会自己更新，也没有任何后台程序去改它们。agent 去更新，靠的是下面这条链：</p>
+<div class="flow">
+  <div class="step"><b>1. agent 读入口文件</b><small>大多数 agent 原生读 <code>AGENTS.md</code>；Claude Code 读 <code>CLAUDE.md</code>，模板里这份只有一行 <code>@AGENTS.md</code>，作用是把它导入进来</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>2. <code>AGENTS.md</code> 指路</b><small>按顺序读公理、GUIDE、<code>CURRENT.md</code>，再从 <code>docs/README.md</code> 读和任务有关的页面；提交文档前和推送前运行 <code>docaxioms check</code></small></div>
+  <div class="arrow">↓</div>
+  <div class="step hl"><b>3. GUIDE 的 “Which document owns what” 表</b><small>每发生一类改动，该改哪份文档、怎么写。agent 靠读懂这张表，才知道要去改</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>4. <code>check</code> 抓一部分遗漏</b><small>前提是它被接进了验证命令、CI 或钩子</small></div>
+</div>
+<p>前三步都只是文字，agent 读了不一定照做。第 4 步能抓住的遗漏是有限的：</p>
+<table class="wrap">
+<tr><th>漏做了什么</th><th>会被发现吗</th></tr>
+<tr><td>owner 的决定没有落到段落里，或者段落没提决策号</td><td>会（落地点检查）</td></tr>
+<tr><td>新文档没挂到索引</td><td>会（可达性，限 <code>reachable</code> 的范围）</td></tr>
+<tr><td>事项删了，调研还是 open；或者调研没有对应的事项</td><td>会（开放调研检查）</td></tr>
+<tr><td>钉住的代码变了，段落没复核</td><td>会（pin）</td></tr>
+<tr><td>改了代码，映射的文档没动</td><td>只提醒（<code>codeToDocs</code> 是 aid）</td></tr>
+<tr><td>完成一步没写日志</td><td>不会</td></tr>
+<tr><td><code>CURRENT.md</code> 没改写，内容已经过时</td><td>不会（只查长度）</td></tr>
+<tr><td>该加计划条目却没加</td><td>不会</td></tr>
+<tr><td>行为变了，没有 pin 的描述没改</td><td>不会，只有 <code>garden</code> 审计时才可能发现</td></tr>
+</table>
+<div class="callout warn">接入已有项目时还有一个缺口：如果项目原来就有 <code>AGENTS.md</code>，<code>init</code> 不会改它（上面那个不规范的项目就是这样），所以第 2 步的指路根本不存在，agent 连 docaxioms 都不知道。要手工把那几行加进去。</div>
+<p><strong>目前缺的东西</strong>：没有技能（skill），没有钩子，也没有在 agent 启动或恢复会话时自动注入的简报。GUIDE 是唯一的说明书，每次都要整份读完。迭代方案第六节第 2 条提出了“工作、审计、恢复”三个按需技能，钩子只负责把调用转给 <code>docaxioms hook &lt;事件&gt;</code>；第九节列了各个时机自动做什么。这些都还没有实现。</p>
+
 <h2 id="summary">一张表总结：每一步改什么，谁来守</h2>
 <table class="wrap">
 <tr><th>发生了什么</th><th>改哪里</th><th>哪项检查守着</th></tr>
@@ -278,7 +368,7 @@ Stage card: CURRENT.md (15 lines)
 <tr><td>文档提到路径、命令</td><td>保证它们存在</td><td>路径存在；命令已定义（只查现行描述）</td></tr>
 <tr><td>完成一步</td><td><code>docs/log.md</code> 记一条，<code>CURRENT.md</code> 改写</td><td>阶段卡在预算内</td></tr>
 <tr><td>事项完成或放弃</td><td>从计划删掉；调研移入 history，加横幅</td><td>历史横幅；开放调研检查</td></tr>
-<tr><td>决策被推翻</td><td>旧行状态改为 <code>superseded by D2</code>，原文不动；新决策加新行</td><td>状态必须是四种之一</td></tr>
+<tr><td>决策被推翻</td><td>旧行状态改为 <code>superseded by D2</code>，原文不动；新决策加新行。这里的 D2 就是推翻它的那条新决策的编号，<code>D</code> 是 profile 里 <code>decisions.id</code> 设的前缀（夹具项目用 <code>ADR-</code>，就写 <code>superseded by ADR-2</code>）。只推翻一部分时写 <code>partly superseded (缓存位置 by D2)</code>，括号里写被推翻的是哪一部分</td><td>状态必须是四种之一；D2 必须是决策表里有的编号（写成不存在的 D99 会报 “cites D99, which is not in docs/decisions.md”）；D2 是否真的推翻了它，没有检查能判断</td></tr>
 <tr><td>历史记录有误</td><td>末尾追加 <code>## Erratum 日期</code></td><td>历史只能改链接目标或追加勘误</td></tr>
 </table>
 
