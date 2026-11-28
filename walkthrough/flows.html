@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docaxioms 导读：接入与开发流程</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><nav>
+  <span class="brand">docaxioms 导读</span>
+  <a href="index.html">概览与架构</a>
+  <a href="flows.html" class="here">接入与开发流程</a>
+  <a href="checks.html">17 项检查</a>
+  <a href="mechanisms.html">核心机制</a>
+  <a href="tests.html">测试与门禁</a>
+  <a href="plan.html">对照迭代方案</a>
+</nav></header>
+
+<div class="layout">
+<aside class="toc">
+  <b>本页</b>
+  <a href="#a">A. 从零开始的新项目</a>
+  <a href="#b">B. 已有项目接入</a>
+  <a href="#b-who">profile 由谁来调</a>
+  <a href="#b-budget">接入时已超预算</a>
+  <a href="#b-messy">目录结构很乱</a>
+  <a href="#c">C. 完成一个功能</a>
+  <a href="#c1">C1 计划与调研</a>
+  <a href="#c2">C2 决策与 pin</a>
+  <a href="#c4">C4 代码移动</a>
+  <a href="#c5">C5 代码改变</a>
+  <a href="#c6">C6 收尾归档</a>
+  <a href="#c7">C7 历史不可改写</a>
+  <a href="#c8">C8 定期审计</a>
+  <a href="#agent">D. agent 怎么知道要更新文档</a>
+  <a href="#summary">一张表总结</a>
+</aside>
+<main>
+
+<h1>接入与开发流程</h1>
+<p class="lead">下面的命令和输出全部是在临时目录里实际运行 <code>d840742</code> 的 CLI 得到的。为了简短，<code>check</code> 的输出只保留不是 <code>ok</code> 的行，<code>[exit N]</code> 是命令的退出码。</p>
+
+<h2 id="a">A. 从零开始的新项目</h2>
+<p>一个只有一次空提交的 git 仓库，运行 <code>init</code>：</p>
+<pre><code><span class="cmd">$ docaxioms init .</span>
+made AGENTS.md
+made CLAUDE.md
+made CURRENT.md
+made docs/README.md
+made docs/decisions.md
+made docs/history/README.md
+made docs/log.md
+made docs/plan.md
+docaxioms/ is pinned to v0.1.0-alpha.0 (d8407429); run: npx --no-install docaxioms check
+Nothing runs the check for you yet: call `docaxioms check` from the project's verify command, require it
+in CI, and optionally run it from a pre-push hook. "Run the check" in the docaxioms README says what each holds.
+<span class="dim">[exit 0]</span></code></pre>
+<p><code>init</code>（<span class="src">src/manage.mjs:85</span>）做三件事：</p>
+<ol>
+  <li>把 <code>templates/</code> 下项目还没有的文件逐个复制过来，已有的一个都不碰（<code>!existsSync(target)</code>）；</li>
+  <li>把 <code>core/</code> 的四个文件复制到 <code>docaxioms/</code>，公理文件设为只读（<code>0o444</code>）；</li>
+  <li>以模板的 <code>docaxioms.json</code> 为底，写入 <code>core</code> 一节：来源、版本、docaxioms 的提交号，以及每个 core 文件的 SHA-256。</li>
+</ol>
+<details><summary>生成的 docaxioms.json</summary>
+<pre><code>{
+  "entries": ["AGENTS.md", "README.md", "docs/README.md"],   <span class="dim">← 候选入口，有一个存在即可</span>
+  "reachable": "^docs/",                                      <span class="dim">← 这些文档必须能从入口走到</span>
+  "codeExtensions": [],                                       <span class="dim">← 默认不扫代码</span>
+  "pathPrefixes": ["docs/"],                                  <span class="dim">← 行内代码里以这些开头的当作路径检查</span>
+  "decisions": { "file": "docs/decisions.md", "id": "D" },
+  "log": "docs/log.md",
+  "research": { "dir": "docs/research", "items": "docs/plan.md" },
+  "history": { "dir": "docs/history", "banner": "Out of date", "erratum": "## Erratum ", "base": "origin/main" },
+  "card": { "file": "CURRENT.md", "maxLines": 45, "maxChars": 4000 },
+  "budgets": [{ "files": "AGENTS.md", "maxLines": 100, "maxChars": 6000 }],
+  "garden": { "exempt": ["CLAUDE.md"] },
+  "core": {
+    "dir": "docaxioms",
+    "source": "https://github.com/Zephinel/docaxioms",
+    "version": "0.1.0-alpha.0",
+    "commit": "d8407429f6bb829ce65696b67d38758d48baf3a5",
+    "files": {
+      "AXIOMS.lock.md": "0ebfe50e…",
+      "GARDEN.md": "0fd7fe58…",
+      "GUIDE.md": "ff106834…",
+      "LICENSE": "1a336a47…"
+    }
+  }
+}</code></pre></details>
+<p>第一次检查：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="ok">ok</span>   the profile has only known keys and valid values (A6)
+<span class="dim">… 另外 13 项 ok …</span>
+<span class="note">note</span> a history file changes only in link targets, or grows by a dated erratum (A5)
+       note: base "origin/main" was not found, or it shares no history with HEAD, so HEAD was used instead (committed changes were not compared)
+<span class="ok">ok</span>   code changed, but the documents mapped to it did not (A2, A6, M2)
+<span class="ok">ok</span>   current descriptions narrate past changes (A3, M1, M2)
+<span class="dim">[exit 0]</span></code></pre>
+<div class="callout warn">这条 <code>note</code> 很重要：仓库没有 <code>origin/main</code>，history 检查找不到比较基线，就和 HEAD 比——已提交的改动没被比较。它不让命令失败，但会明说“这一项少检查了什么”（A6）。接入后应把 <code>history.base</code> 改成实际的主分支，或在 CI 里拉全历史（本仓库 CI 用 <code>fetch-depth: 0</code>）。</div>
+<p>故意加一个断链：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> links and anchors resolve (A2, A4): 1
+       docs/README.md: design.md leads to a file that does not exist
+<span class="dim">[exit 1]</span></code></pre>
+<p>至此新项目就接好了。<strong>docaxioms 不会自己运行</strong>：<code>init</code> 最后一句提醒的就是这个。要把 <code>docaxioms check</code> 接到项目的验证命令、CI 和（可选的）pre-push 钩子里，它才真正起到门禁作用。</p>
+
+<h2 id="b">B. 已有项目接入</h2>
+<p>一个已有的小项目：<code>README.md</code>、<code>AGENTS.md</code>、<code>docs/architecture.md</code>、一篇没人链接的 <code>docs/notes.md</code>、<code>src/cache.py</code>、一个 <code>Makefile</code>（目标 <code>test</code>、<code>lint</code>）。</p>
+<pre><code><span class="cmd">$ docaxioms init .</span>
+made CLAUDE.md
+made CURRENT.md
+made docs/README.md
+made docs/decisions.md
+made docs/history/README.md
+made docs/log.md
+made docs/plan.md
+<span class="dim">…</span>
+<span class="dim">[exit 0]</span>
+
+<span class="cmd">$ git status --short</span>
+?? CLAUDE.md
+?? CURRENT.md
+?? docaxioms.json
+?? docaxioms/
+?? docs/README.md
+?? docs/decisions.md
+?? docs/history/
+?? docs/log.md
+?? docs/plan.md</code></pre>
+<p>和 A 比较：<code>AGENTS.md</code> 没有被创建，因为项目已经有了；git 状态里只有新增，没有一个已有文件被修改。这是 <code>init</code> 的契约：<strong>项目自己的文件永不覆盖</strong>。如果项目已经有 <code>docaxioms.json</code> 或 <code>docaxioms/</code> 目录，<code>init</code> 直接拒绝。</p>
+<p>第一次检查，找出一篇孤立的文档：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> every current document is reachable from an entry point (A3): 1
+       docs/notes.md
+<span class="note">note</span> a history file changes only in link targets, or grows by a dated erratum (A5)
+       note: base "origin/main" was not found, …
+<span class="dim">[exit 1]</span></code></pre>
+<p><code>docs/architecture.md</code> 没报，因为 <code>README.md</code> 链到了它；<code>docs/notes.md</code> 从任何入口都走不到（A3：读者只能读到从入口能走到的东西）。</p>
+<h3>按项目调 profile</h3>
+<p>默认 profile 对代码一无所知。按这个项目调整：</p>
+<pre><code>"codeExtensions": [".py"],                              <span class="dim">← 扫 Python 文件里的决策号和文档路径</span>
+"pathPrefixes": ["docs/", "src/"],                      <span class="dim">← 行内代码里的 src/… 也要存在</span>
+"commands": [{ "prefix": "make ", "makefile": "Makefile" }],  <span class="dim">← `make xxx` 必须是 Makefile 里的目标</span>
+"history": { …, "base": "main" }                        <span class="dim">← 本地主分支叫 main</span></code></pre>
+<p>再把 <code>docs/notes.md</code> 和 <code>docs/architecture.md</code> 挂到 <code>docs/README.md</code>，让 <code>AGENTS.md</code> 链到 <code>CURRENT.md</code> 和 <code>docs/README.md</code>：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="dim">（全部 ok）</span>
+<span class="dim">[exit 0]</span></code></pre>
+<p>调好之后，文档里写错的路径和命令会被抓住。在 README 加一句 “Deploy with <code>make deploy</code>; config is in <code>src/config.py</code>”：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> paths named in current documents exist (A2, A7): 1
+       README.md: `src/config.py` does not exist
+<span class="fail">FAIL</span> commands named in current documents exist (A2, A7): 1
+       README.md:6: `make deploy` is not a defined command
+<span class="dim">[exit 1]</span></code></pre>
+<div class="callout">接入已有项目的要点：先跑一遍看哪些文档孤立、哪些链接已断；再按项目的语言和工具配 <code>codeExtensions</code>、<code>pathPrefixes</code>、<code>commands</code>；最后把检查接进 CI。现有文档不必一次改完，可以先用 <code>--report</code> 只看报告。</div>
+
+<h3 id="b-who">profile 由谁来调，能不能自动</h3>
+<p><strong>现在全靠手工</strong>，人或 agent 直接编辑 <code>docaxioms.json</code>。<code>init</code> 只把模板里的 profile 原样写进去（<span class="src">manage.mjs:102</span>），不看项目里有什么文件；之后的 <code>update</code> 只改 <code>core</code> 一节，其他键都不动。</p>
+<p>能不能自动，要分两类看：</p>
+<table class="wrap">
+<tr><th>设置</th><th>能从仓库推出来吗</th><th>依据</th></tr>
+<tr><td><code>codeExtensions</code></td><td>能</td><td><code>git ls-files</code> 里各种扩展名的数量</td></tr>
+<tr><td><code>commands</code></td><td>能</td><td>有没有 <code>package.json</code> 的 scripts、<code>Makefile</code>、<code>justfile</code></td></tr>
+<tr><td><code>pathPrefixes</code></td><td>大致能</td><td>顶层目录里被跟踪的那些</td></tr>
+<tr><td><code>history.base</code></td><td>能</td><td><code>git symbolic-ref refs/remotes/origin/HEAD</code>，没有远端时用本地主分支</td></tr>
+<tr><td><code>entries</code></td><td>能</td><td>候选入口里实际存在的那些</td></tr>
+<tr><td><code>reachable</code>、<code>budgets</code>、<code>ignore</code>、决策前缀、哪份文件是日志和计划</td><td>不能</td><td>这些是项目的约定，只能由 owner 决定</td></tr>
+</table>
+<p>比较稳妥的做法是：工具只<strong>提出建议</strong>，比如加一个打印建议 profile 的命令，由人确认后再写入；不要在 <code>init</code> 里悄悄写进去。原因有两个：猜错的设置会让检查漏报，而且不会有任何提示（A6）；迭代方案第九节也把写入限定为“确定性生成”和“显式命令”两类。目前代码里没有这个功能，迭代方案里也没有单独列出这一项。</p>
+
+<h3 id="b-budget">接入时文档已经超出预算</h3>
+<p>把一个故意不规范的项目接进来，实际运行的结果如下：根目录的 <code>AGENTS.md</code> 有 152 行，项目原有的 <code>CURRENT.md</code> 有 62 行，另外有 <code>frontend/AGENTS.md</code>、<code>frontend/docs/</code>、<code>backend/docs/</code>，还有一篇没人链接的 <code>docs/old.md</code>。</p>
+<pre><code><span class="cmd">$ docaxioms init .</span>        <span class="dim">（AGENTS.md、CURRENT.md 已经存在，所以不复制、不修改）</span>
+<span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> every current document is reachable from an entry point (A3): 1
+       docs/old.md
+<span class="fail">FAIL</span> the stage card stays within its size limits (A3): 1
+       CURRENT.md: 62 lines, more than the 45 allowed
+<span class="fail">FAIL</span> documents with a size budget stay within it (A3, M4): 1
+       AGENTS.md: 152 lines, more than the 100 allowed
+<span class="dim">[exit 1]</span></code></pre>
+<p>结论：<strong>不会被豁免，也没有“接入时的基线”</strong>，超出预算就是 gate 失败。<code>init</code> 写入的模板 profile 里带着预算，并且直接套用到项目原有的同名文件上。可以这样处理：</p>
+<ul>
+  <li><strong>精简</strong>（GUIDE 推荐的方向）：把细节挪到专门的文档里，入口只保留路由和链接（M4）。</li>
+  <li><strong>调整 profile</strong>：放宽 <code>maxLines</code>，或者暂时删掉这条预算，等文档整理好再加回来。</li>
+  <li><strong>过渡期用 <code>check --report</code></strong>：发现照常打印，但不让退出码失败，运行出错仍然失败。</li>
+  <li>如果项目原有的 <code>CURRENT.md</code> 写的根本不是阶段卡，就把 <code>card.file</code> 改成另一个文件；否则阶段卡的预算会套到一份不相干的文件上。</li>
+</ul>
+<p>历史检查不同：它有比较的基线（<code>history.base</code>），只管这个分支上改了什么。预算和可达性只看当前的样子，不区分哪些超出是接入前就已经存在的。</p>
+
+<h3 id="b-messy">目录结构很乱：到处都有 docs、AGENTS.md 不止一份</h3>
+<p>还是上面那个项目。用默认 profile 时，<code>frontend/docs/ui.md</code>、<code>backend/docs/api.md</code>、<code>frontend/AGENTS.md</code> <strong>都没有被报出来</strong>，原因是：</p>
+<ul>
+  <li><code>reachable</code> 默认是 <code>^docs/</code>，只要求根目录 <code>docs/</code> 下的文档必须可达；</li>
+  <li>预算的 <code>files: "AGENTS.md"</code> 是 picomatch 模式，只匹配根目录那一份。</li>
+</ul>
+<p>它们仍然算作现行文档，链接、路径、命令这些检查照样会扫，只是不要求它们可达，也不限制大小。把范围放宽之后：</p>
+<pre><code>"reachable": "(^|/)docs/",
+"budgets": [{ "files": "**/AGENTS.md", "maxLines": 100 }]
+
+<span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> every current document is reachable from an entry point (A3): 3
+       backend/docs/api.md
+       docs/old.md
+       frontend/docs/ui.md
+<span class="fail">FAIL</span> documents with a size budget stay within it (A3, M4): 2
+       AGENTS.md: 152 lines, more than the 100 allowed
+       frontend/AGENTS.md: 132 lines, more than the 100 allowed</code></pre>
+<p>所以对待结构很乱的项目，docaxioms 的态度是：<strong>不去猜结构，只按 profile 的声明去查</strong>。范围写多宽，管到哪里。它也有管不到的地方：</p>
+<ul>
+  <li>它不理解“每个子目录有一份自己的 <code>AGENTS.md</code>”这种层级关系。有些 agent 会按目录去读最近的那份，docaxioms 只把它当成一份普通文档。</li>
+  <li>同一件事在两份文档里各写了一遍（违反 M3，“一个事实只有一个所有者”），没有任何一项检查能发现。这要靠 <code>garden</code> 的人工审计。</li>
+  <li>目录要不要合并、合并成什么样，它不会提议。接入前最好先整理一遍：子目录的文档挂到根目录的索引下，或者把子目录也列进 <code>entries</code>。</li>
+</ul>
+
+<h2 id="c">C. 完成一个功能：可配置的缓存过期时间</h2>
+<p>接着 B 的项目，在分支 <code>ttl-config</code> 上做一个功能：缓存过期时间改为由环境变量 <code>WEATHER_TTL</code> 控制。下面按 GUIDE 的“Which document owns what”表一步步走。</p>
+
+<h3 id="c1">C1 计划与调研</h3>
+<p>在 <code>docs/plan.md</code> 加一个开放条目，链到它的调研；调研文件头部写 <code>Status: open (…)</code>：</p>
+<pre><code>docs/plan.md:          - Make the cache TTL configurable: [research](research/ttl.md)
+docs/research/ttl.md:  # Cache TTL
+                       Status: open (configurable TTL)
+                       Options: environment variable, or config file.
+
+<span class="cmd">$ docaxioms check</span>
+<span class="dim">[exit 0]</span></code></pre>
+<p>如果写了一篇调研、却没有开放条目链接它：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> open research is linked from an open item, and every history file has its banner (A3, A5): 1
+       docs/research/retry.md: no open item in docs/plan.md links to this research
+<span class="fail">FAIL</span> every current document is reachable from an entry point (A3): 1
+       docs/research/retry.md
+<span class="dim">[exit 1]</span></code></pre>
+<p>调研不会成为没人管的孤儿：要么有开放条目指着它，要么已经完成、该进 history。（这项关联目前是按文件名子串匹配的，迭代方案缺陷 8 说要改成真实链接。）</p>
+
+<h3 id="c2">C2 owner 拍板：先改段落，再加决策行</h3>
+<p>GUIDE 规定的顺序：先改受影响的段落，写上决策号；再在决策表里加一行，带状态和落地点。同时在段落里钉住它依赖的那两行代码：</p>
+<pre><code>docs/architecture.md:
+  ## Cache
+  Responses are cached on disk for `TTL` seconds, read from the environment variable `WEATHER_TTL` (D1).
+  &lt;!-- pin: src/cache.py#L1-L2 --&gt;
+
+docs/decisions.md:
+  | D1 | Should the cache TTL be configurable? | Yes, by the environment variable WEATHER_TTL | active | [cache](architecture.md#cache) |
+
+<span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> code pins match the current source (A2, A6, A7): 1
+       docs/architecture.md:7: src/cache.py has no hash yet (it would be @b0753e25db87); review the passage, then run docaxioms pin --write --file docs/architecture.md
+<span class="dim">[exit 1]</span></code></pre>
+<p>没写哈希的 pin 是故意的失败：要先有人对照代码读过这段，才允许写上哈希。决策这边已经通过了：D1 有落地点 <code>architecture.md#cache</code>，那一节确实提到了 D1。</p>
+
+<h3 id="c3">C3 复核后写上哈希</h3>
+<pre><code><span class="cmd">$ docaxioms pin --write --file docs/architecture.md</span>
+wrote docs/architecture.md:7 src/cache.py#L1-L2 (@b0753e25db87)
+       1 | import os
+       2 | TTL = int(os.environ.get("WEATHER_TTL", "3600"))
+<span class="dim">[exit 0]</span>
+
+<span class="cmd">$ docaxioms check</span>
+<span class="dim">[exit 0]</span></code></pre>
+<p>注释变成 <code>&lt;!-- pin: src/cache.py#L1-L2@b0753e25db87 --&gt;</code>。<code>--write</code> 必须指定范围（<code>--file</code>、<code>--pin</code> 或 <code>--all</code>），并打印被钉住的代码，让人最后再看一眼（A7）。</p>
+
+<h3 id="c4">C4 代码移动：上面多了两行</h3>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> code pins match the current source (A2, A6, A7): 1
+       docs/architecture.md:7: src/cache.py#L1-L2 moved to #L3-L4 unchanged (hash @b0753e25db87); run docaxioms pin --relocate to update the line numbers
+<span class="dim">[exit 1]</span>
+
+<span class="cmd">$ docaxioms pin --relocate</span>
+moved docs/architecture.md:7 src/cache.py#L1-L2 -> #L3-L4 (@b0753e25db87 unchanged)
+       3 | import os
+       4 | TTL = int(os.environ.get("WEATHER_TTL", "3600"))
+<span class="dim">[exit 0]</span></code></pre>
+<p>内容没变、只是位置变了：引擎在文件里找到唯一一处哈希相同的两行，判为“移动”。<code>--relocate</code> 只改行号、不改哈希，所以不需要复核，可以放心批量运行。如果相同内容出现在不止一处，判为 <code>ambiguous-move</code>，要人手动定行号。</p>
+
+<h3 id="c5">C5 被钉住的代码本身变了</h3>
+<p>把默认值从 3600 改成 600：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> code pins match the current source (A2, A6, A7): 1
+       docs/architecture.md:7: src/cache.py changed (pinned @b0753e25db87, now @659682712335); review the passage, then run docaxioms pin --write --file docs/architecture.md
+<span class="dim">[exit 1]</span></code></pre>
+<p>这时要做的不是直接刷新，而是先看段落还对不对。这里补上“ten minutes unless set”，再刷新：</p>
+<pre><code><span class="cmd">$ docaxioms pin --write --file docs/architecture.md</span>
+wrote docs/architecture.md:7 src/cache.py#L3-L4 (@b0753e25db87 -> @659682712335)
+       3 | import os
+       4 | TTL = int(os.environ.get("WEATHER_TTL", "600"))
+<span class="dim">[exit 0]</span></code></pre>
+<div class="callout warn">工具分辨不出你有没有真的复核：<code>pin --write</code> 只是刷新哈希。它能做到的是让每次代码变化都<strong>停下来</strong>，并指出是哪一段（A2、A6）。迭代方案第四节第 6 条讨论的就是这个边界。</div>
+
+<h3 id="c6">C6 收尾：从计划删掉，调研进历史，记日志</h3>
+<pre><code>docs/plan.md:          删掉那一条
+docs/history/ttl.md:   # Cache TTL
+                       &gt; Out of date: decided as D1; see [architecture](../architecture.md#cache).
+                       Options: environment variable, or config file.
+docs/research/:        删掉
+docs/log.md:           ## 2026-11-28
+                       - Cache TTL configurable by WEATHER_TTL (D1). Ran `make test`.
+
+<span class="cmd">$ docaxioms check</span>
+<span class="dim">[exit 0]</span></code></pre>
+<p>历史文件开头必须有横幅（profile 里的 <code>banner</code>，这里是 “Out of date”），告诉读者现在的情况在哪里。然后提交，合入 <code>main</code>。</p>
+
+<h3 id="c7">C7 历史记录不可改写</h3>
+<p>在功能分支上，这份历史文件是新加的，相对基线 <code>main</code> 还不算“已有的记录”，所以改它不会报错。合入 <code>main</code> 之后，在新分支上改它的正文：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> a history file changes only in link targets, or grows by a dated erratum (A5): 1
+       docs/history/ttl.md: a history file may change only in its link targets, or by adding a dated erratum at its end
+<span class="dim">[exit 1]</span></code></pre>
+<p>只改链接目标（<code>../architecture.md#cache</code> 改成 <code>../architecture.md</code>）可以；在末尾追加一段带日期的勘误也可以：</p>
+<pre><code>## Erratum 2026-11-29
+
+A config file was also considered and rejected.
+
+<span class="cmd">$ docaxioms check</span>
+<span class="dim">[exit 0]</span></code></pre>
+<p>原理见 <a href="mechanisms.html#history">核心机制 · 历史比较</a>：把基线版本和现在的版本都去掉链接目标，现在的必须以基线开头，多出来的部分只能是一段以 <code>## Erratum 日期</code> 开头的勘误。</p>
+
+<h3 id="c8">C8 定期审计：garden</h3>
+<pre><code><span class="cmd">$ docaxioms garden</span>
+Doc-gardening manifest (5 K3 description documents):
+Protocol: docaxioms/GARDEN.md
+Stage card: CURRENT.md (15 lines)
+  - AGENTS.md (5 lines, 0 pins)
+  - README.md (4 lines, 0 pins)
+  - docs/README.md (9 lines, 0 pins)
+  - docs/architecture.md (7 lines, 1 pins)
+  - docs/notes.md (3 lines, 0 pins)</code></pre>
+<p><code>garden</code> 只列清单：哪些是现行描述、各有多长、钉了几处代码、映射了哪些代码。真正的审计由人或 agent 按 <code>GARDEN.md</code> 逐条对照代码去做，结果是一份带日期的报告。机器检查保证不了“文字说的是对的”，garden 补的就是这一块。</p>
+
+<h2 id="agent">D. agent 怎么知道要更新这些文档</h2>
+<p><code>templates/docs/</code> 下的决策、计划、日志、索引，以及 <code>CURRENT.md</code>，都不会自己更新，也没有任何后台程序去改它们。agent 去更新，靠的是下面这条链：</p>
+<div class="flow">
+  <div class="step"><b>1. agent 读入口文件</b><small>大多数 agent 原生读 <code>AGENTS.md</code>；Claude Code 读 <code>CLAUDE.md</code>，模板里这份只有一行 <code>@AGENTS.md</code>，作用是把它导入进来</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>2. <code>AGENTS.md</code> 指路</b><small>按顺序读公理、GUIDE、<code>CURRENT.md</code>，再从 <code>docs/README.md</code> 读和任务有关的页面；提交文档前和推送前运行 <code>docaxioms check</code></small></div>
+  <div class="arrow">↓</div>
+  <div class="step hl"><b>3. GUIDE 的 “Which document owns what” 表</b><small>每发生一类改动，该改哪份文档、怎么写。agent 靠读懂这张表，才知道要去改</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>4. <code>check</code> 抓一部分遗漏</b><small>前提是它被接进了验证命令、CI 或钩子</small></div>
+</div>
+<p>前三步都只是文字，agent 读了不一定照做。第 4 步能抓住的遗漏是有限的：</p>
+<table class="wrap">
+<tr><th>漏做了什么</th><th>会被发现吗</th></tr>
+<tr><td>owner 的决定没有落到段落里，或者段落没提决策号</td><td>会（落地点检查）</td></tr>
+<tr><td>新文档没挂到索引</td><td>会（可达性，限 <code>reachable</code> 的范围）</td></tr>
+<tr><td>事项删了，调研还是 open；或者调研没有对应的事项</td><td>会（开放调研检查）</td></tr>
+<tr><td>钉住的代码变了，段落没复核</td><td>会（pin）</td></tr>
+<tr><td>改了代码，映射的文档没动</td><td>只提醒（<code>codeToDocs</code> 是 aid）</td></tr>
+<tr><td>完成一步没写日志</td><td>不会</td></tr>
+<tr><td><code>CURRENT.md</code> 没改写，内容已经过时</td><td>不会（只查长度）</td></tr>
+<tr><td>该加计划条目却没加</td><td>不会</td></tr>
+<tr><td>行为变了，没有 pin 的描述没改</td><td>不会，只有 <code>garden</code> 审计时才可能发现</td></tr>
+</table>
+<div class="callout warn">接入已有项目时还有一个缺口：如果项目原来就有 <code>AGENTS.md</code>，<code>init</code> 不会改它（上面那个不规范的项目就是这样），所以第 2 步的指路根本不存在，agent 连 docaxioms 都不知道。要手工把那几行加进去。</div>
+<p><strong>目前缺的东西</strong>：没有技能（skill），没有钩子，也没有在 agent 启动或恢复会话时自动注入的简报。GUIDE 是唯一的说明书，每次都要整份读完。迭代方案第六节第 2 条提出了“工作、审计、恢复”三个按需技能，钩子只负责把调用转给 <code>docaxioms hook &lt;事件&gt;</code>；第九节列了各个时机自动做什么。这些都还没有实现。</p>
+
+<h2 id="summary">一张表总结：每一步改什么，谁来守</h2>
+<table class="wrap">
+<tr><th>发生了什么</th><th>改哪里</th><th>哪项检查守着</th></tr>
+<tr><td>要做一件事</td><td><code>docs/plan.md</code> 加开放条目；调研放 <code>docs/research/</code>，头部 <code>Status: open (…)</code></td><td>开放调研必须被开放条目链接；可达性</td></tr>
+<tr><td>owner 做了决定</td><td>先改段落并写上决策号，再在 <code>docs/decisions.md</code> 加一行（状态、落地点）</td><td>决策号唯一、被引用的决策存在；落地点存在且提到该决策</td></tr>
+<tr><td>描述依赖某段代码</td><td>在段落里加 <code>&lt;!-- pin: 路径#L起-L止 --&gt;</code>，复核后 <code>pin --write</code></td><td>pin 与当前代码一致</td></tr>
+<tr><td>代码移动了</td><td><code>pin --relocate</code></td><td>同上</td></tr>
+<tr><td>代码改变了</td><td>复核段落，再 <code>pin --write --file</code></td><td>同上</td></tr>
+<tr><td>文档提到路径、命令</td><td>保证它们存在</td><td>路径存在；命令已定义（只查现行描述）</td></tr>
+<tr><td>完成一步</td><td><code>docs/log.md</code> 记一条，<code>CURRENT.md</code> 改写</td><td>阶段卡在预算内</td></tr>
+<tr><td>事项完成或放弃</td><td>从计划删掉；调研移入 history，加横幅</td><td>历史横幅；开放调研检查</td></tr>
+<tr><td>决策被推翻</td><td>旧行状态改为 <code>superseded by D2</code>，原文不动；新决策加新行。这里的 D2 就是推翻它的那条新决策的编号，<code>D</code> 是 profile 里 <code>decisions.id</code> 设的前缀（夹具项目用 <code>ADR-</code>，就写 <code>superseded by ADR-2</code>）。只推翻一部分时写 <code>partly superseded (缓存位置 by D2)</code>，括号里写被推翻的是哪一部分</td><td>状态必须是四种之一；D2 必须是决策表里有的编号（写成不存在的 D99 会报 “cites D99, which is not in docs/decisions.md”）；D2 是否真的推翻了它，没有检查能判断</td></tr>
+<tr><td>历史记录有误</td><td>末尾追加 <code>## Erratum 日期</code></td><td>历史只能改链接目标或追加勘误</td></tr>
+</table>
+
+<footer>docaxioms 导读 · 基于 d840742</footer>
+</main>
+</div>
+</body>
+</html>

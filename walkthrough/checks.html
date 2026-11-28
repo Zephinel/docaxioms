@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docaxioms 导读：17 项检查</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><nav>
+  <span class="brand">docaxioms 导读</span>
+  <a href="index.html">概览与架构</a>
+  <a href="flows.html">接入与开发流程</a>
+  <a href="checks.html" class="here">17 项检查</a>
+  <a href="mechanisms.html">核心机制</a>
+  <a href="tests.html">测试与门禁</a>
+  <a href="plan.html">对照迭代方案</a>
+</nav></header>
+
+<div class="layout">
+<aside class="toc">
+  <b>本页</b>
+  <a href="#levels">gate 与 aid</a>
+  <a href="#scope">各检查看哪些文件</a>
+  <a href="#list">逐项说明</a>
+  <a href="#own">项目自己的检查</a>
+</aside>
+<main>
+
+<h1>17 项检查</h1>
+<p class="lead">全部定义在 <code>src/check.mjs</code> 的 <code>CHECKS</code> 数组里（第 318 行起），按数组顺序运行和打印。每项是一个对象 <code>{ name, axioms, level, run(p) }</code>，<code>run</code> 接收 <code>project()</code> 建好的仓库视图 <code>p</code>，返回发现的列表，或 <code>{ problems, notes }</code>。</p>
+
+<h2 id="levels">gate 与 aid（M2）</h2>
+<div class="grid">
+  <div class="card"><h4><span class="tag gate">gate</span> 15 项</h4><p>判断的就是性质本身，而且精确：有发现就让命令失败（退出码 1）。例如“链接目标存在”。</p></div>
+  <div class="card"><h4><span class="tag aid">aid</span> 2 项</h4><p>只是信号，会有误报：打印发现但不失败，除非 <code>--strict-aids</code>。先在真实项目上量信噪比，才可能升为 gate。</p></div>
+  <div class="card"><h4><span class="tag ok">note</span></h4><p>检查没能按配置完整比较时（例如找不到比较基线），打印说明它少查了什么，显示 <code>note</code> 而不是 <code>ok</code>。不算发现，不失败。</p></div>
+</div>
+
+<h2 id="scope">各检查看哪些文件</h2>
+<p>理解检查范围的关键是三个集合（都在 <code>project()</code> 里算出）：</p>
+<table>
+<tr><th>集合</th><th>是什么</th><th>代码</th></tr>
+<tr><td><code>p.all</code></td><td>仓库里的所有文件：<code>git ls-files --cached --others --exclude-standard</code>（被 git 忽略的不算），去掉符号链接和 profile 的 <code>ignore</code></td><td><span class="src">check.mjs:144</span></td></tr>
+<tr><td><code>p.currentDocs</code></td><td>所有 <code>.md</code>，去掉 history 目录和 core 目录</td><td><span class="src">check.mjs:154</span></td></tr>
+<tr><td><code>descriptionDocs(p)</code></td><td>现行描述（K3）：<code>currentDocs</code> 再去掉 core 副本、决策文件、日志、计划、调研目录、阶段卡和豁免</td><td><span class="src">check.mjs:298</span></td></tr>
+<tr><td><code>p.code</code></td><td>扩展名在 <code>codeExtensions</code> 里的文件（默认空，即不扫代码）</td><td><span class="src">check.mjs:155</span></td></tr>
+</table>
+
+<h2 id="list">逐项说明</h2>
+<div class="filters" id="filters">
+  <button data-level="all" class="on">全部</button>
+  <button data-level="gate">只看 gate</button>
+  <button data-level="aid">只看 aid</button>
+</div>
+
+<table class="wrap" id="checks">
+<tr><th>#</th><th>检查（打印的名字）</th><th>级别 · 公理</th><th>判定什么</th><th>看哪些文件 · 用哪些设置</th><th>代码</th></tr>
+
+<tr data-level="gate"><td>1</td><td>the profile has only known keys and valid values</td><td><span class="tag gate">gate</span> A6</td><td>profile 没有未知键（项目自己的键以 <code>x-</code> 开头），每个值类型正确：路径不越界、正则能编译、必填项都在、每条预算至少有一个上限</td><td><code>docaxioms.json</code> 本身</td><td><span class="src">profile.mjs:114</span></td></tr>
+
+<tr data-level="gate"><td>2</td><td>core files are the pinned version</td><td><span class="tag gate">gate</span> A4, A6</td><td>core 副本的每个文件都和 profile 里记的 SHA-256 一致；core 目录里没有多余文件；profile 记的版本和提交号与正在运行的 docaxioms 一致</td><td><code>core.dir</code>、<code>core.files</code>、<code>core.version</code>、<code>core.commit</code></td><td><span class="src">check.mjs:326</span></td></tr>
+
+<tr data-level="gate"><td>3</td><td>links and anchors resolve</td><td><span class="tag gate">gate</span> A2, A4</td><td>每个指向仓库内的链接：不出仓库、目标存在；带 <code>#锚点</code> 时那个标题或 <code>&lt;a id&gt;</code> 存在（指向目录时查目录的 README）。外链、<code>//</code> 开头的不查；<code>/</code> 开头从仓库根算</td><td>所有现行文档</td><td><span class="src">check.mjs:357</span></td></tr>
+
+<tr data-level="gate"><td>4</td><td>decision numbers are unique, and every cited decision exists</td><td><span class="tag gate">gate</span> A4</td><td>决策表里每个号只有一行；现行文档和代码里提到的每个决策号（如 <code>D7</code>）都在表里</td><td>现行文档 + 代码（围栏代码块除外）；<code>decisions.file</code>、<code>decisions.id</code>、<code>citeExempt</code></td><td><span class="src">check.mjs:372</span>，表格解析 <span class="src">:205 decisionRows</span></td></tr>
+
+<tr data-level="gate"><td>5</td><td>cited sections exist</td><td><span class="tag gate">gate</span> A4</td><td>代码注释里引用的设计文档章节号（如 <code>design 1.2</code>）在那份文档里有对应标题；也可以引用表格行（<code>1.2-3</code>）</td><td>匹配 <code>sections[].files</code> 的代码；<code>cite</code> 正则、<code>document</code>、<code>rowTables</code></td><td><span class="src">check.mjs:395</span></td></tr>
+
+<tr data-level="gate"><td>6</td><td>documents named in code exist</td><td><span class="tag gate">gate</span> A2, A7</td><td>代码里提到的 <code>xx/yy.md</code> 存在。只查“那个目录里确实有 Markdown 文件”的路径，这样测试夹具里编造的路径不会误报（A7）</td><td>代码文件；<code>codeDocExempt</code></td><td><span class="src">check.mjs:427</span></td></tr>
+
+<tr data-level="gate"><td>7</td><td>paths named in current documents exist</td><td><span class="tag gate">gate</span> A2, A7</td><td>行内代码里以 <code>pathPrefixes</code> 开头的路径存在且不出仓库；带 <code>&lt;…&gt;</code>、<code>*</code> 等占位符的算示例不查；<code>#片段</code>、<code>:行号</code> 先去掉；列在 <code>gonePaths</code> 的路径必须已经不存在</td><td>现行描述 + 阶段卡（计划和调研可以提还没写的路径）；<code>pathPrefixes</code>、<code>pathExempt</code>、<code>gonePaths</code></td><td><span class="src">check.mjs:443</span></td></tr>
+
+<tr data-level="gate"><td>8</td><td>code pins match the current source</td><td><span class="tag gate">gate</span> A2, A6, A7</td><td>每个 <code>&lt;!-- pin: … --&gt;</code> 都写对、目标存在且在仓库内、行号范围有效、哈希和现在的代码一致。代码只是移动了，也算失败（报出新位置，用 <code>--relocate</code> 修）</td><td>现行文档里的 HTML 注释</td><td><span class="src">pins.mjs:217 verifyPins</span></td></tr>
+
+<tr data-level="gate"><td>9</td><td>commands named in current documents exist</td><td><span class="tag gate">gate</span> A2, A7</td><td>以配置的前缀（如 <code>make </code>、<code>npm run </code>）开头的行内代码，前缀后第一个不以 <code>-</code> 开头的词必须是已定义的命令：Makefile 目标、JSON 文件里某个键下的名字（如 <code>package.json</code> 的 scripts），或给定列表</td><td>现行描述；<code>commands[]</code></td><td><span class="src">check.mjs:487</span>，命令来源 <span class="src">:267 allowedCommands</span></td></tr>
+
+<tr data-level="gate"><td>10</td><td>open research is linked from an open item, and every history file has its banner</td><td><span class="tag gate">gate</span> A3, A5</td><td>调研目录里每篇都有 <code>Status: open (…)</code>，并且计划的开放部分提到了它的文件名；history 里每篇（README 除外）前十行有横幅</td><td><code>research.dir</code>、<code>items</code>、<code>openUntil</code>；<code>history.dir</code>、<code>banner</code></td><td><span class="src">check.mjs:513</span></td></tr>
+
+<tr data-level="gate"><td>11</td><td>every current document is reachable from an entry point</td><td><span class="tag gate">gate</span> A3</td><td>从入口出发顺着链接走（深度优先），所有匹配 <code>reachable</code> 的现行文档都能走到；链接指向目录时走到它的 README；不进 history。入口是候选，至少要有一个存在</td><td><code>entries</code>、<code>reachable</code></td><td><span class="src">check.mjs:548</span></td></tr>
+
+<tr data-level="gate"><td>12</td><td>a decision links to where it landed, and that passage mentions it</td><td><span class="tag gate">gate</span> A0, A4</td><td>决策状态是四种之一（<code>active</code>、<code>superseded by Dn</code>、<code>partly superseded (… by Dn)</code>、<code>withdrawn</code>）；生效中的决策有落地点链接，落地点是仓库内的 Markdown 文档，那一节（或整篇）提到了这个决策号</td><td>决策表从 <code>landedSection</code> 开始的行</td><td><span class="src">check.mjs:573</span></td></tr>
+
+<tr data-level="gate"><td>13</td><td>the stage card stays within its size limits</td><td><span class="tag gate">gate</span> A3</td><td>阶段卡不超过行数和字符数上限</td><td><code>card.file</code>、<code>maxLines</code>、<code>maxChars</code></td><td><span class="src">check.mjs:606</span></td></tr>
+
+<tr data-level="gate"><td>14</td><td>documents with a size budget stay within it</td><td><span class="tag gate">gate</span> A3, M4</td><td>匹配 glob 的文档不超过上限（模板默认管 <code>AGENTS.md</code>：100 行、6000 字符）</td><td><code>budgets[]</code></td><td><span class="src">check.mjs:624</span></td></tr>
+
+<tr data-level="gate"><td>15</td><td>a history file changes only in link targets, or grows by a dated erratum</td><td><span class="tag gate">gate</span> A5</td><td>和基线比，history 里已有的文件没被删除；去掉链接目标后，现在的内容以原内容开头，多出的只能是一段 <code>## Erratum 日期</code> 开头的勘误。找不到基线时打 note</td><td><code>history.dir</code>、<code>erratum</code>、<code>base</code>；用 git diff</td><td><span class="src">check.mjs:644</span></td></tr>
+
+<tr data-level="aid"><td>16</td><td>code changed, but the documents mapped to it did not</td><td><span class="tag aid">aid</span> A2, A6, M2</td><td>相对基线，匹配 <code>code</code> glob 的代码有改动，而映射的文档没改动，就提醒复核。文档改一个字就不再提醒，所以只是信号</td><td><code>codeToDocs[]</code>；用 git diff 加未跟踪文件</td><td><span class="src">check.mjs:683</span></td></tr>
+
+<tr data-level="aid"><td>17</td><td>current descriptions narrate past changes</td><td><span class="tag aid">aid</span> A3, M1, M2</td><td>现行描述里出现配置的“演化措辞”（如 “used to”、“was replaced by”）时提醒：描述应该写现在是什么，过去的变化放进决策或历史。默认不开</td><td>现行描述的正文文本；<code>evolutionary.phrases</code>、<code>exempt</code></td><td><span class="src">check.mjs:722</span></td></tr>
+</table>
+
+<h2 id="own">项目自己的检查（projectChecks）</h2>
+<p>profile 里写 <code>"projectChecks": "tools/doc-checks.mjs"</code>，这个模块默认导出一个检查列表，格式和内置的一样：</p>
+<pre><code>export default [
+  {
+    name: "every public endpoint is documented",
+    axioms: "A2",
+    level: "gate",          // 或 "aid"
+    run: (p) =&gt; {           // p 就是 project() 的仓库视图：p.read、p.currentDocs、p.markdown……
+      return [];            // 发现的列表；或 { problems, notes }
+    },
+  },
+];</code></pre>
+<p>加载规则（<span class="src">check.mjs:791-810</span>）：文件必须在仓库内、是普通文件（不能经符号链接指到仓外）；导出必须是数组，每项有字符串 <code>name</code> 和函数 <code>run</code>；否则整组不运行，并报一条 “project checks load” 错误。每项运行时同样经 <code>runCheck()</code>，一项出错不影响别的。项目自己的 profile 键要以 <code>x-</code> 开头，检查里通过 <code>p.profile["x-…"]</code> 读取。</p>
+
+<footer>docaxioms 导读 · 基于 d840742</footer>
+</main>
+</div>
+<script>
+  const buttons = document.querySelectorAll("#filters button");
+  buttons.forEach((button) => button.addEventListener("click", () => {
+    buttons.forEach((one) => one.classList.toggle("on", one === button));
+    const level = button.dataset.level;
+    document.querySelectorAll("#checks tr[data-level]").forEach((row) => {
+      row.style.display = level === "all" || row.dataset.level === level ? "" : "none";
+    });
+  }));
+</script>
+</body>
+</html>

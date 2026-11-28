@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docaxioms 导读：核心机制</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><nav>
+  <span class="brand">docaxioms 导读</span>
+  <a href="index.html">概览与架构</a>
+  <a href="flows.html">接入与开发流程</a>
+  <a href="checks.html">17 项检查</a>
+  <a href="mechanisms.html" class="here">核心机制</a>
+  <a href="tests.html">测试与门禁</a>
+  <a href="plan.html">对照迭代方案</a>
+</nav></header>
+
+<div class="layout">
+<aside class="toc">
+  <b>本页</b>
+  <a href="#project">1. 仓库视图与边界</a>
+  <a href="#links">2. 链接怎么解析</a>
+  <a href="#profile">3. profile 校验</a>
+  <a href="#markdown">4. Markdown 解析</a>
+  <a href="#pins">5. code pin</a>
+  <a href="#history">6. 历史比较</a>
+  <a href="#decisions">7. 决策表解析</a>
+  <a href="#errors">8. 出错处理</a>
+  <a href="#manage">9. init 与 update</a>
+</aside>
+<main>
+
+<h1>核心机制</h1>
+<p class="lead">检查的判定逻辑都建立在下面这几块上。读懂它们，17 项检查基本就是在组合这些部件。</p>
+
+<h2 id="project">1. 仓库视图与边界：<code>project()</code></h2>
+<p><span class="src">src/check.mjs:93</span>。所有检查都通过它返回的对象 <code>p</code> 访问仓库，不直接碰文件系统。这样“哪些东西算仓库里的、能不能读”只在一处决定。</p>
+<table class="wrap">
+<tr><th>成员</th><th>作用</th></tr>
+<tr><td><code>inside(path)</code></td><td>这个路径真的在仓库里吗。路径名看起来在里面，也可能经符号链接通到外面，所以取路径上离它最近的、实际存在的那一段，用 <code>realpath</code> 求真实位置，判断是否在仓库根之下。断掉的符号链接可能指向任何地方，算在外面。整个过程不会去碰仓库外的东西</td></tr>
+<tr><td><code>read(file)</code></td><td>所有读取的唯一入口：先过 <code>inside()</code>，不在仓库里就抛错；读过的缓存起来</td></tr>
+<tr><td><code>has</code> / <code>isFile</code> / <code>isFolder</code></td><td>存在性和类型判断，都先过 <code>inside()</code>：仓库外的路径永远“不存在”</td></tr>
+<tr><td><code>all</code></td><td>文件清单：优先用 <code>git ls-files --cached --others --exclude-standard</code>，所以被 <code>.gitignore</code> 忽略的不算；没有 git 时遍历目录。两种方式都跳过符号链接和 profile 的 <code>ignore</code></td></tr>
+<tr><td><code>currentDocs</code>、<code>code</code></td><td>见 <a href="checks.html#scope">各检查看哪些文件</a></td></tr>
+<tr><td><code>markdown(file)</code></td><td>解析结果（第 4 节），每份文件只解析一次</td></tr>
+<tr><td><code>links(file)</code>、<code>targetOf(file, target)</code></td><td>链接解析（第 2 节）</td></tr>
+<tr><td><code>profile</code>、<code>given</code></td><td>可用的 profile（出错的设置已剔除）和原始 profile（只给 profile 检查报问题用）</td></tr>
+</table>
+<div class="callout">“边界只在一处”的好处：第一批修复之前，链接、落地点、pin、配置文件各自解析路径，<code>../</code> 能让链接检查读到仓库外的 Markdown。现在任何人通过 <code>p.read</code> 读仓外文件都会失败。</div>
+
+<h2 id="links">2. 链接怎么解析</h2>
+<p><code>targetOf(file, target)</code> <span class="src">check.mjs:163</span> → <code>resolveTarget()</code> <span class="src">:46</span>：</p>
+<ol>
+  <li>带协议（<code>https:</code>、<code>mailto:</code>）或以 <code>//</code> 开头：外链，返回 <code>undefined</code>，不检查；</li>
+  <li>按第一个 <code>#</code> 分出锚点，去掉 <code>?query</code>；</li>
+  <li>URL 解码（<code>%20</code> → 空格），反斜杠转成 <code>/</code>；</li>
+  <li><code>/</code> 开头：从仓库根算；否则从当前文档所在目录算；</li>
+  <li>规范化后如果是 <code>..</code> 或以 <code>../</code> 开头，或经符号链接通到外面：标为 <code>outside</code>。</li>
+</ol>
+<pre><code>docs/guide.md 里写           解析为
+[a](setup.md)                docs/setup.md
+[b](../README.md#install)    README.md，锚点 install
+[c](/src/app.py)             src/app.py（从仓库根）
+[d](design.md?plain=1#x)     docs/design.md，锚点 x
+[e](../../other/x.md)        outside（报错，且不读）
+[f](https://example.com)     外链，不检查</code></pre>
+<p>锚点按 GitHub 的规则生成（<code>github-slugger</code>）：<code>## 1. Cache</code> 的锚点是 <code>1-cache</code>，同名标题依次加 <code>-1</code>、<code>-2</code>；也认 <code>&lt;a id="x"&gt;</code> 和 <code>&lt;a name="x"&gt;</code>。</p>
+<div class="callout warn">注意 pin 的路径规则和链接<strong>正好相反</strong>：pin 默认从仓库根算，<code>./</code>、<code>../</code> 开头才相对当前文档，<code>/</code> 开头直接拒绝（第 5 节）。迭代方案第十二节第 16 项讨论要不要统一。</div>
+
+<h2 id="profile">3. profile 校验：<code>src/profile.mjs</code></h2>
+<p>两张表定义了 profile 能写什么：</p>
+<ul>
+  <li><code>KINDS</code> <span class="src">:20</span>：值的类型及其判定函数和错误说明，如 <code>text</code>（非空字符串）、<code>dir</code>/<code>file</code>（从仓库根写起、没有空段/<code>.</code>/<code>..</code>/首尾 <code>/</code> 的路径）、<code>regex</code>（能编译）、<code>count</code>（≥1 的整数）、<code>patterns</code>（非空 glob 列表）。</li>
+  <li><code>SCHEMA</code> <span class="src">:41</span>：每个键用什么类型。后缀 <code>!</code> 表示必填；后缀 <code>^</code> 表示“限定范围”的可选项（如 <code>core.dir</code>、<code>exempt</code>）：它写错时整个对象都丢掉，否则只丢掉它会让对象管得比本意更宽。数组里放一个形状，表示“这种形状的对象列表”。</li>
+</ul>
+<p><code>validate()</code> <span class="src">:69</span> 递归比对，每个问题记成 <code>{ path, drop, text }</code>：<code>path</code> 是位置（如 <code>["commands", 0, "prefix"]</code>），<code>drop</code> 是要剔除的部分，<code>text</code> 是给人看的话。</p>
+<p><code>usableProfile()</code> <span class="src">:123</span> 按 <code>drop</code> 精确剔除：</p>
+<table class="wrap">
+<tr><th>问题出在</th><th>剔除什么</th><th>例子</th></tr>
+<tr><td>一个可选的设置</td><td>只剔这个设置</td><td><code>core.foo</code> 是未知键 → 只去掉 <code>foo</code>，<code>core.files</code> 照用</td></tr>
+<tr><td>必填项缺失或写错，或 <code>^</code> 项写错</td><td>剔掉它所在的对象</td><td><code>history.banner</code> 为空 → 整个 <code>history</code> 不用，history 相关检查不运行</td></tr>
+<tr><td>列表里的某一项</td><td>只剔这一项</td><td><code>commands[1]</code> 没有前缀 → 去掉这条规则，<code>commands[0]</code> 照用</td></tr>
+<tr><td>整个 profile 不是 JSON 对象</td><td>所有检查都不运行，全部报 error</td><td><code>[]</code></td></tr>
+</table>
+<p>同时，profile 检查（第 1 项）把每个问题报成 FAIL。所以拼错一个键：会被报出来，但不会让别的检查一起失效，<code>--report</code> 也仍然只是报告。<code>pin</code> 和 <code>garden</code> 会写文件或据此列清单，遇到任何问题直接拒绝运行。</p>
+<pre><code>docaxioms.json: commmands is not a key docaxioms knows (a project's own keys must start with "x-")
+docaxioms.json: card.maxLines must be a whole number of 1 or more
+docaxioms.json: commands[0] must set exactly one of jsonFile, makefile or list</code></pre>
+<p>JSON 的 <code>null</code> 等于“没写”（<code>withoutNulls()</code> <span class="src">:105</span>），项目自己的 <code>x-</code> 键原样保留、不复制。</p>
+
+<h2 id="markdown">4. Markdown 解析：<code>src/markdown.mjs</code></h2>
+<p><code>parseMarkdown(text)</code> <span class="src">:19</span> 用 remark（CommonMark + GFM）解析一次，得到一棵语法树，再算出检查要用的各种视图：</p>
+<table class="wrap">
+<tr><th>输出</th><th>是什么</th><th>谁用</th></tr>
+<tr><td><code>sections</code></td><td>每个标题：级别、原始行、GitHub 风格锚点、起止行、这一节的文本（到下一个同级或更高级标题为止）</td><td>锚点检查、章节引用、openUntil</td></tr>
+<tr><td><code>passage(anchor)</code></td><td>锚点对应的文本：标题锚点取那一节；<code>&lt;a id&gt;</code> 取它所在的段落、列表项、表格行或引用块</td><td>链接锚点、决策落地点</td></tr>
+<tr><td><code>links()</code>、<code>linksIn(node)</code></td><td>所有链接和图片的目标，包括引用式 <code>[文字][标签]</code> 经定义 <code>[标签]: 目标</code> 解析后的；脚注不算</td><td>链接、可达性、决策落地点</td></tr>
+<tr><td><code>inlineCodes</code></td><td>行内代码片段和行号（围栏代码块不在内）</td><td>路径、命令</td></tr>
+<tr><td><code>htmlComments</code></td><td>围栏代码块之外的 HTML 注释，带精确偏移</td><td>code pin</td></tr>
+<tr><td><code>withoutFences</code>、<code>withoutCode</code></td><td>把围栏代码块（及行内代码）换成空白、保留行号的文本</td><td>决策号引用、开放调研</td></tr>
+<tr><td><code>proseSegments</code></td><td>正文文本节点</td><td>演化措辞</td></tr>
+</table>
+<p>例如代码块里的 <code>&lt;!-- pin: … --&gt;</code> 只是示例，不会被当作 pin；代码块里的 <code>D9</code> 不算引用了决策 D9。这些都靠“语法树知道哪里是代码”，而不是正则猜。</p>
+<h3><code>withoutLinkTargets</code>：只去掉链接目标</h3>
+<p><span class="src">:187</span>。history 比较要回答“除了链接目标，什么都没变吗”。它直接用 micromark（remark 底层的解析器）的事件流，找出这几类 token 的精确位置并删掉：</p>
+<ul>
+  <li><code>resourceDestination</code>：<code>[文字](目标 "标题")</code> 里的目标，连同 <code>&lt;…&gt;</code>；</li>
+  <li><code>definitionDestination</code>：<code>[标签]: 目标</code> 里的目标；</li>
+  <li><code>autolinkProtocol</code>、<code>autolinkEmail</code>：<code>&lt;https://…&gt;</code> 尖括号里的地址，但图片说明文字里的不算（那是说明文字）。</li>
+</ul>
+<pre><code>原文:   See [the plan](../plan.md "Plan") and &lt;https://example.com&gt;.
+去掉后: See [the plan]( "Plan") and &lt;&gt;.</code></pre>
+<p>链接文字、标题、代码、正文都留着。正文里直接写的网址（不带尖括号）是看得见的文字，也留着。早先这里用正则扫描，曾被多行标题、代码块里的 <code>](</code>、图片说明里的 HTML 绕过；改成取解析器自己的 token 后，这类问题一并消失。</p>
+
+<h2 id="pins">5. code pin：<code>src/pins.mjs</code></h2>
+<h3>写法</h3>
+<pre><code>&lt;!-- pin: src/cache.py#L3-L4@659682712335 --&gt;   行范围（含首尾），12 位哈希
+&lt;!-- pin: src/cache.py#L3@… --&gt;                  单行
+&lt;!-- pin: src/cache.py@… --&gt;                     整个文件
+&lt;!-- pin: src/cache.py#L3-L4 --&gt;                 还没写哈希：失败，等复核后 pin --write
+&lt;!-- pin: ./sibling.md#L2-L5@… --&gt;               ./ 或 ../ 开头才相对当前文档</code></pre>
+<p>解析用两个正则 <span class="src">:19-20</span>：<code>PIN_ATTEMPT</code> 判断“这是想写一个 pin”（有 <code>pin:</code>，或 <code>pin</code> 后跟像路径的东西）；<code>PIN_PATTERN</code> 判断写对了没有。想写但没写对，判为 <code>malformed</code>；像 <code>&lt;!-- pin the version here --&gt;</code> 这样的普通注释不当 pin。</p>
+<h3>哈希怎么算</h3>
+<p><code>hashSourceSlice()</code> <span class="src">:77</span>：先把 CRLF 换成 LF，按行切开，取第 L起 到 L止 行，用 <code>\n</code> 连起来，求 SHA-256，存前 12 位。整个文件则对全文求哈希。所以只改换行风格不会让 pin 失效；改任何一个字符都会。</p>
+<h3>每个 pin 的状态</h3>
+<p><code>inspectPins()</code> <span class="src">:115</span> 给每个 pin 定一个状态：</p>
+<table class="wrap">
+<tr><th>状态</th><th>条件</th><th>check 的处理</th><th>怎么修</th></tr>
+<tr><td><code>ok</code></td><td>当前位置的哈希一致</td><td>通过</td><td>—</td></tr>
+<tr><td><code>unpinned</code></td><td>还没写哈希</td><td>失败，报出它将来的哈希</td><td>复核后 <code>pin --write</code></td></tr>
+<tr><td><code>moved</code></td><td>当前位置不一致，但文件里恰好有一处同样长度、哈希一致的窗口</td><td>失败，报出新位置</td><td><code>pin --relocate</code>（只改行号）</td></tr>
+<tr><td><code>ambiguous-move</code></td><td>一致的窗口不止一处</td><td>失败，列出所有位置</td><td>手动改行号</td></tr>
+<tr><td><code>changed</code></td><td>哪里都找不到一致的窗口：内容真的变了</td><td>失败</td><td>复核段落后 <code>pin --write</code></td></tr>
+<tr><td><code>invalid-range</code></td><td>行范围超出文件末尾（且找不到移动后的位置）</td><td>失败</td><td>手动改</td></tr>
+<tr><td><code>missing</code>、<code>outside-root</code>、<code>malformed</code></td><td>目标不存在或是目录、出了仓库、写法不对</td><td>失败</td><td>手动改</td></tr>
+</table>
+<div class="callout">为什么“只是移动了”也算失败：如果允许自动跟着走，很短的窗口（比如一行 <code>return None</code>）可能在别处恰好出现，就会悄悄钉到不相干的代码上。所以移动也要停下来，由人确认后 <code>--relocate</code>（A6、A7）。</div>
+<h3><code>pin --write</code> 的范围</h3>
+<p><code>syncPins()</code> <span class="src">:248</span>：<code>--write</code> 必须指定 <code>--file</code>、<code>--pin 文档:行</code> 或 <code>--all</code>。指定范围后，只打开范围内的文档；范围里有一项一个 pin 都没匹配到，就报错并且什么都不写；匹配到但都已是最新，正常退出。写入后打印被钉住的代码行（目前只有带行范围的 pin 会打印，整文件的不打印，这是迭代方案里的缺陷 14）。</p>
+
+<h2 id="history">6. 历史比较</h2>
+<p>第 15 项检查 <span class="src">check.mjs:644</span>：</p>
+<ol>
+  <li><strong>找基线</strong> <code>resolveBase()</code> <span class="src">:72</span>：<code>git merge-base &lt;history.base&gt; HEAD</code>。找不到就退到 HEAD 并打 note（已提交的改动没被比较）；连提交都没有就什么都不比、打 note。</li>
+  <li><strong>列出改动</strong>：<code>git diff --name-status --no-renames --diff-filter=MD 基线 -- history目录</code>，只看修改（M）和删除（D）。新增的文件不在内：所以功能分支上新放进 history 的文件，在合入主分支前都还能改。</li>
+  <li><strong>删除</strong>：一律失败。</li>
+  <li><strong>修改</strong>：基线版本（<code>git show 基线:文件</code>）和现在的版本都用 <code>withoutLinkTargets</code> 去掉链接目标、去掉末尾换行，然后要求：现在的 = 原来的；或者现在的以原来的开头，多出的部分是一段以 <code>## Erratum </code> 加日期（<code>YYYY-MM-DD</code>）开头的新段落。</li>
+</ol>
+<p>这个“以原文开头”的比较是整篇比较，所以不能在中间插一行、再在末尾加个勘误蒙混过去。</p>
+<div class="callout warn">已知缺口（迭代方案缺陷 17）：<code>runGit()</code> <span class="src">:60</span> 在 git 命令失败时返回 <code>undefined</code>，有的地方把它当成“没有改动”。也就是说 git 出错时，这项检查可能静默放行。</div>
+
+<h2 id="decisions">7. 决策表解析</h2>
+<p><code>decisionRows()</code> <span class="src">check.mjs:205</span> 先从语法树里找 GFM 表格行：第一格匹配 <code>前缀+数字</code>（如 <code>D1</code>）的就是一行决策，第 4 格是状态，第 5 格是落地点（取其中的链接）。再用纯文本兜底，找没有表头的 <code>| D3 | … |</code> 行（跳过代码块和 HTML 注释里的）。设了 <code>landedSection</code> 时，只有那个标题之后的行才要求状态和落地点，之前的老行不管。</p>
+
+<h2 id="errors">8. 出错处理：一项出错，其余照跑</h2>
+<p><code>runCheck()</code> <span class="src">check.mjs:768</span> 把每项检查包在 try/catch 里：返回值经 <code>normalizeOutcome()</code> 统一成 <code>{ problems, notes }</code>；抛出的任何东西（包括 <code>null</code>、没有原型的对象）都经 <code>why()</code> 转成文字，记进 <code>errors</code>。CLI 只要看到 errors，连 <code>--report</code> 也退出 1。</p>
+<div class="callout warn">已知缺口（缺陷 18）：项目检查返回 <code>{}</code> 或 <code>undefined</code> 时，<code>normalizeOutcome</code> 把它当成“没有发现”，不会报错。</div>
+
+<h2 id="manage">9. init 与 update：<code>src/manage.mjs</code></h2>
+<p>一句话区分：<strong><code>init</code> 一个项目只运行一次，用来放入模板和规范副本；<code>update</code> 在 docaxioms 本身升级之后运行，只换规范副本。</strong>两者都不碰项目自己写的文档。</p>
+<p>项目里属于 docaxioms 的东西有两类：</p>
+<ul>
+  <li><strong>模板</strong>（<code>AGENTS.md</code>、<code>CURRENT.md</code>、<code>docs/</code> 下几份空文档）：复制进来以后就归项目所有，项目可以随意改，docaxioms 以后再也不碰。</li>
+  <li><strong>规范副本</strong>（<code>docaxioms/</code> 下的公理、GUIDE、GARDEN、许可证）：一直属于 docaxioms，项目不能改，用哈希钉住。</li>
+</ul>
+<p><code>init</code> 两类都放；<code>update</code> 只管规范副本。所以新版 docaxioms 即使加了新模板，<code>update</code> 也不会把它补进已经接入的项目。</p>
+<p><strong>什么时候要运行 <code>update</code></strong>：项目升级了 docaxioms 的 npm 版本以后，第一次 <code>check</code> 就会失败，并告诉你去运行它。实际输出：</p>
+<pre><code><span class="cmd">$ docaxioms check</span>
+<span class="fail">FAIL</span> core files are the pinned version (A4, A6): 1
+       docaxioms.json pins docaxioms version 0.0.9, but the docaxioms running is version 0.1.0-alpha.0: run docaxioms update, or run version 0.0.9
+<span class="cmd">$ docaxioms update .</span>
+docaxioms/ is pinned to v0.1.0-alpha.0 (e45fec29); run: npx --no-install docaxioms check
+<span class="cmd">$ docaxioms check</span>
+ok   core files are the pinned version (A4, A6)</code></pre>
+<p>如果项目改过规范副本，<code>update</code> 会拒绝。它不会覆盖掉项目的改动，而是要求先把改动提交到 docaxioms 本身：</p>
+<pre><code><span class="cmd">$ docaxioms update .</span>
+docaxioms/GUIDE.md was changed in the project: make that change in docaxioms first, then update
+<span class="dim">[exit 1]</span></code></pre>
+<p>细节对比：</p>
+<table class="wrap">
+<tr><th></th><th><code>init</code> <span class="src">:85</span></th><th><code>update</code> <span class="src">:106</span></th></tr>
+<tr><td>前提</td><td>项目没有 <code>docaxioms.json</code>，也没有 <code>docaxioms/</code> 目录</td><td>项目有 <code>docaxioms.json</code></td></tr>
+<tr><td>模板</td><td>复制 <code>templates/</code> 下项目没有的文件</td><td>不碰</td></tr>
+<tr><td>core</td><td>复制到 <code>docaxioms/</code>，公理文件只读</td><td>拒绝的情况：副本被项目改过（哈希对不上）；core 目录里有不是 core 的文件；公理变了而没有 <code>--accept-axioms</code>。都通过才覆盖成新版本，删掉新版本不再有的文件</td></tr>
+<tr><td>profile</td><td>以模板 profile 为底，写入 <code>core</code> 一节</td><td>只更新 <code>core</code> 一节，其余键原样保留</td></tr>
+<tr><td>提交号</td><td colspan="2">从 docaxioms 的 git 检出运行时，记下它的提交号；检出有未提交改动就拒绝（项目钉的必须是一个确定的提交）。从 npm 安装运行时只记版本</td></tr>
+</table>
+<p>检查第 2 项在每次 <code>check</code> 时核对这些哈希、版本和提交号：项目里的规范副本和正在运行的工具，必须是同一个版本。</p>
+
+<footer>docaxioms 导读 · 基于 d840742</footer>
+</main>
+</div>
+</body>
+</html>

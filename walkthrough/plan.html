@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docaxioms 导读：对照迭代方案</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><nav>
+  <span class="brand">docaxioms 导读</span>
+  <a href="index.html">概览与架构</a>
+  <a href="flows.html">接入与开发流程</a>
+  <a href="checks.html">17 项检查</a>
+  <a href="mechanisms.html">核心机制</a>
+  <a href="tests.html">测试与门禁</a>
+  <a href="plan.html" class="here">对照迭代方案</a>
+</nav></header>
+
+<div class="layout">
+<aside class="toc">
+  <b>本页</b>
+  <a href="#how">怎么用这一页</a>
+  <a href="#defects">第二节：剩余缺陷在哪</a>
+  <a href="#gates">第三节：谓词与现有代码</a>
+  <a href="#gate-change">第三节：闸门要改哪里</a>
+  <a href="#graph">第四节：依赖图要改哪里</a>
+  <a href="#docs">第七节：full 档要改哪里</a>
+  <a href="#writes">第九节：现在有哪些写入</a>
+  <a href="#order">第十节：路线和代码量</a>
+</aside>
+<main>
+
+<h1>对照迭代方案</h1>
+<p class="lead">迭代方案是 <code>research/迭代方案.md</code>（在分支 <code>research-merge</code> 上，合入 <code>main</code> 之前在这个分支里看不到）。这一页按方案的章节，指出每一部分落在哪段代码上。</p>
+
+<h2 id="how">怎么用这一页</h2>
+<p>读方案时，遇到“缺陷 N”“G05”“锚点 pin”这类说法，回到这里查它对应的函数，再去 <a href="mechanisms.html">核心机制</a> 看那段代码是怎么工作的。行号都基于 <code>d840742</code>。</p>
+
+<h2 id="defects">第二节：仍存在的缺陷在代码的哪里</h2>
+<table class="wrap">
+<tr><th>缺陷</th><th>代码位置</th><th>问题出在哪</th></tr>
+<tr><td>6 默认决策前缀 <code>D</code></td><td><code>templates/docaxioms.json</code>；<span class="src">check.mjs:384</span></td><td>引用正则是 <code>\bD(\d{1,4})\b</code>，正文里的 D1、D3 都会被当作决策号</td></tr>
+<tr><td>7 换行</td><td><span class="src">manage.mjs:14</span>、<span class="src">check.mjs:347</span>；对比 <span class="src">pins.mjs:57</span></td><td>core 哈希对原始字节计算，CRLF 检出后对不上；只有 pin 先把 CRLF 换成 LF</td></tr>
+<tr><td>8 研究与计划的关联</td><td><span class="src">check.mjs:532</span></td><td><code>open.includes(file.split("/").pop())</code>：只看计划的开放部分里有没有出现这个文件名</td></tr>
+<tr><td>11 零匹配不显示</td><td><span class="src">check.mjs:757 normalizeOutcome</span></td><td>结果里只有 problems、notes、errors，没有“检查了几个对象”</td></tr>
+<tr><td>12 独立的 <code>&lt;a id&gt;</code></td><td><code>parseMarkdown</code> 的显式锚点部分（<span class="src">markdown.mjs</span>）</td><td>锚点前后隔空行时，它自成一个 HTML 节点，<code>passage()</code> 只取到标签；重复的 id 取第一个</td></tr>
+<tr><td>13 被 gitignore 的目标</td><td><span class="src">check.mjs:122 has()</span></td><td>存在性查的是磁盘，不要求目标在 <code>all</code>（git 的文件清单）里</td></tr>
+<tr><td>14 整文件 pin 没有预览</td><td><span class="src">pins.mjs:65 previewSlice</span></td><td>没有行范围时直接返回 <code>null</code></td></tr>
+<tr><td>15 init 返回名、空文件行数</td><td><span class="src">manage.mjs:97</span>；<span class="src">check.mjs:616, 635</span></td><td><code>target.slice(project.length + 1)</code> 遇尾斜杠少一个字；<code>"".split("\n").length</code> 是 1</td></tr>
+<tr><td>16 log 的 glob</td><td><span class="src">check.mjs:302-311 descriptionDocs</span></td><td>日志按完整文件名放进排除集合，glob 不展开</td></tr>
+<tr><td>17 Git 失败</td><td><span class="src">check.mjs:60 runGit</span>，调用处 <span class="src">:86, 656, 665</span></td><td>失败返回 <code>undefined</code>，调用处当成“没有改动”或空文件</td></tr>
+<tr><td>18 扩展返回空</td><td><span class="src">check.mjs:757</span></td><td><code>{}</code>、<code>undefined</code> 被归一成 <code>{ problems: [], notes: [] }</code></td></tr>
+</table>
+
+<h2 id="gates">第三节第 7 条：谓词和现有代码</h2>
+<p>方案用 G01–G22 给门禁谓词编号（只在方案里用）。和现有检查的对应：</p>
+<table class="wrap">
+<tr><th>谓词</th><th>现在由谁做（部分或全部）</th></tr>
+<tr><td>G01 profile 合规</td><td>检查 1，<code>src/profile.mjs</code></td></tr>
+<tr><td>G02 每条规则有明确终态</td><td><code>runCheck()</code>、<code>normalizeOutcome()</code>（终态只有 ok/FAIL/aid/note/ERR，还没有 blocked、not-applicable、disabled 和计数）</td></tr>
+<tr><td>G03 Git 出错不当作空差异</td><td>还没有：<code>runGit()</code>、<code>resolveBase()</code></td></tr>
+<tr><td>G05 目标在仓库内</td><td><code>inside()</code>、<code>resolveTarget()</code>；仓库内的符号链接目前允许</td></tr>
+<tr><td>G06 core 与批准的清单一致</td><td>检查 2（清单来自项目自己的 profile，还不是外部批准的）</td></tr>
+<tr><td>G07 入口、可达、预算</td><td>检查 11、13、14</td></tr>
+<tr><td>G08 链接、锚点、命令、ID 能解析</td><td>检查 3、4、9</td></tr>
+<tr><td>G09 pin</td><td>检查 8，<code>src/pins.mjs</code></td></tr>
+<tr><td>G11 决策有落地点</td><td>检查 4、12</td></tr>
+<tr><td>G13 记录不被改写</td><td>检查 15（只管 history 目录）</td></tr>
+<tr><td>G14 开放研究有关联</td><td>检查 10（子串匹配）</td></tr>
+<tr><td>G15 退役文档有接替位置</td><td>检查 10 只查横幅文字</td></tr>
+<tr><td>G16 契约变更有处置</td><td>只有检查 16（aid，<code>codeToDocs</code>）作为提醒</td></tr>
+<tr><td>G04、G12、G17、G19–G22</td><td>都还没有</td></tr>
+</table>
+
+<h2 id="gate-change">第三节：本地闸门要改哪里</h2>
+<table class="wrap">
+<tr><th>方案说</th><th>今天的代码</th></tr>
+<tr><td>统一的快照读取接口，正式验收读不可变的提交</td><td><code>project()</code> 直接读宿主磁盘（<code>read()</code>、<code>has()</code>）和 <code>git ls-files</code> 的工作树清单；要把这几处换成可切换的数据源</td></tr>
+<tr><td>已批准的策略和候选内容分开</td><td>profile 和 <code>projectChecks</code> 都从被检查的工作树里读：候选可以在同一次改动里删掉规则</td></tr>
+<tr><td>候选代码不以闸门身份运行</td><td><code>projectChecks</code> 在检查进程里直接 <code>import()</code></td></tr>
+<tr><td>正式验收输出完整机器结果</td><td>现在只有 <code>--json</code> 的结果数组；<code>--report</code> 会改变退出码含义</td></tr>
+</table>
+
+<h2 id="graph">第四节：文档依赖图要改哪里</h2>
+<table class="wrap">
+<tr><th>方案说</th><th>今天的代码</th></tr>
+<tr><td>pin 支持 <code>#标题</code> 和 <code>&lt;a id&gt;</code></td><td><span class="src">pins.mjs:31</span>：路径里的 <code>#</code> 后面不是 <code>L行号</code>，就判为写法错误</td></tr>
+<tr><td>段落摘要不含标题行、去掉 pin 注释</td><td><code>passage()</code> 返回的文本从标题行开始；<code>hashSourceSlice()</code> 对原始切片求哈希，包括里面的 pin 注释</td></tr>
+<tr><td>比较依赖定义</td><td><code>inspectPins()</code> 只列出现在还在的注释，看不到被删的</td></tr>
+<tr><td>pin 属于哪一段（节点粒度）</td><td>现在只记 pin 在哪个文件的哪一行</td></tr>
+<tr><td>pin 路径是否接受 <code>/</code> 开头</td><td><code>resolvePinPath()</code> <span class="src">pins.mjs:46</span> 拒绝绝对路径；链接的 <code>resolveTarget()</code> 把 <code>/</code> 当仓库根</td></tr>
+<tr><td>影响报告</td><td>起点可以复用 <code>changedFiles()</code> <span class="src">check.mjs:82</span>（要先修缺陷 17）；<code>garden --json</code> 现在只是清单</td></tr>
+<tr><td>研究 → 任务的边</td><td>检查 10 的子串匹配（缺陷 8）</td></tr>
+<tr><td>生成物（G20）</td><td>还没有任何生成器；profile 也没有登记生成物的键</td></tr>
+</table>
+
+<h2 id="docs">第七节：full 档要改哪里</h2>
+<ul>
+  <li><strong>决策一事一文件</strong>：<code>decisionRows()</code> 只读一份决策表；引用正则要求数字编号。</li>
+  <li><strong>任务、研究按目录表示状态</strong>：检查 10 假设“一份计划、一个调研目录”。</li>
+  <li><strong>目录链接</strong>：可达性已经把目录展开成它的 README；链接检查带锚点时查目录的 README。</li>
+  <li><strong>现行描述的范围</strong>：<code>descriptionDocs()</code> 按“一个决策文件、一个日志、一份计划”排除，多文件要一起改。</li>
+</ul>
+
+<h2 id="writes">第九节：现在有哪些写入</h2>
+<p>方案把写入分成三类：确定性生成、显式命令、后台改写散文（禁止）。今天的代码里只有显式命令：</p>
+<table class="wrap">
+<tr><th>命令</th><th>写什么</th><th>代码</th></tr>
+<tr><td><code>init</code>、<code>update</code></td><td>模板文件、core 副本、<code>docaxioms.json</code></td><td><span class="src">manage.mjs</span></td></tr>
+<tr><td><code>pin --write</code></td><td>指定范围内的 pin 注释的哈希</td><td><span class="src">pins.mjs:248 syncPins</span></td></tr>
+<tr><td><code>pin --relocate</code></td><td>只改 pin 注释的行号</td><td>同上</td></tr>
+</table>
+<p><code>check</code> 和 <code>garden</code> 是只读的。还没有生成物，也没有退役、关闭任务这类命令。</p>
+
+<h2 id="order">第十节：路线和代码量</h2>
+<p>给读方案时估量改动大小用：</p>
+<table class="wrap">
+<tr><th>方案的批次</th><th>主要动哪里</th><th>大致范围</th></tr>
+<tr><td>第一批：补合同</td><td><code>markdown.mjs</code>（锚点）、检查 10、<code>runGit</code>、<code>runCheck</code> 的结果结构、换行、模板</td><td>集中在现有函数内部，每项几十行加测试</td></tr>
+<tr><td>第二批：只读闭环</td><td><code>pins.mjs</code>（锚点 pin）、新的影响报告、一个生成物、profile 新键</td><td>新增模块，复用 <code>project()</code> 和 <code>inspectPins()</code></td></tr>
+<tr><td>第三批：写入与闸门</td><td>新的写入命令；<code>project()</code> 改成快照数据源；闸门是独立的配套程序（含原生桥接）</td><td>引擎重构加一个新程序，规模远大于前两批</td></tr>
+</table>
+
+<footer>docaxioms 导读 · 基于 d840742</footer>
+</main>
+</div>
+</body>
+</html>
