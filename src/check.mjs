@@ -27,7 +27,16 @@ const safeDecode = (text) => {
   try { return decodeURIComponent(text); } catch { return text; }
 };
 
-/** The README that stands for a folder; the folder `.` is the repository root. */
+/** Why a file that docaxioms.json names at `setting` cannot be read, or undefined when it can. */
+function fileFault(p, file, setting) {
+  const where = `${file} (${setting} in docaxioms.json)`;
+  if (!p.inside(file)) return `${where} leads outside the repository`;
+  if (p.isFolder(file)) return `${where} is a folder, not a file`;
+  if (!p.isFile(file)) return `${where} does not exist`;
+  return undefined;
+}
+
+/** The README.md of a folder; for `.`, the repository root, that is README.md itself. */
 const readmeOf = (folder) => (folder === "." ? "README.md" : `${folder}/README.md`);
 
 /**
@@ -82,12 +91,12 @@ function changedFiles(root, baseRef) {
 }
 
 export function project(root, given) {
-  // The checks read only what of the profile is valid; the profile check names the rest (profile.mjs).
+  // The checks read only the valid part of the profile; the profile check reports the rest from `given` (profile.mjs).
   const profile = usableProfile(given);
-  if (!profile) throw new Error("docaxioms.json: the profile must be an object");
+  if (!profile) throw new Error("docaxioms.json: the profile must be a JSON object");
   const at = (file) => join(root, file);
-  // A path inside the repository by name may still lead out of it through a symbolic link on its way: the nearest
-  // part of it that is there must be inside, so that nothing outside is read or even looked for.
+  // A path can look inside the repository and still lead out of it through a symbolic link. So take the nearest part
+  // of the path that exists and check where it really is, without looking at anything outside the repository.
   const realRoot = realpathSync(root);
   const inside = (path) => {
     for (let probe = at(path); ; probe = dirname(probe)) {
@@ -95,7 +104,7 @@ export function project(root, given) {
         const real = realpathSync(probe);
         return real === realRoot || real.startsWith(`${realRoot}${sep}`);
       } catch {
-        // A symbolic link that leads nowhere cannot be shown to stay inside.
+        // A broken symbolic link may point anywhere, so it counts as outside.
         try { if (lstatSync(probe).isSymbolicLink()) return false; } catch { /* not there: try its folder */ }
         if (dirname(probe) === probe) return false;
       }
@@ -109,11 +118,9 @@ export function project(root, given) {
     if (!cache.has(file)) cache.set(file, readFileSync(at(file), "utf8"));
     return cache.get(file);
   };
-  // What is there, inside the repository: nothing outside is looked for, through a symbolic link or otherwise.
+  // has, isFile and isFolder look only inside the repository: a path that leads outside is never there.
   const has = (file) => inside(file) && existsSync(at(file));
-  // A file the profile or a link names must be a file, not a folder.
   const isFile = (file) => has(file) && statSync(at(file)).isFile();
-  // A folder, or a link inside the repository to one.
   const isFolder = (file) => has(file) && statSync(at(file)).isDirectory();
   const markdown = (file) => {
     if (!mdCache.has(file)) mdCache.set(file, parseMarkdown(read(file)));
@@ -151,8 +158,8 @@ export function project(root, given) {
     const target = resolveTarget(fromFile, rawPath);
     return target.outside || inside(target.path) ? target : { ...target, outside: true };
   };
-  // Where a link target in `file` leads, or undefined when it is on another site: it has a scheme, or starts with `//`.
-  // A query is not part of the path.
+  // Where a link target in `file` leads: { target, anchor, path, outside }. Undefined for a link to another site, one
+  // with a scheme or starting with `//`. A `?query` is not part of the path.
   const targetOf = (file, target) => {
     if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith("//")) return undefined;
     const [address, anchor] = target.split("#");
@@ -260,7 +267,8 @@ export function decisionRows(p) {
 function allowedCommands(p, rule) {
   if (Array.isArray(rule.list)) return { valid: new Set(rule.list) };
   if (rule.jsonFile) {
-    if (!p.isFile(rule.jsonFile)) return { error: `${rule.jsonFile}: named by commands in docaxioms.json, and not there` };
+    const fault = fileFault(p, rule.jsonFile, "commands[].jsonFile");
+    if (fault) return { error: fault };
     try {
       const parsed = JSON.parse(p.read(rule.jsonFile));
       const bucket = rule.key ? parsed?.[rule.key] : parsed;
@@ -270,7 +278,8 @@ function allowedCommands(p, rule) {
     }
   }
   if (rule.makefile) {
-    if (!p.isFile(rule.makefile)) return { error: `${rule.makefile}: named by commands in docaxioms.json, and not there` };
+    const fault = fileFault(p, rule.makefile, "commands[].makefile");
+    if (fault) return { error: fault };
     const targets = new Set();
     for (const line of p.read(rule.makefile).split("\n")) {
       if (!line || /^[\s#]/.test(line)) continue;
@@ -308,7 +317,7 @@ export function descriptionDocs(p, extraExempt = []) {
 
 const CHECKS = [
   {
-    name: "the profile names only keys docaxioms knows, each with a value of its kind",
+    name: "the profile has only known keys and valid values",
     axioms: "A6",
     level: "gate",
     run: ({ given }) => profileProblems(given),
@@ -318,7 +327,7 @@ const CHECKS = [
     name: "core files are the pinned version",
     axioms: "A4, A6",
     level: "gate",
-    run: ({ read, isFile, all, inCore, profile }) => {
+    run: ({ read, inside, isFile, isFolder, all, inCore, profile }) => {
       const { dir = "", files = {}, version, commit } = profile.core ?? {};
       const at = (file) => (dir ? `${dir}/${file}` : file);
       const versionProblem = version && version !== PACKAGE_VERSION
@@ -334,7 +343,7 @@ const CHECKS = [
         ...versionProblem,
         ...commitProblem,
         ...Object.entries(files).flatMap(([file, hash]) => (!isFile(at(file))
-          ? [`${at(file)}: missing`]
+          ? [fileFault({ inside, isFolder, isFile }, at(file), "core.files")]
           : createHash("sha256").update(read(at(file))).digest("hex") === hash
             ? []
             : [`${at(file)}: not the pinned version (it comes from docaxioms; change it there, then update)`])),
@@ -366,7 +375,8 @@ const CHECKS = [
     level: "gate",
     run: (p) => {
       if (!p.profile.decisions) return [];
-      if (!p.isFile(p.profile.decisions.file)) return [`${p.profile.decisions.file}: named by decisions.file in docaxioms.json, and not there`];
+      const fault = fileFault(p, p.profile.decisions.file, "decisions.file");
+      if (fault) return [fault];
       const rows = decisionRows(p);
       const names = rows.map((row) => row.name);
       const known = new Set(names);
@@ -387,7 +397,8 @@ const CHECKS = [
     axioms: "A4",
     level: "gate",
     run: (p) => (p.profile.sections ?? []).flatMap(({ cite, files, document, rowTables = {} }) => {
-      if (!p.isFile(document)) return [`${document}: named by sections in docaxioms.json, and not there`];
+      const fault = fileFault(p, document, "sections[].document");
+      if (fault) return [fault];
       const heads = new Set(
         p.sections(document)
           .filter((one) => one.level >= 2)
@@ -449,7 +460,7 @@ const CHECKS = [
           .filter((file) => !elsewhere.test(file))
           .flatMap((file) => p.markdown(file).inlineCodes.flatMap(({ value: path }) => {
             if (!named.test(path)) return [];
-            // A placeholder anywhere, `#<line>` too, makes it an example; a fragment after a name is not part of the path.
+            // A placeholder anywhere, even in `#<line>`, marks an example. A `#fragment` after a name is not part of the path.
             if (/[*<>{}…()|$]|\.\.\./.test(path)) return [];
             const literal = path.replace(/(?<=[^/])#.*$/, "").replace(/(:\d+)+(-\d+)?$/, "").replace(/\/$/, "");
             const lexical = normalize(literal).replace(/\\/g, "/");
@@ -484,7 +495,7 @@ const CHECKS = [
       const problems = [];
       for (const file of descriptionDocs(p, rule.exempt)) {
         for (const { value, line } of p.markdown(file).inlineCodes) {
-          // The prefix is a word of its own: `make` does not name a command in `makefile`.
+          // When the prefix has no trailing space, it must be a whole word: the prefix `make` does not match `makefile`.
           if (!value.startsWith(rule.prefix) || /\S/.test(value[rule.prefix.length] ?? " ") && /\S$/.test(rule.prefix)) continue;
           const rest = value.slice(rule.prefix.length).trim();
           // The first word that is not an option, such as `--silent`, names the command.
@@ -506,14 +517,14 @@ const CHECKS = [
     run: (p) => {
       const problems = [];
       const { research, history } = p.profile;
-      if (research && !p.isFile(research.items)) {
-        problems.push(`${research.items}: named by research.items in docaxioms.json, and not there`);
+      if (research && fileFault(p, research.items, "research.items")) {
+        problems.push(fileFault(p, research.items, "research.items"));
       } else if (research) {
         const items = p.markdown(research.items);
         // Open items end at the heading whose whole line is `openUntil`.
         const until = research.openUntil && items.sections.find((one) => one.line.trim() === research.openUntil.trim());
-        if (research.openUntil && !until) problems.push(`${research.items}: no heading "${research.openUntil}", which research.openUntil names`);
-        // Where the heading that ends them is not there, no item can be told open.
+        if (research.openUntil && !until) problems.push(`${research.items} has no heading "${research.openUntil}" (research.openUntil in docaxioms.json)`);
+        // If the heading that ends the open items is missing, treat no item as open, so that unlinked research still fails.
         const open = until ? items.withoutCode.split("\n").slice(0, until.start).join("\n") : research.openUntil ? "" : items.withoutCode;
         for (const file of p.currentDocs.filter((name) => name.startsWith(`${research.dir}/`) && !name.endsWith("/README.md"))) {
           if (!/^Status: open \(.+\)$/m.test(p.read(file).split("\n").slice(0, 12).join("\n"))) {
@@ -541,8 +552,8 @@ const CHECKS = [
     run: (p) => {
       const entries = p.profile.entries ?? [];
       const seen = new Set(entries.filter(p.isFile));
-      // Entries are candidates, and a project need not have them all; it must have one of them.
-      if (entries.length && !seen.size) return [`none of the entries in docaxioms.json is there: ${entries.join(", ")}`];
+      // The entries are candidates: a project need not have all of them, but it must have at least one.
+      if (entries.length && !seen.size) return [`none of the entries in docaxioms.json exists (${entries.join(", ")}); create one of them or change "entries"`];
       const queue = [...seen];
       while (queue.length) {
         for (const { path, outside } of p.links(queue.pop())) {
@@ -564,7 +575,7 @@ const CHECKS = [
     axioms: "A0, A4",
     level: "gate",
     run: (p) => {
-      // A decisions file that is not there is the finding of the check above.
+      // A missing decisions file is already reported by the decision numbers check.
       if (!p.profile.decisions || !p.isFile(p.profile.decisions.file)) return [];
       return decisionRows(p)
         .filter((row) => row.landing !== undefined)
@@ -578,11 +589,11 @@ const CHECKS = [
           if (!targets.length) problems.push(`${name}: no landing passage`);
           for (const target of targets) {
             const where = p.targetOf(p.profile.decisions.file, target);
-            if (!where) { problems.push(`${name}: ${target} is not in the repository`); continue; }
+            if (!where) { problems.push(`${name}: landing ${target} is an external link; a decision must land in a document in the repository`); continue; }
             const { path: file, anchor, outside } = where;
-            if (outside) { problems.push(`${name}: ${target} leads outside the repository`); continue; }
-            if (!p.has(file)) { problems.push(`${name}: ${target} is not there`); continue; }
-            if (!file.endsWith(".md") || !p.isFile(file)) { problems.push(`${name}: ${target} is not a document`); continue; }
+            if (outside) { problems.push(`${name}: landing ${target} leads outside the repository`); continue; }
+            if (!p.has(file)) { problems.push(`${name}: landing ${target} does not exist`); continue; }
+            if (!file.endsWith(".md") || !p.isFile(file)) { problems.push(`${name}: landing ${target} is not a Markdown document`); continue; }
             const text = anchor ? p.passage(file, anchor) : p.read(file);
             if (text === undefined) problems.push(`${name}: ${target} names a heading that is not there`);
             else if (!new RegExp(`\\b${escape(name)}\\b`).test(text)) problems.push(`${name}: ${target} does not name ${name}`);
@@ -599,7 +610,8 @@ const CHECKS = [
     run: (p) => {
       const { card } = p.profile;
       if (!card) return [];
-      if (!p.isFile(card.file)) return [`${card.file}: named by card in docaxioms.json, and not there`];
+      const fault = fileFault(p, card.file, "card.file");
+      if (fault) return [fault];
       const text = p.read(card.file);
       const lines = text.trimEnd().split("\n").length;
       return [
@@ -747,9 +759,9 @@ function normalizeOutcome(outcome) {
   return { problems: outcome?.problems ?? [], notes: outcome?.notes ?? [] };
 }
 
-/** What was thrown, as text; formatting it must not throw again. */
+/** Any thrown value as text, even null or an object without a prototype; this function itself never throws. */
 function why(error) {
-  try { return error instanceof Error ? error.message : String(error); } catch { return "a value that cannot be shown as text"; }
+  try { return error instanceof Error ? error.message : String(error); } catch { return "a value that could not be turned into text"; }
 }
 
 /** One check's result. A check that could not run says why in `errors`, and the others still run (A6). */
@@ -763,13 +775,13 @@ async function runCheck(one, p) {
 }
 
 export async function check(root, given) {
-  // A profile that is not an object leaves the checks nothing to read: none can run, which fails even a report (A6).
+  // When docaxioms.json is not a JSON object, no check can run, so each one gets an error and even --report exits 1 (A6).
   const invalid = profileProblems(given);
   if (!usableProfile(given)) {
     const [first, ...rest] = CHECKS;
     return [
       { name: first.name, axioms: first.axioms, level: first.level, problems: invalid, notes: [], errors: [] },
-      ...rest.map(({ name, axioms, level = "gate" }) => ({ name, axioms, level, problems: [], notes: [], errors: ["not run: docaxioms.json is not valid"] })),
+      ...rest.map(({ name, axioms, level = "gate" }) => ({ name, axioms, level, problems: [], notes: [], errors: ["not run: docaxioms.json is not a JSON object"] })),
     ];
   }
   const p = project(resolve(root), given);
@@ -777,18 +789,24 @@ export async function check(root, given) {
   const results = [];
   for (const one of CHECKS) results.push(await runCheck(one, p));
   if (profile.projectChecks) {
-    let own;
-    try {
-      // Project checks are code the project runs as its own: they are loaded only from a file inside it.
-      if (!p.isFile(profile.projectChecks)) throw new Error("not a file in the repository");
-      own = (await import(pathToFileURL(p.at(profile.projectChecks)).href)).default;
-      const shaped = Array.isArray(own) && Array.from(own).every((one) => one && typeof one.name === "string" && typeof one.run === "function");
-      if (!shaped) throw new Error("its default export is not a list of checks, each with a name and a run");
-    } catch (error) {
-      own = [];
-      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [`${profile.projectChecks}: ${why(error)}`] });
+    const file = profile.projectChecks;
+    // Project checks are code that runs: load them only from a file inside the repository, never through a link out.
+    let own = [];
+    let failure = fileFault(p, file, "projectChecks");
+    if (!failure) {
+      try {
+        own = (await import(pathToFileURL(p.at(file)).href)).default;
+        const shaped = Array.isArray(own) && Array.from(own).every((one) => one && typeof one.name === "string" && typeof one.run === "function");
+        if (!shaped) failure = `${file}: its default export is not a list of checks, each with a string name and a run function`;
+      } catch (error) {
+        failure = `${file}: ${why(error)}`;
+      }
     }
-    for (const one of own ?? []) results.push(await runCheck(one, p));
+    if (failure) {
+      own = [];
+      results.push({ name: "project checks load", axioms: "A6", level: "gate", problems: [], notes: [], errors: [failure] });
+    }
+    for (const one of own) results.push(await runCheck(one, p));
   }
   return results;
 }

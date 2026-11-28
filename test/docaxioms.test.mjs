@@ -172,7 +172,7 @@ inProject("CLI check respects gate vs aid exit codes, notes on --strict-aids, sc
   assert.equal(garden.descriptions.some((d) => d.file === "docs/log.md"), false);
   assert.equal(garden.descriptions.find((d) => d.file === "docs/guide.md").pins, 1);
 });
-inProject("a check that cannot run fails the command even with --report or --json (A6)", async ({ root, at, profile }) => {
+inProject("check exits 1 when a check cannot run, even with --report or --json (A6)", async ({ root, at, profile }) => {
   init(root, "c1");
   writeFileSync(at("own.mjs"), "export default [{ name: \"own\", axioms: \"A6\", run: () => { throw new Error(\"boom\"); } }];\n");
   writeFileSync(at("docaxioms.json"), JSON.stringify({ ...profile(), projectChecks: "own.mjs" }));
@@ -184,7 +184,7 @@ inProject("a check that cannot run fails the command even with --report or --jso
   }
 });
 
-inProject("a profile with a fault is a finding of the check, and pin and garden refuse it", async ({ root, at, profile }) => {
+inProject("check reports an invalid profile as a finding; pin and garden refuse to run", async ({ root, at, profile }) => {
   init(root, "c1");
   writeFileSync(at("docaxioms.json"), JSON.stringify({ ...profile(), foo: 1 }));
   assert.throws(() => execFileSync("node", [CLI, "check", "--root", root], { stdio: "pipe" }));

@@ -25,7 +25,7 @@ function loadProfile(root, { strict = false } = {}) {
   const file = join(root, "docaxioms.json");
   if (!existsSync(file)) throw new Error(`${file} is not there`);
   const profile = JSON.parse(readFileSync(file, "utf8"));
-  // The check reports a profile's problems as findings; a command that writes or lists from it refuses it instead.
+  // check reports problems in the profile as findings; pin and garden, which write or list from it, refuse to run.
   const problems = strict ? profileProblems(profile) : [];
   if (problems.length) throw new Error(problems.join("\n"));
   return profile;

@@ -173,16 +173,16 @@ export function parseMarkdown(text) {
   };
 }
 
-// The kinds of token that are a link's target: an inline or definition destination with its `<...>` if it has one, and
-// the address inside an autolink `<...>`. A bare address is prose that reads as a link, so it is not among them.
+// The parser tokens that hold a link target: the destination of an inline link or a definition (with its `<...>`, if
+// any), and the address inside an autolink `<...>`. A bare address is visible prose, so it is not a target here.
 const DESTINATIONS = new Set(["resourceDestination", "definitionDestination"]);
 const AUTOLINKS = new Set(["autolinkProtocol", "autolinkEmail"]);
 
 /**
- * `text` with the destination of every link, image and link definition removed, and all else kept: titles, code
- * and prose stay as they are, so that comparing two such texts lets only link targets differ. The ranges come from
- * the parser's own tokens, the same parse that remark builds its tree from. An autolink in the text of an image is
- * that image's alternative text, so it stays.
+ * `text` with the target of every link, image and link definition removed. Everything else stays: link text,
+ * titles, code and prose. Comparing two such texts therefore shows whether anything other than link targets changed.
+ * The positions come from the parser's own tokens. An autolink inside an image's text is part of its alternative
+ * text, so it stays too.
  */
 export function withoutLinkTargets(text) {
   const events = postprocess(parse({ extensions: [gfm()] }).document().write(preprocess()(text, undefined, true)));

@@ -35,7 +35,7 @@ When it stops describing the present: move what is still true to its owner, move
 
 - The check passes: `docaxioms check`, on every documentation commit and before a push. Where code and its documentation are separate commits, it is the pair that must pass.
 - What changed was read against its owner. No check holds that a description is right, that a decision was really the owner's, or that a landing says the right thing (A6).
-- A link into the repository leads to a file or folder there: from its document, or from the repository root when it starts with `/`; a decision lands in a document (A2, A4).
+- A link inside the repository points to a file or folder that exists. It is read from its own document's folder, or from the repository root when it starts with `/`. A decision's landing is a document (A2, A4).
 - From the entry point, a reader finds what the software does now without opening research or history (A3).
 - Entry documents stay concise routing maps (M4): put detail in dedicated documents and link to them.
 
@@ -47,7 +47,7 @@ Name the axioms it follows from. Make it a failing check (`gate`) only when what
 
 ## The profile
 
-Every key is optional; a check with nothing to look at passes. A key not in this table, or a value of the wrong kind, fails the check, because a misspelt key would turn its check off unseen (A6); a project's own keys, for its project checks, start with `x-`.
+Every key is optional, and a check with nothing to look at passes. An unknown key, or a value of the wrong type, fails the profile check, so that a typo cannot switch a check off unnoticed (A6). That setting is then ignored, and the other checks still run. A project's own keys, read by its project checks, start with `x-`.
 
 | Key | What it says |
 |---|---|
@@ -59,8 +59,8 @@ Every key is optional; a check with nothing to look at passes. A key not in this
 | `sections` | Citations of numbered sections in code: `cite`, `files`, `document`, `rowTables` |
 | `pathPrefixes`, `pathExempt`, `gonePaths` | Paths named in documents that must exist; documents that may name other projects' paths; paths named as gone, which must stay gone |
 | `codeDocExempt` | Code that may name documents that are not there |
-| `commands` | Documented command checks on descriptions: `{ prefix, jsonFile, key }` or `{ prefix, makefile }` or `{ prefix, list }`, with optional `exempt`; only text that starts with the prefix is checked, and its first word that is not an option names the command |
-| `research` | `dir`, `items` (the document of open items), `openUntil` (the heading line where open items end, such as `## Done`) |
+| `commands` | Documented command checks on descriptions: `{ prefix, jsonFile, key }` or `{ prefix, makefile }` or `{ prefix, list }`, with optional `exempt`. Only inline code that starts with the prefix, as a whole word, is checked. The command is the first word after the prefix that does not start with `-`, so write an option that takes a value as one word, such as `--name=value` |
+| `research` | `dir`, `items` (the document that lists open items), `openUntil` (the exact heading line where open items end, such as `## Done`) |
 | `history` | `dir`, `banner`, `erratum` (the heading of an erratum, before its date), `base` (the branch to compare with) |
 | `card` | `file`, `maxLines`, `maxChars` |
 | `budgets` | Size limits for entry or current documents: `[{ files, maxLines, maxChars, exempt }]` |

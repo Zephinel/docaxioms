@@ -21,7 +21,7 @@ test("this repository passes the checks that block a merge", async () => {
   const profile = JSON.parse(readFileSync(new URL("../docaxioms.json", import.meta.url), "utf8"));
   // Without its entry the axiom pin checks nothing.
   assert.match(profile.core?.files?.["core/AXIOMS.lock.md"] ?? "", /^[0-9a-f]{64}$/, "docaxioms.json pins core/AXIOMS.lock.md");
-  // The pin holds on its own, whatever else of the profile the check leaves out.
+  // Compare the lock file with its pin directly, so that a mistake elsewhere in the core settings cannot hide a change.
   assert.equal(createHash("sha256").update(readFileSync(new URL("../core/AXIOMS.lock.md", import.meta.url))).digest("hex"), profile.core.files["core/AXIOMS.lock.md"], "core/AXIOMS.lock.md is the pinned version");
   const results = await check(ROOT, profile);
   const failing = BLOCKING.map((name) => {

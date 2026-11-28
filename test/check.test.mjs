@@ -217,7 +217,11 @@ FAULTS.push(
   ["open research", ({ add }) => add("docs/todo.md", "\n## Done (later)\n\n- rain\n"), { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done" } }],
 );
 const rows = (profile) => (profile === "rows" ? { ...PROFILE, sections: [{ ...PROFILE.sections[0], cite: "\\bdesign (\\d+(?:\\.\\d+)*(?:-\\d+)?)\\b", rowTables: { 1.2: "### 1.2", 2: "## 2" } }] } : profile);
-for (const [name, change, profile] of FAULTS) test(`caught: ${name} (${change.toString().slice(change.toString().indexOf("=>") + 3, 90)})`, async () => {
+// A case that changes only the profile is labelled by the settings it changes; one that changes files, by its code.
+const label = (change, profile) => (change.toString() === "() => {}" && profile && profile !== "rows"
+  ? JSON.stringify(Object.fromEntries(Object.entries(profile).filter(([key, value]) => PROFILE[key] !== value))).slice(0, 90)
+  : change.toString().slice(change.toString().indexOf("=>") + 3, 90));
+for (const [name, change, profile] of FAULTS) test(`caught: ${name} (${label(change, profile)})`, async () => {
   assert.ok((await failing(change, rows(profile))).some((one) => one.startsWith(name)));
 });
 
@@ -252,8 +256,8 @@ ALLOWED.push(
   ["a folder the profile ignores by its path", ({ put }) => put("docs/tmp/lost.md", "# Lost\n\n[x](gone.md)\n"), { ...PROFILE, ignore: ["docs/tmp"] }],
 );
 ALLOWED.push(
-  ["a key of the project's own", () => {}, { ...PROFILE, "x-mine": { any: 1 } }],
-  ["a log, a plan and research naming paths not there", ({ add }) => { add("docs/log.md", "- 2026-11-24: removed `weather/old.py`.\n"); add("docs/todo.md", "- later: `weather/wind.py`\n"); add("docs/ideas/wind.md", "\nIn `weather/wind.py`.\n"); }],
+  ["a project's own x- key", () => {}, { ...PROFILE, "x-mine": { any: 1 } }],
+  ["a log, a plan and research that name paths that do not exist", ({ add }) => { add("docs/log.md", "- 2026-11-24: removed `weather/old.py`.\n"); add("docs/todo.md", "- later: `weather/wind.py`\n"); add("docs/ideas/wind.md", "\nIn `weather/wind.py`.\n"); }],
   ["a path with a line fragment", ({ add }) => add("README.md", "\nSee `weather/cli.py#L2-L3`.\n")],
   ["a command after an option", ({ add }) => add("README.md", "\nRun `make -s test`.\n")],
   ["a link from the repository root", ({ add }) => add("docs/index.md", "\n[design](/docs/design.md#1-cache)\n")],
@@ -261,20 +265,20 @@ ALLOWED.push(
   ["a target with parentheses fixed in history", ({ swap }) => swap("docs/old/refs.md", "../todo_(1).md", "../plan_(1)/x.md")],
   ["a target on its own line in a block quote fixed in history", ({ swap }) => swap("docs/old/refs.md", "> ../todo.md", "> ../design.md")],
   ["a target after a CRLF line ending fixed in history", ({ swap }) => swap("docs/old/crlf.md", "\r\n../todo.md)", "\r\n../design.md)")],
-  ["an image target fixed in history past code in its text", ({ swap }) => swap("docs/old/refs.md", "../img/a.png", "../img/b.png")],
-  ["a key the profile leaves unset with null", () => {}, { ...PROFILE, core: { ...PROFILE.core, source: null }, sections: [{ ...PROFILE.sections[0], rowTables: null }], history: { ...PROFILE.history, base: null } }],
+  ["a history file whose image target changes, with inline code in the image text", ({ swap }) => swap("docs/old/refs.md", "../img/a.png", "../img/b.png")],
+  ["optional profile keys set to null", () => {}, { ...PROFILE, core: { ...PROFILE.core, source: null }, sections: [{ ...PROFILE.sections[0], rowTables: null }], history: { ...PROFILE.history, base: null } }],
   ["a link to another site that starts with //", ({ add }) => add("docs/index.md", "\n[x](//example.com/a.md)\n")],
-  ["an image target fixed in history past HTML in its text", ({ swap }) => swap("docs/old/html.md", "../img/a.png", "../img/b.png")],
-  ["a target after a lone CR in a block quote fixed in history", ({ swap }) => swap("docs/old/span.md", "> ../todo.md", "> ../design.md")],
-  ["a target fixed in history to one in angle brackets", ({ swap }) => swap("docs/old/alt.md", "[t](../todo.md)", "[t](<../to do.md>)")],
-  ["a link to the repository root, whose README is reached", ({ add }) => add("NOW.md", "[home](/)\n"), { ...PROFILE, entries: ["NOW.md"], reachable: "^(README\\.md|docs/)" }],
+  ["a history file whose image target changes, with HTML in the image text", ({ swap }) => swap("docs/old/html.md", "../img/a.png", "../img/b.png")],
+  ["a history file whose link target changes after a lone CR in a block quote", ({ swap }) => swap("docs/old/span.md", "> ../todo.md", "> ../design.md")],
+  ["a history file whose link target changes to one in angle brackets", ({ swap }) => swap("docs/old/alt.md", "[t](../todo.md)", "[t](<../to do.md>)")],
+  ["a link to the repository root, which reaches README.md", ({ add }) => add("NOW.md", "[home](/)\n"), { ...PROFILE, entries: ["NOW.md"], reachable: "^(README\\.md|docs/)" }],
   ["a landing with a query", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "design.md?plain=1#1-cache")],
   ["a link to a heading of a folder's README", ({ put, add }) => { put("docs/README.md", "# Docs\n\n## Here\n"); add("docs/index.md", "\n[d](/docs#here)\n"); }],
   ["a path with a placeholder in its fragment", ({ add }) => add("README.md", "\nSee `weather/gone.py#<line>`.\n")],
-  ["a path under a gone folder, spelled with ./", ({ add }) => add("README.md", "\nOnce `weather/./legacy/a.py`.\n")],
-  ["a word that starts with a prefix that has no space", ({ add }) => add("README.md", "\nThe `makefile` is plain.\n"), { ...PROFILE, commands: [{ prefix: "make", makefile: "Makefile" }] }],
+  ["a path under a gone folder, written with ./", ({ add }) => add("README.md", "\nOnce `weather/./legacy/a.py`.\n")],
+  ["a word that starts with a command prefix that has no trailing space", ({ add }) => add("README.md", "\nThe `makefile` is plain.\n"), { ...PROFILE, commands: [{ prefix: "make", makefile: "Makefile" }] }],
   ["a link with a query", ({ add }) => add("docs/index.md", "\n[d](design.md?plain=1#1-cache)\n")],
-  ["a definition target fixed in history past a backtick in its label", ({ swap }) => swap("docs/old/label.md", "../todo.md", "../design.md")],
+  ["a history file whose definition target changes, with a backtick in its label", ({ swap }) => swap("docs/old/label.md", "../todo.md", "../design.md")],
   ["open items that end at a heading with parentheses", ({ add }) => add("docs/todo.md", "\n## Done (old)\n\n- rain\n"), { ...PROFILE, research: { ...PROFILE.research, openUntil: "## Done (old)" } }],
 );
 for (const [name, change, profile] of ALLOWED) test(`allowed: ${name}`, async () => assert.deepEqual(await failing(change, rows(profile)), []));
@@ -389,17 +393,17 @@ test("review aid: codeToDocs warns without failing gates, clears on doc edit, an
   assert.match(codeToDocsResult.notes[0], /base "origin\/missing" not found/);
 });
 
-test("a check that cannot run says why, and the others still run (A6)", async () => {
+test("a check that throws an error reports it, and the other checks still run (A6)", async () => {
   const results = await runFixture(() => {}, { ...PROFILE, projectChecks: "nope.mjs" });
   const load = results.find((r) => r.name === "project checks load");
   assert.equal(load.errors.length, 1);
-  assert.match(load.errors[0], /^nope\.mjs: /);
+  assert.equal(load.errors[0], "nope.mjs (projectChecks in docaxioms.json) does not exist");
   assert.ok(results.filter((r) => r.name !== "project checks load").every((r) => Array.isArray(r.errors) && !r.errors.length));
   const thrown = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"own\", axioms: \"A6\", run: () => { throw new Error(\"boom\"); } }];\n"), { ...PROFILE, projectChecks: "own.mjs" });
   assert.deepEqual(thrown.find((r) => r.name === "own").errors, ["boom"]);
 });
 
-test("a link out of the repository is not followed even when the file there exists (A2, A4)", async () => {
+test("a link that leads outside the repository fails, and the file there is not read (A2, A4)", async () => {
   let outside;
   const run = (change) => runFixture((tools) => {
     outside = `${tools.root}-outside.md`;
@@ -418,7 +422,7 @@ test("a link out of the repository is not followed even when the file there exis
   } finally { if (outside) rmSync(outside, { force: true }); }
 });
 
-test("a command after an option is named by its first word that is not an option", async () => {
+test("the command name is the first word after the prefix that is not an option", async () => {
   const results = await runFixture(({ add }) => add("README.md", "\nRun `make -s deploy`.\n"));
   const found = results.find((r) => r.name.startsWith("commands named")).problems;
   assert.equal(found.length, 1);
@@ -426,7 +430,7 @@ test("a command after an option is named by its first word that is not an option
   assert.doesNotMatch(found[0], /-s\b/);
 });
 
-test("a link through a symbolic link that leads out of the repository is not followed (A2, A4)", async () => {
+test("a link through a symbolic link that leads outside the repository fails, and the target is not read (A2, A4)", async () => {
   let outside;
   try {
     const results = await runFixture(({ root, add }) => {
@@ -439,9 +443,9 @@ test("a link through a symbolic link that leads out of the repository is not fol
   } finally { if (outside) rmSync(outside, { recursive: true, force: true }); }
 });
 
-test("a fault in one key of the profile leaves that key unset and the other checks running; only a profile that is not an object stops them (A6, A7)", async () => {
+test("an invalid profile setting is ignored and the other checks run; only a profile that is not an object stops them (A6, A7)", async () => {
   const none = await runFixture(() => {}, []);
-  assert.match(none[0].problems.join("\n"), /the profile must be an object/);
+  assert.match(none[0].problems.join("\n"), /the profile must be a JSON object/);
   assert.ok(none.slice(1).every((r) => r.errors.length === 1 && !r.problems.length));
   const one = await runFixture(({ add }) => add("docs/index.md", "\n[x](gone.md)\n"), { ...PROFILE, codeExtensions: ".py", foo: 1 });
   assert.match(one[0].problems.join("\n"), /codeExtensions must be a list of strings/);
@@ -449,10 +453,10 @@ test("a fault in one key of the profile leaves that key unset and the other chec
   assert.deepEqual(one.filter((r) => r.errors.length).map((r) => r.name), []);
   assert.ok(one.find((r) => r.name.startsWith("links and anchors")).problems.some((x) => /gone\.md/.test(x)));
   assert.equal(project(process.cwd(), { ignore: 1, entries: ["README.md"] }).profile.ignore, undefined);
-  assert.throws(() => project(process.cwd(), null), /the profile must be an object/);
+  assert.throws(() => project(process.cwd(), null), /the profile must be a JSON object/);
 });
 
-test("a folder's README that is a symbolic link out of the repository is not followed (A2, A4)", async () => {
+test("reachability does not follow a folder's README.md that links outside the repository (A2, A4)", async () => {
   const outside = mkdtempSync(join(tmpdir(), "docaxioms-readme-"));
   try {
     writeFileSync(join(outside, "README.md"), "# Out\n\n[o](orphan.md)\n");
@@ -465,7 +469,7 @@ test("a folder's README that is a symbolic link out of the repository is not fol
   } finally { rmSync(outside, { recursive: true, force: true }); }
 });
 
-test("an entry that is a symbolic link out of the repository, or one that leads nowhere, is not followed (A2, A4)", async () => {
+test("an entry that links outside the repository, or a broken link, is not followed (A2, A4)", async () => {
   const outside = mkdtempSync(join(tmpdir(), "docaxioms-entry-"));
   try {
     writeFileSync(join(outside, "START.md"), "# Out\n\n[o](docs/orphan.md)\n");
@@ -480,7 +484,7 @@ test("an entry that is a symbolic link out of the repository, or one that leads 
   } finally { rmSync(outside, { recursive: true, force: true }); }
 });
 
-test("project checks that are not a list of checks are refused, and none of them runs", async () => {
+test("project checks whose export is not a list of checks are refused, and none of them runs", async () => {
   for (const exported of ["{}", "[null]", "new Set([{ name: \"own\", axioms: \"A6\", run: () => [\"ran\"] }])"]) {
     const results = await runFixture(({ put }) => put("own.mjs", `export default ${exported};\n`), { ...PROFILE, projectChecks: "own.mjs" });
     assert.match(results.find((r) => r.name === "project checks load").errors[0], /not a list of checks/);
@@ -499,7 +503,7 @@ test("pin --write with a scope does not read the pins of other documents", () =>
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("a file the profile names that is a symbolic link out of the repository is not read (A2, A4)", async () => {
+test("a file named in the profile that links outside the repository is reported, not read (A2, A4)", async () => {
   const outside = mkdtempSync(join(tmpdir(), "docaxioms-core-"));
   try {
     writeFileSync(join(outside, "LAW.md"), FILES["law/LAW.md"]);
@@ -510,7 +514,7 @@ test("a file the profile names that is a symbolic link out of the repository is 
   } finally { rmSync(outside, { recursive: true, force: true }); }
 });
 
-test("a fault in one setting of the profile leaves out only that setting, or the one item of a list it is in", async () => {
+test("an invalid setting drops only that setting, or the one list item that holds it", async () => {
   const results = await runFixture(() => {}, { ...PROFILE, "commands.foo": 1, commands: [...PROFILE.commands, { prefix: "" }] });
   assert.equal(results[0].problems.length, 3);
   assert.deepEqual(results.filter((r) => r.errors.length).map((r) => r.name), []);
@@ -518,19 +522,19 @@ test("a fault in one setting of the profile leaves out only that setting, or the
   assert.deepEqual(bad.find((r) => r.name.startsWith("commands named")).problems, ["README.md:5: `make deploy` is not defined"]);
 });
 
-test("project checks are loaded only from a file inside the repository, and a list with holes is refused", async () => {
+test("project checks load only from a file inside the repository, and a sparse array is refused", async () => {
   const outside = mkdtempSync(join(tmpdir(), "docaxioms-own-"));
   try {
     writeFileSync(join(outside, "own.mjs"), "export default [{ name: \"ext\", axioms: \"A6\", run: () => [\"ran\"] }];\n");
     const linked = await runFixture(({ root }) => symlinkSync(join(outside, "own.mjs"), join(root, "own.mjs")), { ...PROFILE, projectChecks: "own.mjs" });
-    assert.match(linked.find((r) => r.name === "project checks load").errors[0], /not a file in the repository/);
+    assert.match(linked.find((r) => r.name === "project checks load").errors[0], /is not a file|leads outside the repository/);
     assert.equal(linked.find((r) => r.name === "ext"), undefined);
   } finally { rmSync(outside, { recursive: true, force: true }); }
   const holes = await runFixture(({ put }) => put("own.mjs", "export default [,];\n"), { ...PROFILE, projectChecks: "own.mjs" });
   assert.match(holes.find((r) => r.name === "project checks load").errors[0], /not a list of checks/);
 });
 
-test("pin --write with a scope does not open other documents, and takes a full path to a file whose name starts with ..", { skip: process.platform === "win32" || process.getuid?.() === 0 }, () => {
+test("scoped pin --write opens no other document, and accepts a full path to a file whose name starts with ..", { skip: process.platform === "win32" || process.getuid?.() === 0 }, () => {
   const root = mkdtempSync(join(tmpdir(), "docaxioms-scope3-"));
   try {
     const at = (file) => join(root, file);
@@ -544,7 +548,7 @@ test("pin --write with a scope does not open other documents, and takes a full p
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("a wrong setting that bounds its object leaves out the object, not just the bound", async () => {
+test("an invalid setting that limits its object, such as core.dir or an exempt list, drops the whole object", async () => {
   const results = await runFixture(() => {}, { ...PROFILE, core: { ...PROFILE.core, dir: "law/" } });
   assert.match(results[0].problems.join("\n"), /core\.dir/);
   // Left with core.files but no core.dir, the check would look for LAW.md at the root and count law/ as current.
@@ -552,7 +556,7 @@ test("a wrong setting that bounds its object leaves out the object, not just the
   assert.equal(usableProfile({ evolutionary: { phrases: ["used to"], exempt: [""] } }).evolutionary, undefined);
 });
 
-test("a project's own x- values are passed on as they are, even ones that cannot be copied", () => {
+test("a project's own x- values are passed on unchanged, even ones that cannot be copied", () => {
   const helper = () => true;
   assert.equal(usableProfile({ "x-helper": helper })["x-helper"], helper);
 });
@@ -565,7 +569,7 @@ test("garden lists no stage card when the card names a folder", () => {
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("a link inside the repository to a folder is that folder: its anchors are its README's, and a pin on it is an error", async () => {
+test("a symbolic link to a folder inside the repository is treated as that folder, for anchors and for code pins", async () => {
   const results = await runFixture(({ root, put, add }) => {
     put("docs/sub/README.md", "# Sub\n\n## Here\n");
     symlinkSync(join(root, "docs/sub"), join(root, "docs/alias"));
@@ -576,7 +580,7 @@ test("a link inside the repository to a folder is that folder: its anchors are i
   assert.ok(results.find((r) => r.name.startsWith("code pins")).problems.some((one) => /docs\/alias/.test(one)));
 });
 
-test("a list with a hole in the profile is not valid", () => {
+test("a sparse array in the profile is not valid", () => {
   assert.equal(usableProfile({ budgets: [{ files: new Array(1), maxLines: 1 }] }).budgets.length, 0);
 });
 
@@ -597,7 +601,7 @@ test("a code pin through a symbolic link out of the repository is not read (A2, 
   } finally { rmSync(outside, { recursive: true, force: true }); }
 });
 
-test("pin --write with a scope reports only that scope, and writes nothing when part of it names no pin", () => {
+test("scoped pin --write reports only its scope, and writes nothing if part of the scope matches no pin", () => {
   const root = mkdtempSync(join(tmpdir(), "docaxioms-scope-"));
   try {
     const at = (file) => join(root, file);
@@ -616,7 +620,7 @@ test("pin --write with a scope reports only that scope, and writes nothing when 
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("a check that throws a value that is not an error still says why, and the next runs", async () => {
+test("a check that throws something other than an Error is still reported, and the next check runs", async () => {
   const results = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"first\", axioms: \"A6\", run: () => { throw null; } }, { name: \"second\", axioms: \"A6\", run: () => [] }];\n"), { ...PROFILE, projectChecks: "own.mjs" });
   assert.deepEqual(results.find((r) => r.name === "first").errors, ["null"]);
   const bare = await runFixture(({ put }) => put("own.mjs", "export default [{ name: \"first\", axioms: \"A6\", run: () => { throw Object.create(null); } }, { name: \"second\", axioms: \"A6\", run: () => [] }];\n"), { ...PROFILE, projectChecks: "own.mjs" });

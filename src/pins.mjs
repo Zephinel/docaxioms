@@ -44,12 +44,12 @@ export function parsePinComment(comment) {
 }
 
 export function resolvePinPath(docFile, rawPath) {
-  if (isAbsolute(rawPath)) return { error: `pin path "${rawPath}" must stay inside the repository` };
+  if (isAbsolute(rawPath)) return { error: `pin path "${rawPath}" must be relative to the repository, not an absolute path` };
   const resolved = rawPath.startsWith("./") || rawPath.startsWith("../")
     ? normalize(join(dirname(docFile), rawPath)).replace(/\\/g, "/")
     : normalize(rawPath).replace(/\\/g, "/");
   if (resolved === ".." || resolved.startsWith("../") || isAbsolute(resolved)) {
-    return { error: `pin path "${rawPath}" escapes the repository root` };
+    return { error: `pin path "${rawPath}" leads outside the repository` };
   }
   return { path: resolved };
 }
@@ -124,7 +124,7 @@ export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
         continue;
       }
       const resolved = resolvePinPath(file, pin.rawPath);
-      if (!resolved.error && !p.inside(resolved.path)) resolved.error = `pin path "${pin.rawPath}" leads outside the repository through a symbolic link`;
+      if (!resolved.error && !p.inside(resolved.path)) resolved.error = `pin path "${pin.rawPath}" leads outside the repository (through a symbolic link)`;
       if (resolved.error) {
         records.push({ file, pin, status: "outside-root", detail: resolved.error });
         continue;
@@ -134,7 +134,7 @@ export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
         continue;
       }
       if (!p.isFile(resolved.path)) {
-        records.push({ file, pin, status: "missing", detail: `pin target ${pin.rawPath} is a folder, not a file` });
+        records.push({ file, pin, status: "missing", detail: `pin target "${pin.rawPath}" is a folder, not a file` });
         continue;
       }
       const content = p.read(resolved.path);
@@ -246,7 +246,8 @@ export function verifyPins(p) {
  *   and also relocates `moved` pins in scope without altering their hashes.
  */
 export function syncPins(p, { write = false, relocate = false, files = [], pins = [], all = false } = {}) {
-  // A document is named from the repository root, with or without a leading `/`, or by its full path on the machine.
+  // --file and --pin take a path relative to the repository root, with or without a leading `/`, or a full path
+  // on this machine to a file inside the repository.
   const fromRoot = (path) => {
     const rel = relative(p.root, resolve(path));
     const onMachine = isAbsolute(path) && rel !== "" && rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
@@ -261,26 +262,26 @@ export function syncPins(p, { write = false, relocate = false, files = [], pins 
   const hasScope = fileSet.size > 0 || pinSet.size > 0;
   const inScope = (file, line) => all || (!hasScope && !write) || fileSet.has(file) || pinSet.has(`${file}:${line}`);
 
-  // With a scope, only its pins are reported: a fault elsewhere is not this command's to fail on.
-  // Only the documents in scope are read at all.
+  // With a scope, open and report only the documents in it, so that a problem in another document cannot fail
+  // this command.
   const pinDocs = new Set([...pinSet].map((spec) => spec.slice(0, spec.lastIndexOf(":"))));
   const records = inspectPins(p, (file, line) => !hasScope || inScope(file, line), (file) => !hasScope || all || fileSet.has(file) || pinDocs.has(file));
   const changes = [];
   const editsByFile = new Map();
 
-  // A scope that names no pin refreshes nothing: say so rather than report that all is up to date.
+  // A scope that matches no pin would refresh nothing: report that, instead of "all code pins are up to date".
   for (const file of fileSet) {
     if (!records.some((record) => record.file === file)) {
-      changes.push({ file, status: "no-match", detail: `--file ${file} names no document with a code pin` });
+      changes.push({ file, status: "no-match", detail: `no code pin found in "${file}" (named by --file)` });
     }
   }
   for (const spec of pinSet) {
     if (!records.some((record) => `${record.file}:${record.pin.line}` === spec)) {
-      changes.push({ file: spec, status: "no-match", detail: `--pin ${spec} names no code pin` });
+      changes.push({ file: spec, status: "no-match", detail: `no code pin found at "${spec}" (named by --pin; expected <document>:<line> of a pin comment)` });
     }
   }
-  if (all && write && !records.length) changes.push({ file: "", status: "no-match", detail: "--all finds no code pin" });
-  // A scope that names nothing is a mistake in the command: write nothing until it is put right.
+  if (all && write && !records.length) changes.push({ file: "", status: "no-match", detail: "no code pin found in any current document (named by --all)" });
+  // If any part of the scope matches no pin, the command is wrong: write nothing until it is fixed.
   if (changes.length) return changes;
 
   for (const record of records) {

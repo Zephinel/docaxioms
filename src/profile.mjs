@@ -1,10 +1,10 @@
-// What a profile (docaxioms.json) may say: every key the checks read, and the kind of value each takes.
-// A misspelt key or a value of the wrong kind would otherwise turn its check off unseen (A6).
-// A project's own keys, for its project checks, start with `x-`.
+// The keys docaxioms.json may have, and the type of value each one takes.
+// Without this, a misspelt key or a value of the wrong type would switch its check off without a word (A6).
+// A project's own keys, read by its project checks, start with `x-`.
 
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const isString = (value) => typeof value === "string";
-// `Array.from` reads a hole in a list as a member that is not there, which no kind accepts.
+// `every()` skips the holes of a sparse array; `Array.from` turns each hole into `undefined`, which then fails the test.
 const isStrings = (value) => Array.isArray(value) && Array.from(value).every(isString);
 const isRegex = (value) => {
   if (!isString(value)) return false;
@@ -12,33 +12,32 @@ const isRegex = (value) => {
 };
 
 const isText = (value) => isString(value) && value.trim() !== "";
-// A path from the repository root, named the way the checks compare it: `docs/old`, not `docs/old/`, `./docs`,
-// `docs//old`, `../x`, `/x` or `C:/x`.
+// A path relative to the repository root, written the way the checks compare paths: `docs/old` is valid;
+// `docs/old/`, `./docs`, `docs//old`, `../x`, `/x` and `C:/x` are not.
 const isPath = (value) => isText(value) && value.trim() === value && !value.includes("\\") && !/^[A-Za-z]:/.test(value)
   && value.split("/").every((part) => part.trim() !== "" && part !== "." && part !== "..");
-const PATH = "from the repository root, such as docs/old: no empty, . or .. part, no leading or trailing /";
 
 const KINDS = {
   string: [isString, "a string"],
-  text: [isText, "a string that is not empty"],
-  texts: [(value) => Array.isArray(value) && Array.from(value).every(isText), "a list of strings that are not empty"],
-  dir: [isPath, `a folder ${PATH}`],
-  file: [isPath, `a file ${PATH}`],
-  files: [(value) => Array.isArray(value) && Array.from(value).every(isPath), `a list of files ${PATH}`],
-  // A folder may be named with a trailing `/`, as gone paths are.
-  folders: [(value) => Array.isArray(value) && Array.from(value).every((one) => isString(one) && isPath(one.replace(/\/$/, ""))), `a list of paths ${PATH} but an optional trailing /`],
+  text: [isText, "a non-empty string"],
+  texts: [(value) => Array.isArray(value) && Array.from(value).every(isText), "a list of strings, none of them empty"],
+  dir: [isPath, "a folder path relative to the repository root, without a leading or trailing \"/\", \".\" or \"..\" (for example \"docs/old\")"],
+  file: [isPath, "a file path relative to the repository root, without a leading \"/\", \".\" or \"..\" (for example \"docs/decisions.md\")"],
+  files: [(value) => Array.isArray(value) && Array.from(value).every(isPath), "a list of paths relative to the repository root, without a leading or trailing \"/\", \".\" or \"..\" (for example [\"README.md\"])"],
+  // Gone paths may end in `/` to name a folder.
+  folders: [(value) => Array.isArray(value) && Array.from(value).every((one) => isString(one) && isPath(one.replace(/\/$/, ""))), "a list of paths relative to the repository root, without a leading \"/\", \".\" or \"..\"; a folder may end in \"/\" (for example [\"src/legacy/\"])"],
   strings: [isStrings, "a list of strings"],
-  globs: [(value) => isText(value) || (Array.isArray(value) && Array.from(value).every(isText)), "a pattern or a list of patterns, none empty"],
-  patterns: [(value) => isText(value) || (Array.isArray(value) && value.length > 0 && Array.from(value).every(isText)), "a pattern or a list of patterns, at least one and none empty"],
+  globs: [(value) => isText(value) || (Array.isArray(value) && Array.from(value).every(isText)), "a glob pattern or a list of glob patterns, none of them empty"],
+  patterns: [(value) => isText(value) || (Array.isArray(value) && value.length > 0 && Array.from(value).every(isText)), "a glob pattern or a non-empty list of glob patterns, none of them empty"],
   regex: [isRegex, "a valid regular expression"],
-  count: [(value) => Number.isInteger(value) && value > 0, "a whole number above 0"],
-  hashes: [(value) => isObject(value) && Object.entries(value).every(([file, hash]) => isPath(file) && isString(hash) && /^[0-9a-f]{64}$/.test(hash)), `an object of files ${PATH}, to SHA-256 hashes`],
-  headings: [(value) => isObject(value) && Object.values(value).every(isText), "an object of section numbers to headings"],
+  count: [(value) => Number.isInteger(value) && value > 0, "a whole number of 1 or more"],
+  hashes: [(value) => isObject(value) && Object.entries(value).every(([file, hash]) => isPath(file) && isString(hash) && /^[0-9a-f]{64}$/.test(hash)), "an object that maps each file path to its SHA-256 hash (64 lowercase hex characters)"],
+  headings: [(value) => isObject(value) && Object.values(value).every(isText), "an object that maps section numbers to non-empty headings (for example { \"1.2\": \"### 1.2\" })"],
 };
 
-// A field ending in `!` is required where its object is given. One ending in `^` is optional, but bounds what the rest of
-// its object means (the folder of the core, what is exempt), so a wrong value leaves the whole object unusable rather
-// than widening it. An array of one shape is a list of such objects.
+// Field suffixes: `!` marks a required field. `^` marks an optional field that limits what the rest of its object covers
+// (such as core.dir or an exempt list): if it is invalid, the whole object is dropped, because dropping only the field
+// would make the object cover more than intended. An array holding one shape is a list of objects of that shape.
 const SCHEMA = {
   core: { dir: "dir^", source: "string", version: "string", commit: "string", files: "hashes" },
   entries: "files",
@@ -63,8 +62,8 @@ const SCHEMA = {
   projectChecks: "file",
 };
 
-// A problem names where it is (`path`, a list of keys and indexes) and what of the profile it leaves unusable
-// (`drop`): the value itself, or the object that lacks a required key.
+// Each problem records `path`, where it is (a list of keys and indexes), and `drop`, the part that usableProfile
+// removes: the invalid value itself, or the object it belongs to when that object cannot work without it.
 const named = (path) => path.reduce((text, key) => (typeof key === "number" ? `${text}[${key}]` : text ? `${text}.${key}` : key), "") || "the profile";
 
 function validate(value, shape, path, problems) {
@@ -74,10 +73,10 @@ function validate(value, shape, path, problems) {
     return;
   }
   if (isObject(shape)) {
-    if (!isObject(value)) { problems.push({ path, drop: path, text: `${named(path)} must be an object` }); return; }
+    if (!isObject(value)) { problems.push({ path, drop: path, text: `${named(path)} must be a JSON object` }); return; }
     for (const key of Object.keys(value)) {
       if (!Object.hasOwn(shape, key) && !key.startsWith("x-")) {
-        problems.push({ path: [...path, key], drop: [...path, key], text: `${named([...path, key])} is not a key docaxioms knows (a project's own keys start with "x-")` });
+        problems.push({ path: [...path, key], drop: [...path, key], text: `${named([...path, key || "\"\""])} is not a key docaxioms knows (a project's own keys must start with "x-")` });
       }
     }
     for (const [key, field] of Object.entries(shape)) {
@@ -100,8 +99,8 @@ function validate(value, shape, path, problems) {
 }
 
 /**
- * `profile` without the keys it sets to JSON null, which leaves them unset, so that every check reads one meaning.
- * A project's own `x-` data is its own and kept as it is.
+ * `value` with every key set to JSON null removed, so that the checks treat null the same as a missing key.
+ * A project's own `x-` keys are kept unchanged.
  */
 export function withoutNulls(value) {
   if (Array.isArray(value)) return value.map(withoutNulls);
@@ -111,19 +110,19 @@ export function withoutNulls(value) {
     .map(([key, one]) => [key, key.startsWith("x-") ? one : withoutNulls(one)]));
 }
 
-/** Every way `profile` departs from what docaxioms reads, as one message each. */
+/** One message, starting with "docaxioms.json:", for each problem in `profile`. */
 export function profileProblems(profile) {
   return problemsOf(profile).map(({ text }) => `docaxioms.json: ${text}`);
 }
 
 /**
- * What of `profile` the checks can read: without its nulls, and without each part that has a problem, so that a
- * fault leaves only its own setting unset and every check runs on the rest (A6, A7). A fault inside an item of a
- * list leaves out that item. Undefined when the profile is not an object at all.
+ * A copy of `profile` that the checks can safely read: null keys are removed, and so is each invalid setting (or
+ * the list item or object it belongs to), so that one mistake turns off only its own setting and every other check
+ * still runs (A6, A7). Returns undefined when `profile` is not an object.
  */
 export function usableProfile(profile) {
   if (!isObject(profile)) return undefined;
-  // A project's own `x-` values are its own, kept as they are and not copied.
+  // A project's own `x-` values are passed on unchanged, without being copied.
   const own = Object.entries(profile).filter(([key]) => key.startsWith("x-"));
   const usable = structuredClone(withoutNulls(Object.fromEntries(Object.entries(profile).filter(([key]) => !key.startsWith("x-")))));
   const drops = problemsOf(profile).map(({ drop }) => {
@@ -138,7 +137,7 @@ export function usableProfile(profile) {
     if (Array.isArray(parent)) parent[last] = gone;
     else if (isObject(parent)) delete parent[last];
   }
-  // A list item marked as gone is taken out once all are marked, so that the indexes of the others still hold.
+  // Mark invalid list items first and remove them all at the end, so that the indexes of later drops stay correct.
   const sweep = (node) => {
     if (Array.isArray(node)) return node.filter((one) => one !== gone).map(sweep);
     if (isObject(node)) return Object.fromEntries(Object.entries(node).map(([key, one]) => [key, sweep(one)]));
@@ -153,10 +152,10 @@ function problemsOf(profile) {
   const rule = (key, index, text) => problems.push({ path: [key, index], drop: [key, index], text: `${key}[${index}] ${text}` });
   for (const [index, one] of (Array.isArray(profile?.commands) ? profile.commands : []).entries()) {
     const sources = ["jsonFile", "makefile", "list"].filter((key) => one?.[key] !== undefined && one?.[key] !== null);
-    if (sources.length !== 1) rule("commands", index, "needs exactly one of jsonFile, makefile and list");
+    if (sources.length !== 1) rule("commands", index, "must set exactly one of jsonFile, makefile or list");
   }
   for (const [index, one] of (Array.isArray(profile?.budgets) ? profile.budgets : []).entries()) {
-    if (one?.maxLines == null && one?.maxChars == null) rule("budgets", index, "needs maxLines or maxChars");
+    if (one?.maxLines == null && one?.maxChars == null) rule("budgets", index, "must set maxLines, maxChars or both");
   }
   return problems;
 }
