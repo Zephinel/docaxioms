@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -34,6 +34,7 @@ const FILES = {
   "docs/old/label.md": "# Label\n\n> OUT OF DATE, a record.\n\n[`a]: ../todo.md\n\nSee `x` and note]: secret\n",
   "docs/old/span.md": "# Span\n\n> OUT OF DATE, a record.\n\n![`](a.png)\n\n` ](OLD)\n\n> [r](\r> ../todo.md\r> \"R\")\n",
   "docs/old/html.md": "# Html\n\n> OUT OF DATE, a record.\n\n![<span title=\"](OLD)\">](../img/a.png)\n",
+  "docs/old/alt.md": "# Alt\n\n> OUT OF DATE, a record.\n\n![a <https://example.com/](OLD)>](../img/a.png) [t](../todo.md)\n",
   "docs/old/crlf.md": "# Crlf\r\n\r\n> OUT OF DATE, a record.\r\n\r\n[c](\r\n../todo.md)\r\n",
   "NOW.md": "# Now\n\nNothing active.\n",
   "law/LAW.md": "locked\n",
@@ -188,6 +189,16 @@ FAULTS.push(
   ["links and anchors", ({ put, add }) => { put("docs/sub.md/x.txt", "x"); add("docs/index.md", "\n[x](sub.md#a)\n"); }],
   ["paths named", ({ add }) => add("README.md", "\nSee `docs/#gone`.\n")],
   ["every current document is reachable", () => {}, { ...PROFILE, entries: ["READ.md"] }],
+  ["every current document is reachable", () => {}, { ...PROFILE, entries: ["docs"] }],
+  ["the stage card", () => {}, { ...PROFILE, card: { ...PROFILE.card, file: "docs" } }],
+  ["decision numbers", () => {}, { ...PROFILE, decisions: { ...PROFILE.decisions, file: "docs" } }],
+  ["core files", ({ swap }) => swap("law/LAW.md", "locked", "changed"), { ...PROFILE, core: { ...PROFILE.core, foo: 1 } }],
+  ["the profile", () => {}, { ...PROFILE, budgets: [{ files: [""], maxLines: 10 }] }],
+  ["the profile", () => {}, { ...PROFILE, budgets: [{ files: [], maxLines: 10 }] }],
+  ["the profile", () => {}, { ...PROFILE, garden: { exempt: [""] } }],
+  ["the profile", () => {}, { ...PROFILE, ignore: ["docs/"] }],
+  ["the profile", () => {}, { ...PROFILE, ".oops": 1, "": 2 }],
+  ["a history file", ({ swap }) => swap("docs/old/alt.md", "(OLD)", "(NEW)")],
   ["a history file", ({ swap }) => swap("docs/old/span.md", "(OLD)", "(NEW)")],
   ["the profile", () => {}, { ...PROFILE, history: { ...PROFILE.history, banner: "" } }],
   ["the profile", () => {}, { ...PROFILE, budgets: [{ files: "README.md" }] }],
@@ -254,6 +265,8 @@ ALLOWED.push(
   ["a link to another site that starts with //", ({ add }) => add("docs/index.md", "\n[x](//example.com/a.md)\n")],
   ["an image target fixed in history past HTML in its text", ({ swap }) => swap("docs/old/html.md", "../img/a.png", "../img/b.png")],
   ["a target after a lone CR in a block quote fixed in history", ({ swap }) => swap("docs/old/span.md", "> ../todo.md", "> ../design.md")],
+  ["a target fixed in history to one in angle brackets", ({ swap }) => swap("docs/old/alt.md", "[t](../todo.md)", "[t](<../to do.md>)")],
+  ["a link to the repository root, whose README is reached", ({ add }) => add("NOW.md", "[home](/)\n"), { ...PROFILE, entries: ["NOW.md"], reachable: "^(README\\.md|docs/)" }],
   ["a landing with a query", ({ swap }) => swap("docs/adr.md", "design.md#1-cache", "design.md?plain=1#1-cache")],
   ["a link to a heading of a folder's README", ({ put, add }) => { put("docs/README.md", "# Docs\n\n## Here\n"); add("docs/index.md", "\n[d](/docs#here)\n"); }],
   ["a path with a placeholder in its fragment", ({ add }) => add("README.md", "\nSee `weather/gone.py#<line>`.\n")],
@@ -490,8 +503,44 @@ test("a file the profile names that is a symbolic link out of the repository is 
   try {
     writeFileSync(join(outside, "LAW.md"), FILES["law/LAW.md"]);
     const results = await runFixture(({ root, drop }) => { drop("law/LAW.md"); symlinkSync(join(outside, "LAW.md"), join(root, "law/LAW.md")); });
-    assert.match(results.find((r) => r.name.startsWith("core files")).errors.join("\n"), /law\/LAW\.md leads outside the repository/);
+    const core = results.find((r) => r.name.startsWith("core files"));
+    assert.deepEqual(core.errors, []);
+    assert.ok(core.problems.some((one) => one.startsWith("law/LAW.md")), core.problems.join("\n"));
   } finally { rmSync(outside, { recursive: true, force: true }); }
+});
+
+test("a fault in one setting of the profile leaves out only that setting, or the one item of a list it is in", async () => {
+  const results = await runFixture(() => {}, { ...PROFILE, "commands.foo": 1, commands: [...PROFILE.commands, { prefix: "" }] });
+  assert.equal(results[0].problems.length, 3);
+  assert.deepEqual(results.filter((r) => r.errors.length).map((r) => r.name), []);
+  const bad = await runFixture(({ add }) => add("README.md", "\nRun `make deploy`.\n"), { ...PROFILE, "commands.foo": 1, commands: [{ prefix: "make", makefile: "Makefile" }, { prefix: "" }] });
+  assert.deepEqual(bad.find((r) => r.name.startsWith("commands named")).problems, ["README.md:5: `make deploy` is not defined"]);
+});
+
+test("project checks are loaded only from a file inside the repository, and a list with holes is refused", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "docaxioms-own-"));
+  try {
+    writeFileSync(join(outside, "own.mjs"), "export default [{ name: \"ext\", axioms: \"A6\", run: () => [\"ran\"] }];\n");
+    const linked = await runFixture(({ root }) => symlinkSync(join(outside, "own.mjs"), join(root, "own.mjs")), { ...PROFILE, projectChecks: "own.mjs" });
+    assert.match(linked.find((r) => r.name === "project checks load").errors[0], /not a file in the repository/);
+    assert.equal(linked.find((r) => r.name === "ext"), undefined);
+  } finally { rmSync(outside, { recursive: true, force: true }); }
+  const holes = await runFixture(({ put }) => put("own.mjs", "export default [,];\n"), { ...PROFILE, projectChecks: "own.mjs" });
+  assert.match(holes.find((r) => r.name === "project checks load").errors[0], /not a list of checks/);
+});
+
+test("pin --write with a scope does not open other documents, and takes a full path to a file whose name starts with ..", { skip: process.platform === "win32" || process.getuid?.() === 0 }, () => {
+  const root = mkdtempSync(join(tmpdir(), "docaxioms-scope3-"));
+  try {
+    const at = (file) => join(root, file);
+    for (const [file, text] of Object.entries(FILES)) { mkdirSync(dirname(at(file)), { recursive: true }); writeFileSync(at(file), text); }
+    writeFileSync(at("docs/..notes.md"), "# Notes\n\n<!-- pin: weather/cli.py#L2-L3@000000000000 -->\n");
+    writeFileSync(at("docs/locked.md"), "# Locked\n");
+    chmodSync(at("docs/locked.md"), 0o000);
+    const changes = syncPins(project(root, PROFILE), { write: true, files: [at("docs/..notes.md")] });
+    assert.deepEqual(changes.map((one) => [one.file, one.status]), [["docs/..notes.md", "updated"]]);
+    chmodSync(at("docs/locked.md"), 0o644);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test("withoutNulls keeps a project's own x- data as it is", () => {

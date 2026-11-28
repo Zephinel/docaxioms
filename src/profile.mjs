@@ -25,7 +25,8 @@ const KINDS = {
   file: [isPath, `a file ${PATH}`],
   files: [(value) => Array.isArray(value) && value.every(isPath), `a list of files ${PATH}`],
   strings: [isStrings, "a list of strings"],
-  globs: [(value) => isString(value) || isStrings(value), "a string or a list of strings"],
+  globs: [(value) => isText(value) || (Array.isArray(value) && value.every(isText)), "a pattern or a list of patterns, none empty"],
+  patterns: [(value) => isText(value) || (Array.isArray(value) && value.length > 0 && value.every(isText)), "a pattern or a list of patterns, at least one and none empty"],
   regex: [isRegex, "a valid regular expression"],
   count: [(value) => Number.isInteger(value) && value > 0, "a whole number above 0"],
   hashes: [(value) => isObject(value) && Object.entries(value).every(([file, hash]) => isPath(file) && isString(hash) && /^[0-9a-f]{64}$/.test(hash)), `an object of files ${PATH}, to SHA-256 hashes`],
@@ -38,7 +39,7 @@ const SCHEMA = {
   entries: "files",
   reachable: "regex",
   codeExtensions: "texts",
-  ignore: "strings",
+  ignore: "files",
   decisions: { file: "file!", id: "text!", landedSection: "text", citeExempt: "regex" },
   log: "globs",
   sections: [{ cite: "regex!", files: "regex!", document: "file!", rowTables: "headings" }],
@@ -46,39 +47,46 @@ const SCHEMA = {
   pathExempt: "regex",
   gonePaths: "texts",
   codeDocExempt: "regex",
-  commands: [{ prefix: "text!", jsonFile: "file", key: "string", makefile: "file", list: "strings", exempt: "globs" }],
+  commands: [{ prefix: "text!", jsonFile: "file", key: "string", makefile: "file", list: "texts", exempt: "globs" }],
   research: { dir: "dir!", items: "file!", openUntil: "text" },
   history: { dir: "dir!", banner: "text!", erratum: "text!", base: "text" },
   card: { file: "file!", maxLines: "count", maxChars: "count" },
-  budgets: [{ files: "globs!", maxLines: "count", maxChars: "count", exempt: "globs" }],
-  codeToDocs: [{ code: "globs!", docs: "globs!", base: "text" }],
+  budgets: [{ files: "patterns!", maxLines: "count", maxChars: "count", exempt: "globs" }],
+  codeToDocs: [{ code: "patterns!", docs: "patterns!", base: "text" }],
   evolutionary: { phrases: "texts", exempt: "globs" },
   garden: { exempt: "globs" },
   projectChecks: "file",
 };
 
-function validate(value, shape, where, problems) {
+// A problem names where it is (`path`, a list of keys and indexes) and what of the profile it leaves unusable
+// (`drop`): the value itself, or the object that lacks a required key.
+const named = (path) => path.reduce((text, key) => (typeof key === "number" ? `${text}[${key}]` : text ? `${text}.${key}` : key), "") || "the profile";
+
+function validate(value, shape, path, problems) {
   if (Array.isArray(shape)) {
-    if (!Array.isArray(value)) { problems.push(`${where} must be a list`); return; }
-    value.forEach((item, index) => validate(item, shape[0], `${where}[${index}]`, problems));
+    if (!Array.isArray(value)) { problems.push({ path, drop: path, text: `${named(path)} must be a list` }); return; }
+    for (let index = 0; index < value.length; index += 1) validate(value[index], shape[0], [...path, index], problems);
     return;
   }
   if (isObject(shape)) {
-    if (!isObject(value)) { problems.push(`${where || "the profile"} must be an object`); return; }
+    if (!isObject(value)) { problems.push({ path, drop: path, text: `${named(path)} must be an object` }); return; }
     for (const key of Object.keys(value)) {
-      if (!Object.hasOwn(shape, key) && !key.startsWith("x-")) problems.push(`${where ? `${where}.` : ""}${key} is not a key docaxioms knows (a project's own keys start with "x-")`);
+      if (!Object.hasOwn(shape, key) && !key.startsWith("x-")) {
+        problems.push({ path: [...path, key], drop: [...path, key], text: `${named([...path, key])} is not a key docaxioms knows (a project's own keys start with "x-")` });
+      }
     }
     for (const [key, field] of Object.entries(shape)) {
-      const at = where ? `${where}.${key}` : key;
+      const at = [...path, key];
       const kind = isString(field) ? field.replace(/!$/, "") : field;
       // JSON null leaves an optional key unset.
       if (value[key] === undefined || value[key] === null) {
-        if (isString(field) && field.endsWith("!")) problems.push(`${at} is required`);
+        if (isString(field) && field.endsWith("!")) problems.push({ path: at, drop: path, text: `${named(at)} is required` });
         continue;
       }
       if (isString(kind)) {
         const [test, what] = KINDS[kind];
-        if (!test(value[key])) problems.push(`${at} must be ${what}`);
+        // A required value that is wrong leaves its object unusable, as a missing one does.
+        if (!test(value[key])) problems.push({ path: at, drop: field.endsWith("!") ? path : at, text: `${named(at)} must be ${what}` });
       } else {
         validate(value[key], kind, at, problems);
       }
@@ -100,29 +108,48 @@ export function withoutNulls(value) {
 
 /** Every way `profile` departs from what docaxioms reads, as one message each. */
 export function profileProblems(profile) {
-  return problemsOf(profile).map((problem) => `docaxioms.json: ${problem}`);
+  return problemsOf(profile).map(({ text }) => `docaxioms.json: ${text}`);
 }
 
 /**
- * What of `profile` the checks can read: without its nulls, and without each top-level key that has a problem, so
- * that a fault in one key leaves that key's checks unset and the others running (A6, A7). Undefined when the
- * profile is not an object at all.
+ * What of `profile` the checks can read: without its nulls, and without each part that has a problem, so that a
+ * fault leaves only its own setting unset and every check runs on the rest (A6, A7). A fault inside an item of a
+ * list leaves out that item. Undefined when the profile is not an object at all.
  */
 export function usableProfile(profile) {
   if (!isObject(profile)) return undefined;
-  const faulty = new Set(problemsOf(profile).map((problem) => /^[^.[\s]+/.exec(problem)[0]));
-  return withoutNulls(Object.fromEntries(Object.entries(profile).filter(([key]) => !faulty.has(key))));
+  const usable = structuredClone(withoutNulls(profile));
+  const drops = problemsOf(profile).map(({ drop }) => {
+    const item = drop.findIndex((key) => typeof key === "number");
+    return item === -1 ? drop : drop.slice(0, item + 1);
+  });
+  const gone = Symbol("gone");
+  for (const drop of drops) {
+    if (!drop.length) return undefined;
+    const parent = drop.slice(0, -1).reduce((node, key) => node?.[key], usable);
+    const last = drop.at(-1);
+    if (Array.isArray(parent)) parent[last] = gone;
+    else if (isObject(parent)) delete parent[last];
+  }
+  // A list item marked as gone is taken out once all are marked, so that the indexes of the others still hold.
+  const sweep = (node) => {
+    if (Array.isArray(node)) return node.filter((one) => one !== gone).map(sweep);
+    if (isObject(node)) return Object.fromEntries(Object.entries(node).map(([key, one]) => [key, sweep(one)]));
+    return node;
+  };
+  return sweep(usable);
 }
 
 function problemsOf(profile) {
   const problems = [];
-  validate(profile, SCHEMA, "", problems);
-  for (const [index, rule] of (Array.isArray(profile?.commands) ? profile.commands : []).entries()) {
-    const sources = ["jsonFile", "makefile", "list"].filter((key) => rule?.[key] !== undefined && rule?.[key] !== null);
-    if (sources.length !== 1) problems.push(`commands[${index}] needs exactly one of jsonFile, makefile and list`);
+  validate(profile, SCHEMA, [], problems);
+  const rule = (key, index, text) => problems.push({ path: [key, index], drop: [key, index], text: `${key}[${index}] ${text}` });
+  for (const [index, one] of (Array.isArray(profile?.commands) ? profile.commands : []).entries()) {
+    const sources = ["jsonFile", "makefile", "list"].filter((key) => one?.[key] !== undefined && one?.[key] !== null);
+    if (sources.length !== 1) rule("commands", index, "needs exactly one of jsonFile, makefile and list");
   }
-  for (const [index, rule] of (Array.isArray(profile?.budgets) ? profile.budgets : []).entries()) {
-    if (rule?.maxLines == null && rule?.maxChars == null) problems.push(`budgets[${index}] needs maxLines or maxChars`);
+  for (const [index, one] of (Array.isArray(profile?.budgets) ? profile.budgets : []).entries()) {
+    if (one?.maxLines == null && one?.maxChars == null) rule("budgets", index, "needs maxLines or maxChars");
   }
   return problems;
 }

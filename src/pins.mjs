@@ -12,7 +12,7 @@
 // reports the shift and `pin --relocate` updates only the line numbers without altering the hash.
 import { createHash } from "node:crypto";
 import { lstatSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, normalize, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
 
 // Match `pin:` (any attempt with a colon) or `pin <path-like>` (missing colon before a path/file token),
 // while leaving ordinary prose comments like `<!-- pin the version here -->` untouched.
@@ -112,9 +112,9 @@ export function formatPinComment(rawPath, startLine, endLine, shortHash) {
 }
 
 /** Inspect every pin comment across current documents and classify its exact state. */
-export function inspectPins(p, wanted = () => true) {
+export function inspectPins(p, wanted = () => true, wantedDoc = () => true) {
   const records = [];
-  for (const file of p.currentDocs) {
+  for (const file of p.currentDocs.filter(wantedDoc)) {
     const md = p.markdown(file);
     for (const comment of md.htmlComments) {
       const pin = parsePinComment(comment);
@@ -249,7 +249,7 @@ export function syncPins(p, { write = false, relocate = false, files = [], pins 
   // A document is named from the repository root, with or without a leading `/`, or by its full path on the machine.
   const fromRoot = (path) => {
     const rel = relative(p.root, resolve(path));
-    const onMachine = isAbsolute(path) && rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
+    const onMachine = isAbsolute(path) && rel !== "" && rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
     return normalize(onMachine ? rel : path).replace(/\\/g, "/").replace(/^\/+/, "");
   };
   const fileSet = new Set(files.map(fromRoot));
@@ -262,7 +262,9 @@ export function syncPins(p, { write = false, relocate = false, files = [], pins 
   const inScope = (file, line) => all || (!hasScope && !write) || fileSet.has(file) || pinSet.has(`${file}:${line}`);
 
   // With a scope, only its pins are reported: a fault elsewhere is not this command's to fail on.
-  const records = inspectPins(p, (file, line) => !hasScope || inScope(file, line));
+  // Only the documents in scope are read at all.
+  const pinDocs = new Set([...pinSet].map((spec) => spec.slice(0, spec.lastIndexOf(":"))));
+  const records = inspectPins(p, (file, line) => !hasScope || inScope(file, line), (file) => !hasScope || all || fileSet.has(file) || pinDocs.has(file));
   const changes = [];
   const editsByFile = new Map();
 

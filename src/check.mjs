@@ -6,7 +6,7 @@
 //   - "aid":  review aid; prints findings and counts without failing exit code (unless --strict-aids).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { toString } from "mdast-util-to-string";
@@ -26,6 +26,9 @@ const asArray = (value) => (Array.isArray(value) ? value : value ? [value] : [])
 const safeDecode = (text) => {
   try { return decodeURIComponent(text); } catch { return text; }
 };
+
+/** The README that stands for a folder; the folder `.` is the repository root. */
+const readmeOf = (folder) => (folder === "." ? "README.md" : `${folder}/README.md`);
 
 /**
  * Where a link target leads in the repository: from the document's folder, or from the repository root when it
@@ -83,6 +86,21 @@ export function project(root, given) {
   const profile = usableProfile(given);
   if (!profile) throw new Error("docaxioms.json: the profile must be an object");
   const at = (file) => join(root, file);
+  // A path inside the repository by name may still lead out of it through a symbolic link on its way: the nearest
+  // part of it that is there must be inside, so that nothing outside is read or even looked for.
+  const realRoot = realpathSync(root);
+  const inside = (path) => {
+    for (let probe = at(path); ; probe = dirname(probe)) {
+      try {
+        const real = realpathSync(probe);
+        return real === realRoot || real.startsWith(`${realRoot}${sep}`);
+      } catch {
+        // A symbolic link that leads nowhere cannot be shown to stay inside.
+        try { if (lstatSync(probe).isSymbolicLink()) return false; } catch { /* not there: try its folder */ }
+        if (dirname(probe) === probe) return false;
+      }
+    }
+  };
   const cache = new Map();
   const mdCache = new Map();
   // Every read goes through here, so nothing outside the repository is read, whoever names it.
@@ -91,7 +109,10 @@ export function project(root, given) {
     if (!cache.has(file)) cache.set(file, readFileSync(at(file), "utf8"));
     return cache.get(file);
   };
-  const has = (file) => existsSync(at(file));
+  // What is there, inside the repository: nothing outside is looked for, through a symbolic link or otherwise.
+  const has = (file) => inside(file) && existsSync(at(file));
+  // A file the profile or a link names must be a file, not a folder.
+  const isFile = (file) => has(file) && statSync(at(file)).isFile();
   const markdown = (file) => {
     if (!mdCache.has(file)) mdCache.set(file, parseMarkdown(read(file)));
     return mdCache.get(file);
@@ -124,21 +145,6 @@ export function project(root, given) {
   const currentDocs = all.filter((file) => file.endsWith(".md") && !inHistory(file) && !inCore(file));
   const code = all.filter((file) => !inCore(file) && (profile.codeExtensions ?? []).some((extension) => file.endsWith(extension)));
 
-  // A path inside the repository by name may still lead out of it through a symbolic link on its way: the nearest
-  // part of it that is there must be inside, so that nothing outside is read or even looked for.
-  const realRoot = realpathSync(root);
-  const inside = (path) => {
-    for (let probe = at(path); ; probe = dirname(probe)) {
-      try {
-        const real = realpathSync(probe);
-        return real === realRoot || real.startsWith(`${realRoot}${sep}`);
-      } catch {
-        // A symbolic link that leads nowhere cannot be shown to stay inside.
-        try { if (lstatSync(probe).isSymbolicLink()) return false; } catch { /* not there: try its folder */ }
-        if (dirname(probe) === probe) return false;
-      }
-    }
-  };
   const locate = (fromFile, rawPath) => {
     const target = resolveTarget(fromFile, rawPath);
     return target.outside || inside(target.path) ? target : { ...target, outside: true };
@@ -164,6 +170,7 @@ export function project(root, given) {
     profile,
     read,
     has,
+    isFile,
     all,
     inHistory,
     inCore,
@@ -250,7 +257,7 @@ export function decisionRows(p) {
 function allowedCommands(p, rule) {
   if (Array.isArray(rule.list)) return { valid: new Set(rule.list) };
   if (rule.jsonFile) {
-    if (!p.has(rule.jsonFile)) return { error: `${rule.jsonFile}: named by commands in docaxioms.json, and not there` };
+    if (!p.isFile(rule.jsonFile)) return { error: `${rule.jsonFile}: named by commands in docaxioms.json, and not there` };
     try {
       const parsed = JSON.parse(p.read(rule.jsonFile));
       const bucket = rule.key ? parsed?.[rule.key] : parsed;
@@ -260,7 +267,7 @@ function allowedCommands(p, rule) {
     }
   }
   if (rule.makefile) {
-    if (!p.has(rule.makefile)) return { error: `${rule.makefile}: named by commands in docaxioms.json, and not there` };
+    if (!p.isFile(rule.makefile)) return { error: `${rule.makefile}: named by commands in docaxioms.json, and not there` };
     const targets = new Set();
     for (const line of p.read(rule.makefile).split("\n")) {
       if (!line || /^[\s#]/.test(line)) continue;
@@ -308,7 +315,7 @@ const CHECKS = [
     name: "core files are the pinned version",
     axioms: "A4, A6",
     level: "gate",
-    run: ({ read, has, all, inCore, profile }) => {
+    run: ({ read, isFile, all, inCore, profile }) => {
       const { dir = "", files = {}, version, commit } = profile.core ?? {};
       const at = (file) => (dir ? `${dir}/${file}` : file);
       const versionProblem = version && version !== PACKAGE_VERSION
@@ -323,7 +330,7 @@ const CHECKS = [
       return [
         ...versionProblem,
         ...commitProblem,
-        ...Object.entries(files).flatMap(([file, hash]) => (!has(at(file))
+        ...Object.entries(files).flatMap(([file, hash]) => (!isFile(at(file))
           ? [`${at(file)}: missing`]
           : createHash("sha256").update(read(at(file))).digest("hex") === hash
             ? []
@@ -344,10 +351,9 @@ const CHECKS = [
       if (!p.has(path)) return [`${file}: ${target} leads nowhere`];
       if (!anchor) return [];
       // A folder's headings are those of its README.
-      const folder = lstatSync(p.at(path)).isDirectory();
-      const doc = folder ? `${path}/README.md` : path;
+      const doc = lstatSync(p.at(path)).isDirectory() ? readmeOf(path) : path;
       if (!doc.endsWith(".md")) return [];
-      return p.has(doc) && p.passage(doc, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
+      return p.isFile(doc) && p.passage(doc, anchor) !== undefined ? [] : [`${file}: ${target} names a heading that is not there`];
     })),
   },
 
@@ -357,7 +363,7 @@ const CHECKS = [
     level: "gate",
     run: (p) => {
       if (!p.profile.decisions) return [];
-      if (!p.has(p.profile.decisions.file)) return [`${p.profile.decisions.file}: named by decisions.file in docaxioms.json, and not there`];
+      if (!p.isFile(p.profile.decisions.file)) return [`${p.profile.decisions.file}: named by decisions.file in docaxioms.json, and not there`];
       const rows = decisionRows(p);
       const names = rows.map((row) => row.name);
       const known = new Set(names);
@@ -378,7 +384,7 @@ const CHECKS = [
     axioms: "A4",
     level: "gate",
     run: (p) => (p.profile.sections ?? []).flatMap(({ cite, files, document, rowTables = {} }) => {
-      if (!p.has(document)) return [`${document}: named by sections in docaxioms.json, and not there`];
+      if (!p.isFile(document)) return [`${document}: named by sections in docaxioms.json, and not there`];
       const heads = new Set(
         p.sections(document)
           .filter((one) => one.level >= 2)
@@ -482,7 +488,7 @@ const CHECKS = [
           const command = rest.split(/\s+/).find((word) => !word.startsWith("-"));
           if (!command || /[*<>{}…()|$#]|\.\.\./.test(command)) continue;
           if (!valid.has(command)) {
-            problems.push(`${file}:${line}: \`${rule.prefix}${command}\` is not defined`);
+            problems.push(`${file}:${line}: \`${rule.prefix}${/\s$/.test(rule.prefix) ? "" : " "}${command}\` is not defined`);
           }
         }
       }
@@ -497,7 +503,7 @@ const CHECKS = [
     run: (p) => {
       const problems = [];
       const { research, history } = p.profile;
-      if (research && !p.has(research.items)) {
+      if (research && !p.isFile(research.items)) {
         problems.push(`${research.items}: named by research.items in docaxioms.json, and not there`);
       } else if (research) {
         const items = p.markdown(research.items);
@@ -531,15 +537,15 @@ const CHECKS = [
     level: "gate",
     run: (p) => {
       const entries = p.profile.entries ?? [];
-      const seen = new Set(entries.filter((file) => p.inside(file) && p.has(file)));
+      const seen = new Set(entries.filter(p.isFile));
       // Entries are candidates, and a project need not have them all; it must have one of them.
       if (entries.length && !seen.size) return [`none of the entries in docaxioms.json is there: ${entries.join(", ")}`];
       const queue = [...seen];
       while (queue.length) {
         for (const { path, outside } of p.links(queue.pop())) {
           if (outside) continue;
-          const next = p.inside(path) && p.has(path) && lstatSync(p.at(path)).isDirectory() ? `${path}/README.md` : path;
-          if (next.endsWith(".md") && p.inside(next) && p.has(next) && !p.inHistory(next) && !seen.has(next)) {
+          const next = p.has(path) && lstatSync(p.at(path)).isDirectory() ? readmeOf(path) : path;
+          if (next.endsWith(".md") && p.isFile(next) && !p.inHistory(next) && !seen.has(next)) {
             seen.add(next);
             queue.push(next);
           }
@@ -556,7 +562,7 @@ const CHECKS = [
     level: "gate",
     run: (p) => {
       // A decisions file that is not there is the finding of the check above.
-      if (!p.profile.decisions || !p.has(p.profile.decisions.file)) return [];
+      if (!p.profile.decisions || !p.isFile(p.profile.decisions.file)) return [];
       return decisionRows(p)
         .filter((row) => row.landing !== undefined)
         .flatMap(({ name, status, landingTargets }) => {
@@ -590,7 +596,7 @@ const CHECKS = [
     run: (p) => {
       const { card } = p.profile;
       if (!card) return [];
-      if (!p.has(card.file)) return [`${card.file}: named by card in docaxioms.json, and not there`];
+      if (!p.isFile(card.file)) return [`${card.file}: named by card in docaxioms.json, and not there`];
       const text = p.read(card.file);
       const lines = text.trimEnd().split("\n").length;
       return [
@@ -744,9 +750,10 @@ function why(error) {
 }
 
 /** One check's result. A check that could not run says why in `errors`, and the others still run (A6). */
-async function runCheck({ name, axioms, level = "gate", run }, p) {
+async function runCheck(one, p) {
+  const { name = "a project check", axioms = "", level = "gate" } = one ?? {};
   try {
-    return { name, axioms, level, ...normalizeOutcome(await run(p)), errors: [] };
+    return { name, axioms, level, ...normalizeOutcome(await one.run(p)), errors: [] };
   } catch (error) {
     return { name, axioms, level, problems: [], notes: [], errors: [why(error)] };
   }
@@ -769,8 +776,10 @@ export async function check(root, given) {
   if (profile.projectChecks) {
     let own;
     try {
+      // Project checks are code the project runs as its own: they are loaded only from a file inside it.
+      if (!p.isFile(profile.projectChecks)) throw new Error("not a file in the repository");
       own = (await import(pathToFileURL(p.at(profile.projectChecks)).href)).default;
-      const shaped = Array.isArray(own) && own.every((one) => one && typeof one.name === "string" && typeof one.run === "function");
+      const shaped = Array.isArray(own) && Array.from(own).every((one) => one && typeof one.name === "string" && typeof one.run === "function");
       if (!shaped) throw new Error("its default export is not a list of checks, each with a name and a run");
     } catch (error) {
       own = [];

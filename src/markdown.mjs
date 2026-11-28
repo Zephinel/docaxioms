@@ -173,20 +173,27 @@ export function parseMarkdown(text) {
   };
 }
 
-// The kinds of token that are a link's target: inline and definition destinations, and the address inside `<...>`.
-// A bare address is prose that reads as a link, so it is not among them.
-const TARGET_TOKENS = new Set(["resourceDestinationString", "definitionDestinationString", "autolinkProtocol", "autolinkEmail"]);
+// The kinds of token that are a link's target: an inline or definition destination with its `<...>` if it has one, and
+// the address inside an autolink `<...>`. A bare address is prose that reads as a link, so it is not among them.
+const DESTINATIONS = new Set(["resourceDestination", "definitionDestination"]);
+const AUTOLINKS = new Set(["autolinkProtocol", "autolinkEmail"]);
 
 /**
  * `text` with the destination of every link, image and link definition removed, and all else kept: titles, code
  * and prose stay as they are, so that comparing two such texts lets only link targets differ. The ranges come from
- * the parser's own tokens, the same parse that remark builds its tree from.
+ * the parser's own tokens, the same parse that remark builds its tree from. An autolink in the text of an image is
+ * that image's alternative text, so it stays.
  */
 export function withoutLinkTargets(text) {
   const events = postprocess(parse({ extensions: [gfm()] }).document().write(preprocess()(text, undefined, true)));
-  const ranges = events
-    .filter(([kind, token]) => kind === "enter" && TARGET_TOKENS.has(token.type))
-    .map(([, token]) => [token.start.offset, token.end.offset])
+  const entered = events.filter(([kind]) => kind === "enter").map(([, token]) => token);
+  const imageLabels = entered
+    .filter((token, index) => token.type === "label" && entered[index - 1]?.type === "image")
+    .map((token) => [token.start.offset, token.end.offset]);
+  const inImageLabel = (token) => imageLabels.some(([start, end]) => token.start.offset >= start && token.end.offset <= end);
+  const ranges = entered
+    .filter((token) => DESTINATIONS.has(token.type) || (AUTOLINKS.has(token.type) && !inImageLabel(token)))
+    .map((token) => [token.start.offset, token.end.offset])
     .sort((a, b) => a[0] - b[0]);
   let out = "";
   let cursor = 0;
