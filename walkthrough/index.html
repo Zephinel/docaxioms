@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docaxioms 导读：概览与架构</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><nav>
+  <span class="brand">docaxioms 导读</span>
+  <a href="index.html" class="here">概览与架构</a>
+  <a href="flows.html">接入与开发流程</a>
+  <a href="checks.html">17 项检查</a>
+  <a href="mechanisms.html">核心机制</a>
+  <a href="tests.html">测试与门禁</a>
+  <a href="plan.html">对照迭代方案</a>
+</nav></header>
+
+<div class="layout">
+<aside class="toc">
+  <b>本页</b>
+  <a href="#what">它是什么</a>
+  <a href="#route">阅读路线</a>
+  <a href="#layers">三层结构</a>
+  <a href="#files">仓库地图</a>
+  <a href="#commands">五个命令</a>
+  <a href="#run">一次 check 的全过程</a>
+  <a href="#exit">退出码</a>
+  <a href="#kinds">四类内容（M1）</a>
+</aside>
+<main>
+
+<h1>docaxioms 是什么，怎么组织的</h1>
+<p class="lead">本导读基于提交 <code>d840742</code>。文中的 <span class="src">文件:行号</span> 都指这个版本；代码以后改了，行号会漂移，函数名不会。</p>
+
+<h2 id="what">它是什么</h2>
+<p>docaxioms 是一个本地运行的命令行工具（Node.js，纯 JS），检查一个软件项目的<strong>文档是否还和代码、和 owner 的决定对得上</strong>。它不写文档、不调用模型，只做确定性的检查：同样的仓库，跑几次结果都一样。</p>
+<p>它的每条规则都从一组锁定的公理推出来（<code>core/AXIOMS.lock.md</code>：A0–A8 九条公理、M1–M4 四条方法），每个检查名后面的括号里写着它依据哪几条。</p>
+<div class="grid">
+  <div class="card"><h4>能保证的</h4><p>链接不断、路径存在、钉住的代码没变、决策有落地点、历史记录没被改写、文档在预算内……都是机器能精确判断的性质。</p></div>
+  <div class="card"><h4>保证不了的</h4><p>文字描述是否真的符合代码行为、决策是不是 owner 本意。这些靠人和定期的 garden 审计（A6：门禁只保证它判断的那一条）。</p></div>
+  <div class="card"><h4>不做的</h4><p>不自动改写文档。代码变了，它只指出哪里要复核；改不改、怎么改，由人或 agent 决定（A0）。</p></div>
+</div>
+
+<h2 id="route">阅读路线</h2>
+<ol>
+  <li><strong>本页</strong>：三层结构、仓库地图、一次检查从头到尾怎么跑。</li>
+  <li><a href="flows.html">接入与开发流程</a>：新项目、已有项目、完成一个功能。全是在临时目录里实跑的真实输出，先看这页最直观。</li>
+  <li><a href="checks.html">17 项检查</a>：每项判定什么、代码在哪、哪条测试证明它会失败。</li>
+  <li><a href="mechanisms.html">核心机制</a>：仓库视图与边界、profile 校验、Markdown 解析、code pin、历史比较、init/update。</li>
+  <li><a href="tests.html">测试与门禁</a>：故障注入式测试、本仓库的阻断规则（AD-7）、CI。</li>
+  <li><a href="plan.html">对照迭代方案</a>：<code>research/迭代方案.md</code> 的每一部分落在哪段代码上。读完前五页再读方案，会顺很多。</li>
+</ol>
+
+<h2 id="layers">三层结构：公理 → 规范 → 检查</h2>
+<div class="flow">
+  <div class="step"><b>公理与方法</b><small><code>core/AXIOMS.lock.md</code>：A0 owner 是权威、A2 依赖会过期、A4 手抄的副本会分叉、A5 记录不可改写、A6 门禁只保证它的判断、A7 门禁要精确……锁定，只有 owner 能改。</small></div>
+  <div class="arrow">↓ 推出</div>
+  <div class="step"><b>操作规范</b><small><code>core/GUIDE.md</code>（改了什么就更新哪份文档、怎么退役文档、profile 字典）和 <code>core/GARDEN.md</code>（只读审计协议）。纯文本，不点名任何项目、工具或语言（AD-2），由测试守住。</small></div>
+  <div class="arrow">↓ 机器能判断的部分，做成</div>
+  <div class="step hl"><b>检查</b><small><code>src/check.mjs</code> 里的 17 项（15 项 gate 会让命令失败，2 项 aid 只提醒），加上项目自己的 <code>projectChecks</code>。</small></div>
+</div>
+<p>接入的项目会把 <code>core/</code> 原样复制一份到自己的 <code>docaxioms/</code> 目录，并在 <code>docaxioms.json</code> 里记下每个文件的 SHA-256。之后谁改了这份副本，检查就会失败（A4）。</p>
+
+<h2 id="files">仓库地图</h2>
+<table>
+<tr><th>位置</th><th>行数</th><th>职责</th></tr>
+<tr><td><code>bin/docaxioms.mjs</code></td><td>197</td><td>命令行入口：解析参数、读 profile、打印结果、决定退出码</td></tr>
+<tr><td><code>src/check.mjs</code></td><td>812</td><td>检查引擎：<code>project()</code> 建仓库视图，<code>CHECKS</code> 数组里 17 项检查，<code>check()</code> 逐项运行</td></tr>
+<tr><td><code>src/profile.mjs</code></td><td>161</td><td><code>docaxioms.json</code> 的 schema 校验；把出错的设置剔掉，得到“可用的 profile”</td></tr>
+<tr><td><code>src/markdown.mjs</code></td><td>227</td><td>Markdown 解析（remark + micromark）：标题锚点、链接、行内代码、HTML 注释；历史比较用的 <code>withoutLinkTargets</code></td></tr>
+<tr><td><code>src/pins.mjs</code></td><td>353</td><td>code pin：解析 <code>&lt;!-- pin: … --&gt;</code>、算哈希、判断移动或改变、<code>pin --write/--relocate</code></td></tr>
+<tr><td><code>src/manage.mjs</code></td><td>130</td><td><code>init</code>、<code>update</code>：复制模板和 core，写 profile 和哈希</td></tr>
+<tr><td><code>src/garden.mjs</code></td><td>47</td><td><code>garden</code>：列出所有现行描述文档和阶段卡，供人工审计</td></tr>
+<tr><td><code>src/index.mjs</code></td><td>5</td><td>程序化 API，导出 19 个函数</td></tr>
+<tr><td><code>core/</code></td><td>—</td><td>发给接入项目的纯文本规范：公理、GUIDE、GARDEN、许可证</td></tr>
+<tr><td><code>templates/</code></td><td>—</td><td><code>init</code> 时复制给新项目的起始文档和默认 profile</td></tr>
+<tr><td><code>test/</code></td><td>966</td><td>引擎测试、CLI 测试、本仓库自检（221 项）</td></tr>
+<tr><td><code>docs/decisions.md</code></td><td>—</td><td>本仓库自己的决策（AD-1 到 AD-7）</td></tr>
+<tr><td><code>.github/workflows/check.yml</code></td><td>—</td><td>CI：在 Node 22 上跑 <code>npm run check</code></td></tr>
+</table>
+<p>依赖有九个，全是纯 JS 的解析和匹配库：<code>remark-parse</code>、<code>remark-gfm</code>、<code>micromark</code>、<code>micromark-extension-gfm</code>、<code>unified</code>、<code>unist-util-visit</code>、<code>mdast-util-to-string</code>、<code>github-slugger</code>、<code>picomatch</code>（AD-4：用现成的库，不自己写解析器）。</p>
+
+<h2 id="commands">五个命令</h2>
+<table>
+<tr><th>命令</th><th>做什么</th><th>代码</th></tr>
+<tr><td><code>check</code></td><td>跑全部检查。<code>--report</code>：发现不影响退出码；<code>--strict-aids</code>：aid 的发现也算失败；<code>--json</code>：输出机器可读结果</td><td><span class="src">bin/docaxioms.mjs:42</span> → <span class="src">src/check.mjs:777 check()</span></td></tr>
+<tr><td><code>pin</code></td><td>不带参数：列出过期的 pin。<code>--relocate</code>：代码没变、只是行号移动时改行号。<code>--write</code>：复核过后刷新哈希，必须指定范围（<code>--file</code>、<code>--pin</code> 或 <code>--all</code>）</td><td><span class="src">bin/docaxioms.mjs:71</span> → <span class="src">src/pins.mjs:248 syncPins()</span></td></tr>
+<tr><td><code>garden</code></td><td>列出现行描述文档、阶段卡、每份的 pin 数和映射的代码，交给人或 agent 按 GARDEN.md 审计</td><td><span class="src">src/garden.mjs:8</span></td></tr>
+<tr><td><code>init</code></td><td>接入：复制模板中项目没有的文件，复制 core，写 profile</td><td><span class="src">src/manage.mjs:85</span></td></tr>
+<tr><td><code>update</code></td><td>升级 core 副本；项目改过副本、或公理变了而没有 <code>--accept-axioms</code> 时拒绝</td><td><span class="src">src/manage.mjs:106</span></td></tr>
+</table>
+
+<h2 id="run">一次 <code>docaxioms check</code> 的全过程</h2>
+<div class="flow">
+  <div class="step"><b>1. 读 profile</b><small><code>loadProfile()</code> <span class="src">bin/docaxioms.mjs:24</span>：读 <code>docaxioms.json</code>，原样交给引擎。check 不在这里拒绝错误的 profile；<code>pin</code> 和 <code>garden</code> 会（<code>strict: true</code>）。</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>2. 校验 profile，得到可用部分</b><small><code>profileProblems()</code> 列出问题；<code>usableProfile()</code> 剔掉出错的设置，其余照用 <span class="src">src/profile.mjs:114, 123</span>。只有 profile 根本不是 JSON 对象时，所有检查都不运行、全部报 error。</small></div>
+  <div class="arrow">↓</div>
+  <div class="step hl"><b>3. 建仓库视图 <code>project()</code></b><small><span class="src">src/check.mjs:93</span>。确定仓库边界（<code>inside()</code>，含符号链接）、所有读取的唯一入口 <code>read()</code>、文件清单 <code>all</code>（来自 <code>git ls-files</code>，没有 git 时遍历目录）、现行文档 <code>currentDocs</code>（除去 history 和 core 的 <code>.md</code>）、代码文件 <code>code</code>、链接解析 <code>targetOf()</code>。每份 Markdown 只解析一次并缓存。</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>4. 逐项运行 17 项检查</b><small>每项经 <code>runCheck()</code> <span class="src">:768</span> 运行：返回发现（problems）和说明（notes）；抛出异常时记成 error，后面的检查照样跑（A6）。</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>5. 项目自己的检查</b><small>profile 配了 <code>projectChecks</code> 时，从仓库内的那个文件 import，导出必须是检查的列表 <span class="src">:791</span>。</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>6. 打印与退出码</b><small>每项一行：<code>ok</code>、<code>FAIL</code>、<code>aid</code>、<code>note</code> 或 <code>ERR</code> <span class="src">bin/docaxioms.mjs:57</span>。</small></div>
+</div>
+
+<h2 id="exit">退出码规则</h2>
+<p>来自 <span class="src">bin/docaxioms.mjs:66-68</span>：</p>
+<pre><code>errored = 有任何一项检查运行出错
+failed  = 有 gate 级发现（或开了 --strict-aids 时 aid 也算）
+退出码  = errored 或（failed 且没有 --report） ? 1 : 0</code></pre>
+<table>
+<tr><th>情况</th><th>默认</th><th><code>--report</code></th><th><code>--strict-aids</code></th></tr>
+<tr><td>全部 ok，或只有 note</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>只有 aid 的发现</td><td>0</td><td>0</td><td>1</td></tr>
+<tr><td>有 gate 的发现（FAIL）</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>有检查运行出错（ERR）</td><td>1</td><td><strong>1</strong></td><td>1</td></tr>
+</table>
+<div class="callout">为什么出错时连 <code>--report</code> 也失败：一项检查没能运行，就不知道它本该发现什么。把它当作通过，等于让检查静默失效（A6）。</div>
+
+<h2 id="kinds">四类内容（M1）：检查为什么对不同文档区别对待</h2>
+<p>方法 M1 把文档里的每句话分成四类，很多检查只对其中一类生效：</p>
+<table>
+<tr><th>类别</th><th>含义</th><th>在模板里</th><th>对检查的影响</th></tr>
+<tr><td>K1 记录</td><td>过去的事，带日期，永不改写，错了只能加勘误</td><td><code>docs/log.md</code>、<code>docs/history/</code></td><td>history 只允许改链接目标或追加勘误；不检查路径、命令（记录可以提到已删除的东西）</td></tr>
+<tr><td>K2 规范</td><td>必须成立的事，权威是 owner 的决定</td><td><code>docs/decisions.md</code></td><td>决策号唯一、有落地点、落地段落提到它</td></tr>
+<tr><td>K3 描述</td><td>软件现在是什么样，会随代码过期</td><td>README、设计文档、<code>docs/README.md</code></td><td>路径、命令、pin、演化措辞都只查这一类（<code>descriptionDocs()</code> <span class="src">src/check.mjs:298</span>）</td></tr>
+<tr><td>K4 计划</td><td>将要做的事</td><td><code>docs/plan.md</code>、<code>docs/research/</code></td><td>可以提到还不存在的路径和命令；开放的调研必须被计划里的开放条目链接</td></tr>
+</table>
+<p>阶段卡 <code>CURRENT.md</code> 混合了描述和计划，按预算单独管（不超过 45 行、4000 字符）。</p>
+
+<footer>docaxioms 导读 · 基于 d840742 · 本地文件，直接用浏览器打开 <code>walkthrough/index.html</code></footer>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docaxioms 导读：测试与门禁</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><nav>
+  <span class="brand">docaxioms 导读</span>
+  <a href="index.html">概览与架构</a>
+  <a href="flows.html">接入与开发流程</a>
+  <a href="checks.html">17 项检查</a>
+  <a href="mechanisms.html">核心机制</a>
+  <a href="tests.html" class="here">测试与门禁</a>
+  <a href="plan.html">对照迭代方案</a>
+</nav></header>
+
+<div class="layout">
+<aside class="toc">
+  <b>本页</b>
+  <a href="#overview">三个测试文件</a>
+  <a href="#fixture">夹具项目</a>
+  <a href="#faults">FAULTS：每项检查都要见过自己失败</a>
+  <a href="#allowed">ALLOWED：合法的改动必须通过</a>
+  <a href="#standalone">单独的测试</a>
+  <a href="#cli">CLI 与 init/update 测试</a>
+  <a href="#self">本仓库的门禁（AD-7）</a>
+  <a href="#ci">npm run check 与 CI</a>
+  <a href="#verify">怎样确认一个修复真的被测住</a>
+</aside>
+<main>
+
+<h1>测试与门禁</h1>
+<p class="lead">一共 221 项测试，用 Node 自带的测试运行器（<code>node --test</code>），不依赖测试框架。</p>
+
+<h2 id="overview">三个测试文件</h2>
+<table>
+<tr><th>文件</th><th>行数</th><th>测什么</th></tr>
+<tr><td><code>test/check.test.mjs</code></td><td>708</td><td>检查引擎：一个虚构项目上的故障注入（FAULTS）和放行用例（ALLOWED），加上 30 多项单独的测试</td></tr>
+<tr><td><code>test/docaxioms.test.mjs</code></td><td>221</td><td>命令行和接入：<code>init</code>、<code>update</code>、各命令的退出码、<code>pin --write</code> 的范围</td></tr>
+<tr><td><code>test/self.test.mjs</code></td><td>37</td><td>本仓库自己的文档必须通过的那几项检查（AD-7 的阻断集合）</td></tr>
+</table>
+
+<h2 id="fixture">夹具项目：一个和本仓库毫不相干的项目</h2>
+<p><code>check.test.mjs</code> 开头定义了一个虚构的 Python 天气工具（<code>FILES</code> <span class="src">:18</span>、<code>PROFILE</code> <span class="src">:42</span>），故意用不同的名字、不同的决策前缀（<code>ADR-</code>）、不同的目录（<code>law/</code> 放 core、<code>NOW.md</code> 当阶段卡）。目的是证明检查不依赖本仓库的习惯，换一个项目照样成立。</p>
+<p>每个用例都由 <code>runFixture(change, profile)</code> <span class="src">:61</span> 运行：</p>
+<div class="flow">
+  <div class="step"><b>在系统临时目录建一个新仓库</b><small>写入 <code>FILES</code>，<code>git init</code>，提交到 <code>main</code>，再切到 <code>work</code> 分支（这样 history 检查有基线可比）</small></div>
+  <div class="arrow">↓</div>
+  <div class="step hl"><b>执行 <code>change</code></b><small>一个小函数，用 <code>add</code>（追加）、<code>swap</code>（替换一段文字，原文必须存在）、<code>put</code>（写文件）、<code>drop</code>（删文件）改动工作树</small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><b>运行 <code>check(root, profile)</code>，返回所有结果</b><small>结束后删掉临时目录</small></div>
+</div>
+<p><code>failing()</code> <span class="src">:76</span> 再把结果筛成“有 gate 发现的检查名”列表；并且先断言<strong>没有任何一项运行出错</strong>：出错的检查没有发现可比，不能让它看起来像通过。</p>
+
+<h2 id="faults">FAULTS：每项检查都要见过自己失败（120 条）</h2>
+<p>GUIDE 的要求：“Give it its own seeded fault: a check that was never seen to fail proves nothing.” FAULTS <span class="src">:88</span> 是一张表，每行是 <code>[检查名前缀, 改动, 可选的 profile]</code>，期望这项检查报出问题：</p>
+<pre><code>["links and anchors", ({ add }) =&gt; add("docs/index.md", "\n[x](/docs/gone.md)\n")],
+["a history file",    ({ swap }) =&gt; swap("docs/old/first.md", "Old text,", "New text,")],
+["commands named",    ({ add }) =&gt; add("README.md", "\nRun `make -s deploy`.\n")],
+["the profile",       () =&gt; {}, { ...PROFILE, commmands: PROFILE.commands }],   <span class="dim">// 拼错的键</span></code></pre>
+<p>第 224 行把每行展开成一个测试，名字形如 <code>caught: links and anchors (add("docs/index.md", …))</code>；只改 profile 的用例，括号里显示改了哪些设置。表里按时间分段追加：每一轮审查发现的漏洞，都先在这里加一条复现，再去修代码。</p>
+
+<h2 id="allowed">ALLOWED：合法的改动必须通过（49 条）</h2>
+<p>只测“会失败”不够：一项检查如果什么都报，也能通过 FAULTS，却会让人对它习以为常、视而不见（A7）。ALLOWED <span class="src">:228</span> 列的是不该报错的改动，期望<strong>没有任何 gate 发现、也没有运行错误</strong>：</p>
+<pre><code>["a dated erratum", ({ add }) =&gt; add("docs/old/first.md", "\n## Erratum 2026-11-23\n\nIt was two hours.\n")],
+["a link target fixed in history", ({ swap }) =&gt; swap("docs/old/first.md", "../todo.md", "../design.md")],
+["a command after an option", ({ add }) =&gt; add("README.md", "\nRun `make -s test`.\n")],
+["a pin example inside a fenced code block", …],</code></pre>
+<p>另有一条基线测试：什么都不改，连 aid 也要全部通过。</p>
+
+<h2 id="standalone">单独的测试</h2>
+<p>不适合放进表里的情况，写成单独的 <code>test(…)</code>，例如：</p>
+<ul>
+  <li>code pin：嵌套在列表和引用块里的 HTML 中写 pin，<code>pin --write</code> 不破坏 Markdown；代码移动、一行的 pin 撞上别处相同的行、重复窗口时的处理；</li>
+  <li>符号链接：链接、入口、目录的 README、配置的文件、code pin 经符号链接指到仓外时，都报错且不读取（测试在系统临时目录里真的建一个仓外文件）；</li>
+  <li>profile：一个设置出错只剔掉这个设置；不是对象时所有检查都不运行；<code>x-</code> 值原样传递；</li>
+  <li>出错隔离：项目检查抛出 <code>null</code> 或没有原型的对象，仍被记成 error，下一项照跑；</li>
+  <li>history：找不到基线、没有提交时，打出说明而不是静默；</li>
+  <li><strong>core 不点名任何项目</strong> <span class="src">:705</span>：用一个正则检查 <code>core/</code> 的三份文件里没有本机路径、网址、邮箱、工具名（Claude、npm、git……）、汉字、决策编号之类（AD-2）。</li>
+</ul>
+
+<h2 id="cli">CLI 与 init/update 测试</h2>
+<p><code>test/docaxioms.test.mjs</code> 在临时目录里真的运行 <code>init</code>、<code>update</code> 和 <code>bin/docaxioms.mjs</code> 子进程，断言输出和退出码：</p>
+<ul>
+  <li>新项目 <code>init</code> 后自己的检查就通过，钉住的版本和 core 哈希正确；</li>
+  <li><code>update</code> 不覆盖项目改过的 core 文件；公理变了必须 <code>--accept-axioms</code>；core 目录在项目外时拒绝；</li>
+  <li><code>check</code> 的 gate/aid 退出码、<code>--strict-aids</code>、<code>--report</code>；一项检查出错时，加 <code>--report</code> 或 <code>--json</code> 也退出 1；</li>
+  <li><code>pin --write</code> 不指定范围时拒绝；范围没匹配到 pin 时报错；profile 有问题时 <code>pin</code>、<code>garden</code> 拒绝运行。</li>
+</ul>
+
+<h2 id="self">本仓库的门禁（AD-7）</h2>
+<p>docaxioms 用自己检查自己的文档，但在开发期只让一部分检查阻断合并。决策 AD-7：“只有链接、路径、命令和 axiom pin 阻断；其余是报告；运行出错仍然失败”。理由是：一项检查要先在外部真实项目上跑够（10 次相关改动、3 条值得改文档的发现），证明它精确，才配阻断（M2、A7）。</p>
+<p><code>test/self.test.mjs</code> 把这条决策变成测试：</p>
+<pre><code>const BLOCKING = [
+  "core files are the pinned version",
+  "links and anchors resolve",
+  "documents named in code exist",
+  "paths named in current documents exist",
+  "commands named in current documents exist",
+];</code></pre>
+<ol>
+  <li>直接计算 <code>core/AXIOMS.lock.md</code> 的 SHA-256，必须等于 <code>docaxioms.json</code> 里钉的值（不经过 profile 的容错处理，避免 profile 里一个错字让这项保护失效）；</li>
+  <li>对本仓库跑 <code>check</code>，上面五项必须没有发现；</li>
+  <li>本仓库文档里的 code pin，目标必须存在、不出仓库（pin 的内容变了只报告，不阻断）。</li>
+</ol>
+<p>本仓库的 <code>docaxioms.json</code> 自己的设置也很说明问题：<code>codeExtensions: [".mjs"]</code>，<code>pathPrefixes</code> 是 <code>bin/</code>、<code>core/</code>、<code>docs/</code>、<code>src/</code>、<code>test/</code>，命令检查 <code>npm run …</code> 对照 <code>package.json</code> 的 scripts；<code>codeToDocs</code> 把 <code>src/**</code> 映射到 GUIDE 和 README，所以改了源码而没动这两份文档，会出现一条 aid 提醒。</p>
+
+<h2 id="ci">npm run check 与 CI</h2>
+<pre><code>"check": "node --no-warnings --test test/*.test.mjs &amp;&amp; node bin/docaxioms.mjs check --report"</code></pre>
+<p>先跑全部测试（包括 self.test 的阻断），再对本仓库跑一遍完整检查并打印报告。<code>--report</code> 让非阻断检查的发现只打印、不失败；运行出错仍然失败。</p>
+<p>CI（<code>.github/workflows/check.yml</code>）在每个 PR 和推到 <code>main</code> 时，用 Node 22（<code>package.json</code> 支持的最低版本）跑 <code>npm ci</code> 和 <code>npm run check</code>。检出时用 <code>fetch-depth: 0</code> 拉全历史，这样 history 检查在 PR 上能找到 <code>origin/main</code> 作基线；否则只会打一条 note。</p>
+
+<h2 id="verify">怎样确认一个修复真的被测住</h2>
+<p>这次开发反复用的一个做法：写好新测试后，把测试文件复制到<strong>修复前的提交</strong>的临时 worktree 里再跑一遍。新测试在旧代码上失败、在新代码上通过，才说明它测到了这次修的东西；在旧代码上也通过的测试，只能算防回归。</p>
+<pre><code>git worktree add /tmp/old &lt;修复前的提交&gt;
+ln -s "$PWD/node_modules" /tmp/old/node_modules
+cp test/*.test.mjs /tmp/old/test/
+(cd /tmp/old &amp;&amp; node --test test/check.test.mjs)   <span class="dim"># 期望：新加的用例失败</span>
+git worktree remove --force /tmp/old</code></pre>
+
+<footer>docaxioms 导读 · 基于 d840742</footer>
+</main>
+</div>
+</body>
+</html>
